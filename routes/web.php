@@ -30,6 +30,8 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth.session.custom');
 
+Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])->middleware('auth.session.custom');
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes

@@ -75,4 +75,35 @@ class AuthController extends Controller
         Session::forget('user');
         return redirect('/login')->with('error', 'Logged out successfully.');
     }
+
+    public function manageUsers(Request $request)
+    {
+        if ($request->isMethod('post')) {
+            $name = $request->input('name');
+            $email = $request->input('email');
+            $password = $request->input('password');
+            $password_confirmation = $request->input('password_confirmation');
+
+            if ($password !== $password_confirmation) {
+                return back()->with('error', 'Passwords do not match.');
+            }
+
+            $existing = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+            if ($existing) {
+                return back()->with('error', 'Email already exists.');
+            }
+
+            DB::insert("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)", [
+                $name,
+                $email,
+                Hash::make($password),
+                Carbon::now()
+            ]);
+
+            return redirect('/users')->with('success', 'User created successfully.');
+        }
+
+        $users = DB::select("SELECT * FROM users ORDER BY created_at DESC");
+        return view('user', ['users' => $users]);
+    }
 }

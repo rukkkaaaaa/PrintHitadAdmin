@@ -76,7 +76,7 @@
             <div data-i18n="Hitad Web New Ad">Hitad Web New Ad</div>
           </a>
         </li>
-        
+
       </ul>
     </li>
 
@@ -103,12 +103,12 @@
       </a>
     </li>
 
-    <!-- Documentation -->
-    <li class="menu-item">
-      <a href="#" target="_blank" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-box"></i>
-        <div data-i18n="User Management">User Management</div>
+    <li class="menu-item {{ request()->is('users') ? 'active' : '' }}">
+      <a href="{{ url('/users') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-user"></i>
+        <div data-i18n="Users">Users</div>
       </a>
     </li>
+
   </ul>
 </aside>
