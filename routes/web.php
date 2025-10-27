@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Session;
+use App\Http\Controllers\GeneralController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -42,4 +45,10 @@ Route::middleware(['auth.session.custom'])->group(function () {
         $user = session('user');
         return view('dashboard', compact('user'));
     });
+});
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/categories', [GeneralController::class, 'getCategories']);
+    Route::post('/add-category', [GeneralController::class, 'addCategory']);
+    Route::post('/update-category/{id}', [GeneralController::class, 'updateCategory']);
 });

@@ -96,8 +96,8 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('tables*') ? 'active' : '' }}">
-      <a href="#" class="menu-link">
+    <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
+      <a href="{{ url('/categories') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-category"></i>
         <div data-i18n="Categories">Ad Categories</div>
       </a>
