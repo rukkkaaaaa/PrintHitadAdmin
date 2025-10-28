@@ -81,20 +81,21 @@
     </li>
 
     <!-- Tables -->
-    <li class="menu-item {{ request()->is('tables*') ? 'active' : '' }}">
-      <a href="#" class="menu-link">
+    <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
+      <a href="{{ url('/adtypes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-file"></i>
         <div data-i18n="Ad Type Management">Ad Type Management</div>
       </a>
     </li>
 
 
-    <li class="menu-item {{ request()->is('tables*') ? 'active' : '' }}">
-      <a href="#" class="menu-link">
+    <li class="menu-item {{ request()->is('adsizes') ? 'active' : '' }}">
+      <a href="{{ url('/adsizes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-table"></i>
         <div data-i18n="Ad Size Management">Ad Size Management</div>
       </a>
     </li>
+
 
     <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
       <a href="{{ url('/categories') }}" class="menu-link">

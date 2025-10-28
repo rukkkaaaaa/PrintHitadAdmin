@@ -12,6 +12,7 @@ use App\Http\Controllers\GeneralController;
 | Base Path
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     if (Session::has('user')) {
         $user = session('user');
@@ -51,4 +52,16 @@ Route::middleware(['auth.session.custom'])->group(function () {
     Route::get('/categories', [GeneralController::class, 'getCategories']);
     Route::post('/add-category', [GeneralController::class, 'addCategory']);
     Route::post('/update-category/{id}', [GeneralController::class, 'updateCategory']);
+});
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/adtypes', [GeneralController::class, 'getAdTypes']);
+    Route::post('/add-adtype', [GeneralController::class, 'addAdType']);
+    Route::post('/update-adtype/{id}', [GeneralController::class, 'updateAdType']);
+});
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/adsizes', [GeneralController::class, 'getAdSizes']);
+    Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
+    Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
 });
