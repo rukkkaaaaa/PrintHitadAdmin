@@ -397,7 +397,6 @@ class GeneralController extends Controller
                 'cities.city_name'
             );
 
-        // 🔍 Apply search if keyword exists
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -406,7 +405,11 @@ class GeneralController extends Controller
             });
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->get();
+        // 👇 Paginate instead of get()
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+
+        // 👇 Append search to pagination links
+        $ads->appends($request->only('search'));
 
         return view('advertisements.index', compact('ads'))
             ->with('search', $request->search);

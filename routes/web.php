@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\GeneralController;
+use Illuminate\Support\Facades\DB;
+
 
 
 
@@ -44,53 +46,52 @@ Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])-
 Route::middleware(['auth.session.custom'])->group(function () {
     Route::get('/dashboard', function () {
         $user = session('user');
-        return view('dashboard', compact('user'));
-    });
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+        // ✅ Fetch dashboard counts
+        $customerCount = DB::table('customers')->count();
+        $adminCount = DB::table('users')->count();
+        $adCount = DB::table('advertisements')->count();
+
+        // ✅ Pass them to the dashboard view
+        return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
+    });
+
+    // ✅ Categories
     Route::get('/categories', [GeneralController::class, 'getCategories']);
     Route::post('/add-category', [GeneralController::class, 'addCategory']);
     Route::post('/update-category/{id}', [GeneralController::class, 'updateCategory']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Ad Types
     Route::get('/adtypes', [GeneralController::class, 'getAdTypes']);
     Route::post('/add-adtype', [GeneralController::class, 'addAdType']);
     Route::post('/update-adtype/{id}', [GeneralController::class, 'updateAdType']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Ad Sizes
     Route::get('/adsizes', [GeneralController::class, 'getAdSizes']);
     Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
     Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Ad Criterias
     Route::get('/adcriterias', [GeneralController::class, 'getAdCriterias']);
     Route::post('/add-adcriteria', [GeneralController::class, 'addAdCriteria']);
     Route::post('/update-adcriteria/{id}', [GeneralController::class, 'updateAdCriteria']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Ad Criteria Options
     Route::get('/adcriteria-options', [GeneralController::class, 'getAdCriteriaOptions']);
     Route::post('/add-adcriteria-option', [GeneralController::class, 'addAdCriteriaOption']);
     Route::post('/update-adcriteria-option/{id}', [GeneralController::class, 'updateAdCriteriaOption']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Districts
     Route::get('/districts', [GeneralController::class, 'getDistricts']);
     Route::post('/add-district', [GeneralController::class, 'addDistrict']);
     Route::post('/update-district/{id}', [GeneralController::class, 'updateDistrict']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Cities
     Route::get('/cities', [GeneralController::class, 'getCities']);
     Route::post('/add-city', [GeneralController::class, 'addCity']);
     Route::post('/update-city/{id}', [GeneralController::class, 'updateCity']);
-});
 
-Route::middleware(['auth.session.custom'])->group(function () {
+    // ✅ Advertisements
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
     Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);
 });
