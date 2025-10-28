@@ -396,11 +396,12 @@ class GeneralController extends Controller
                 'districts.district_name',
                 'cities.city_name'
             )
-            ->orderBy('advertisements.created_at', 'desc')
+            ->orderBy('advertisements.id', 'desc') // 👈 show most recent ID first
             ->get();
 
         return view('advertisements.index', compact('ads'));
     }
+
 
     // GET: View single advertisement
     public function viewAdvertisement($id)
