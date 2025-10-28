@@ -35,15 +35,21 @@
         <div data-i18n="Account Settings">Hitad Print</div>
       </a>
       <ul class="menu-sub">
-        <li class="menu-item"><a href="#" class="menu-link">
+        <li class="menu-item">
+          <a href="#" class="menu-link">
             <div data-i18n="Account">Print Paid</div>
-          </a></li>
-        <li class="menu-item"><a href="#" class="menu-link">
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="#" class="menu-link">
             <div data-i18n="Notifications">Print Unpaid</div>
-          </a></li>
-        <li class="menu-item"><a href="#" class="menu-link">
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements') }}" class="menu-link">
             <div data-i18n="Connections">Print AllAds</div>
-          </a></li>
+          </a>
+        </li>
       </ul>
     </li>
 

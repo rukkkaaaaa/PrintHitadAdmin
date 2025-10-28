@@ -89,3 +89,8 @@ Route::middleware(['auth.session.custom'])->group(function () {
     Route::post('/add-city', [GeneralController::class, 'addCity']);
     Route::post('/update-city/{id}', [GeneralController::class, 'updateCity']);
 });
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
+    Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);
+});

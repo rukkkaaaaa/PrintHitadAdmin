@@ -381,4 +381,53 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'City updated successfully!');
     }
+    // GET: Show all advertisements
+    public function getAdvertisements()
+    {
+        $ads = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                'categories.category_name',
+                'districts.district_name',
+                'cities.city_name'
+            )
+            ->orderBy('advertisements.created_at', 'desc')
+            ->get();
+
+        return view('advertisements.index', compact('ads'));
+    }
+
+    // GET: View single advertisement
+    public function viewAdvertisement($id)
+    {
+        $ad = DB::table('advertisements')
+            ->where('advertisements.id', $id)
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                'customers.address',
+                'customers.telephone',
+                'customers.email',
+                'customers.nic_passport',
+                'categories.category_name',
+                'districts.district_name',
+                'cities.city_name'
+            )
+            ->first();
+
+        if (!$ad) {
+            abort(404);
+        }
+
+        return view('advertisements.view', compact('ad'));
+    }
 }
