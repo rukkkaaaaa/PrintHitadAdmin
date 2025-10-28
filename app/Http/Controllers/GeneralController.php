@@ -186,4 +186,113 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'Advertisement size updated successfully!');
     }
+
+    // GET: Show all advertisement criterias
+    public function getAdCriterias()
+    {
+        $criterias = DB::table('advertisement_criterias')->get();
+        $categories = DB::table('categories')->where('is_active', 1)->get();
+        return view('adcriterias.index', compact('criterias', 'categories'));
+    }
+
+    // POST: Add new criteria
+    public function addAdCriteria(Request $request)
+    {
+        $request->validate([
+            'advertisement_criteria_name' => 'required|string|max:255',
+            'field_type' => 'required|string|max:50',
+            'category_id' => 'required|integer|exists:categories,id',
+        ]);
+
+        DB::table('advertisement_criterias')->insert([
+            'advertisement_criteria_name' => $request->advertisement_criteria_name,
+            'field_type' => $request->field_type,
+            'category_id' => $request->category_id,
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Advertisement criteria added successfully!');
+    }
+
+    // POST: Update criteria
+    public function updateAdCriteria(Request $request, $id)
+    {
+        $request->validate([
+            'advertisement_criteria_name' => 'required|string|max:255',
+            'field_type' => 'required|string|max:50',
+            'category_id' => 'required|integer|exists:categories,id',
+            'is_active' => 'required|boolean',
+        ]);
+
+        DB::table('advertisement_criterias')->where('id', $id)->update([
+            'advertisement_criteria_name' => $request->advertisement_criteria_name,
+            'field_type' => $request->field_type,
+            'category_id' => $request->category_id,
+            'is_active' => $request->is_active,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Advertisement criteria updated successfully!');
+    }
+
+    // GET: Show all criteria options
+    public function getAdCriteriaOptions()
+    {
+        // Join with categories for label display
+        $criterias = DB::table('advertisement_criterias')
+            ->join('categories', 'advertisement_criterias.category_id', '=', 'categories.id')
+            ->select(
+                'advertisement_criterias.id',
+                'advertisement_criterias.advertisement_criteria_name',
+                'advertisement_criterias.field_type',
+                'advertisement_criterias.category_id',
+                'categories.category_name'
+            )
+            ->where('advertisement_criterias.is_active', 1)
+            ->get();
+
+        $options = DB::table('advertisement_criteria_options')->get();
+
+        return view('adcriteriaoptions.index', compact('criterias', 'options'));
+    }
+
+    // POST: Add option
+    public function addAdCriteriaOption(Request $request)
+    {
+        $request->validate([
+            'advertisement_criteria_option_name' => 'required|string|max:255',
+            'advertisement_criteria_id' => 'required|integer|exists:advertisement_criterias,id',
+        ]);
+
+        DB::table('advertisement_criteria_options')->insert([
+            'advertisement_criteria_option_name' => $request->advertisement_criteria_option_name,
+            'advertisement_criteria_id' => $request->advertisement_criteria_id,
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Criteria option added successfully!');
+    }
+
+    // POST: Update option
+    public function updateAdCriteriaOption(Request $request, $id)
+    {
+        $request->validate([
+            'advertisement_criteria_option_name' => 'required|string|max:255',
+            'advertisement_criteria_id' => 'required|integer|exists:advertisement_criterias,id',
+            'is_active' => 'required|boolean',
+        ]);
+
+        DB::table('advertisement_criteria_options')->where('id', $id)->update([
+            'advertisement_criteria_option_name' => $request->advertisement_criteria_option_name,
+            'advertisement_criteria_id' => $request->advertisement_criteria_id,
+            'is_active' => $request->is_active,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Criteria option updated successfully!');
+    }
 }

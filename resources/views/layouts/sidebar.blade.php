@@ -80,11 +80,18 @@
       </ul>
     </li>
 
+    <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
+      <a href="{{ url('/categories') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-category"></i>
+        <div data-i18n="Categories">Ad Categories</div>
+      </a>
+    </li>
+
     <!-- Tables -->
     <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
       <a href="{{ url('/adtypes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-file"></i>
-        <div data-i18n="Ad Type Management">Ad Type Management</div>
+        <div data-i18n="Ad Type Management">Ad Type </div>
       </a>
     </li>
 
@@ -92,17 +99,24 @@
     <li class="menu-item {{ request()->is('adsizes') ? 'active' : '' }}">
       <a href="{{ url('/adsizes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-table"></i>
-        <div data-i18n="Ad Size Management">Ad Size Management</div>
+        <div data-i18n="Ad Size Management">Ad Size </div>
       </a>
     </li>
 
-
-    <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
-      <a href="{{ url('/categories') }}" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-category"></i>
-        <div data-i18n="Categories">Ad Categories</div>
+    <li class="menu-item {{ request()->is('adcriterias') ? 'active' : '' }}">
+      <a href="{{ url('/adcriterias') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-check-square"></i>
+        <div data-i18n="Ad Criteria Management">Ad Criteria </div>
       </a>
     </li>
+
+    <li class="menu-item {{ request()->is('adcriteria-options') ? 'active' : '' }}">
+      <a href="{{ url('/adcriteria-options') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-list-check"></i>
+        <div data-i18n="Criteria Options">Ad Criteria Options</div>
+      </a>
+    </li>
+
 
     <li class="menu-item {{ request()->is('users') ? 'active' : '' }}">
       <a href="{{ url('/users') }}" class="menu-link">

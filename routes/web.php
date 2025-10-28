@@ -65,3 +65,15 @@ Route::middleware(['auth.session.custom'])->group(function () {
     Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
     Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
 });
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/adcriterias', [GeneralController::class, 'getAdCriterias']);
+    Route::post('/add-adcriteria', [GeneralController::class, 'addAdCriteria']);
+    Route::post('/update-adcriteria/{id}', [GeneralController::class, 'updateAdCriteria']);
+});
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/adcriteria-options', [GeneralController::class, 'getAdCriteriaOptions']);
+    Route::post('/add-adcriteria-option', [GeneralController::class, 'addAdCriteriaOption']);
+    Route::post('/update-adcriteria-option/{id}', [GeneralController::class, 'updateAdCriteriaOption']);
+});
