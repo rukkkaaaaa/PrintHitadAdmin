@@ -18,10 +18,16 @@ use Illuminate\Support\Facades\DB;
 Route::get('/', function () {
     if (Session::has('user')) {
         $user = session('user');
-        return view('dashboard', compact('user'));
+
+        $customerCount = DB::table('customers')->count();
+        $adminCount = DB::table('users')->count();
+        $adCount = DB::table('advertisements')->count();
+
+        return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
     }
     return redirect('/login');
 });
+
 
 /*
 |--------------------------------------------------------------------------
