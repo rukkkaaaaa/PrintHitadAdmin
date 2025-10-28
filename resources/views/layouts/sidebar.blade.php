@@ -117,6 +117,19 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('districts') ? 'active' : '' }}">
+      <a href="{{ url('/districts') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-map"></i>
+        <div data-i18n="Districts">Districts</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('cities') ? 'active' : '' }}">
+      <a href="{{ url('/cities') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-buildings"></i>
+        <div data-i18n="Cities">Cities</div>
+      </a>
+    </li>
 
     <li class="menu-item {{ request()->is('users') ? 'active' : '' }}">
       <a href="{{ url('/users') }}" class="menu-link">

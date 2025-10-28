@@ -295,4 +295,90 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'Criteria option updated successfully!');
     }
+
+    // GET: Show all districts
+    public function getDistricts()
+    {
+        $districts = DB::table('districts')->get();
+        return view('districts.index', compact('districts'));
+    }
+
+    // POST: Add district
+    public function addDistrict(Request $request)
+    {
+        $request->validate([
+            'district_name' => 'required|string|max:255',
+        ]);
+
+        DB::table('districts')->insert([
+            'district_name' => $request->district_name,
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'District added successfully!');
+    }
+
+    // POST: Update district
+    public function updateDistrict(Request $request, $id)
+    {
+        $request->validate([
+            'district_name' => 'required|string|max:255',
+            'is_active' => 'required|boolean',
+        ]);
+
+        DB::table('districts')->where('id', $id)->update([
+            'district_name' => $request->district_name,
+            'is_active' => $request->is_active,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'District updated successfully!');
+    }
+    // GET: Show all cities
+    public function getCities()
+    {
+        $cities = DB::table('cities')->get();
+        $districts = DB::table('districts')->where('is_active', 1)->get();
+        return view('cities.index', compact('cities', 'districts'));
+    }
+
+    // POST: Add city
+    public function addCity(Request $request)
+    {
+        $request->validate([
+            'city_name' => 'required|string|max:255',
+            'district_id' => 'required|exists:districts,id',
+        ]);
+
+        DB::table('cities')->insert([
+            'city_name' => $request->city_name,
+            'district_id' => $request->district_id,
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'City added successfully!');
+    }
+
+    // POST: Update city
+    public function updateCity(Request $request, $id)
+    {
+        $request->validate([
+            'city_name' => 'required|string|max:255',
+            'district_id' => 'required|exists:districts,id',
+            'is_active' => 'required|boolean',
+        ]);
+
+        DB::table('cities')->where('id', $id)->update([
+            'city_name' => $request->city_name,
+            'district_id' => $request->district_id,
+            'is_active' => $request->is_active,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'City updated successfully!');
+    }
 }

@@ -77,3 +77,15 @@ Route::middleware(['auth.session.custom'])->group(function () {
     Route::post('/add-adcriteria-option', [GeneralController::class, 'addAdCriteriaOption']);
     Route::post('/update-adcriteria-option/{id}', [GeneralController::class, 'updateAdCriteriaOption']);
 });
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/districts', [GeneralController::class, 'getDistricts']);
+    Route::post('/add-district', [GeneralController::class, 'addDistrict']);
+    Route::post('/update-district/{id}', [GeneralController::class, 'updateDistrict']);
+});
+
+Route::middleware(['auth.session.custom'])->group(function () {
+    Route::get('/cities', [GeneralController::class, 'getCities']);
+    Route::post('/add-city', [GeneralController::class, 'addCity']);
+    Route::post('/update-city/{id}', [GeneralController::class, 'updateCity']);
+});
