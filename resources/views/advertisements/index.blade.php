@@ -4,7 +4,17 @@
 <div class="container mt-4">
     <h2>All Advertisements</h2>
 
-    <table class="table table-bordered mt-4">
+    <!-- 🔍 Search Form -->
+    <form action="{{ url('/advertisements') }}" method="GET" class="row g-3 mb-4">
+        <div class="col-md-10">
+            <input type="text" name="search" class="form-control" placeholder="Search by ad title or customer name..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+    </form>
+
+    <table class="table table-bordered mt-2">
         <thead>
             <tr>
                 <th>ID</th>
@@ -19,7 +29,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($ads as $ad)
+            @forelse ($ads as $ad)
                 <tr>
                     <td>{{ $ad->id }}</td>
                     <td>{{ $ad->customer_name }}</td>
@@ -37,7 +47,11 @@
                         <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-info">View</a>
                     </td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="9" class="text-center text-muted">No advertisements found.</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 </div>

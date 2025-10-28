@@ -382,9 +382,9 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'City updated successfully!');
     }
     // GET: Show all advertisements
-    public function getAdvertisements()
+    public function getAdvertisements(Request $request)
     {
-        $ads = DB::table('advertisements')
+        $query = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
@@ -395,12 +395,23 @@ class GeneralController extends Controller
                 'categories.category_name',
                 'districts.district_name',
                 'cities.city_name'
-            )
-            ->orderBy('advertisements.id', 'desc') // 👈 show most recent ID first
-            ->get();
+            );
 
-        return view('advertisements.index', compact('ads'));
+        // 🔍 Apply search if keyword exists
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_title', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->get();
+
+        return view('advertisements.index', compact('ads'))
+            ->with('search', $request->search);
     }
+
 
 
     // GET: View single advertisement
