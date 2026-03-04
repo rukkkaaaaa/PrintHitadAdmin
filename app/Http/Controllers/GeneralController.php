@@ -16,11 +16,13 @@ class GeneralController extends Controller
     public function addCategory(Request $request)
     {
         $request->validate([
-            'category_name' => 'required|string|max:255'
+            'category_name_en' => 'required|string|max:255',
+            'category_name_si' => 'required|string|max:255'
         ]);
 
         DB::table('categories')->insert([
-            'category_name' => $request->category_name,
+            'category_name_en' => $request->category_name_en,
+            'category_name_si' => $request->category_name_si,
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -31,14 +33,16 @@ class GeneralController extends Controller
     public function updateCategory(Request $request, $id)
     {
         $request->validate([
-            'category_name' => 'required|string|max:255',
+            'category_name_en' => 'required|string|max:255',
+            'category_name_si' => 'required|string|max:255',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('categories')
             ->where('id', $id)
             ->update([
-                'category_name' => $request->category_name,
+                'category_name_en' => $request->category_name_en,
+                'category_name_si' => $request->category_name_si,
                 'is_active' => $request->is_active,
                 'updated_at' => now(),
             ]);
