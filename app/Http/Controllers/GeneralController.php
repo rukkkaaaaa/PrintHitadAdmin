@@ -486,20 +486,38 @@ class GeneralController extends Controller
     {
         $ad = DB::table('advertisements')
             ->where('advertisements.id', $id)
+
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+
+            // ✅ LEFT JOIN payments (important)
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+
+            // ✅ LEFT JOIN payment methods
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+
             ->select(
                 'advertisements.*',
+
                 'customers.customer_name',
                 'customers.address',
                 'customers.telephone',
                 'customers.email',
                 'customers.nic_passport',
+
                 'categories.category_name_en as category_name',
                 'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name'
+                'cities.city_name_en as city_name',
+
+                // ✅ Payment fields
+                'payments.amount',
+                'payments.payment_status',
+                'payments.payment_date',
+                'payments.is_success',
+
+                'payment_methods.payment_method_name as payment_method'
             )
             ->first();
 
