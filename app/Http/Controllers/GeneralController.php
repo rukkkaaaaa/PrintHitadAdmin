@@ -129,8 +129,16 @@ class GeneralController extends Controller
     // GET: Show all ad sizes
     public function getAdSizes()
     {
-        $adSizes = DB::table('advertisement_sizes')->get();
+        $adSizes = DB::table('advertisement_sizes')
+            ->join('advertisement_types', 'advertisement_sizes.advertisement_type_id', '=', 'advertisement_types.id')
+            ->select(
+                'advertisement_sizes.*',
+                'advertisement_types.advertisement_type_en as type_name'
+            )
+            ->get();
+
         $adTypes = DB::table('advertisement_types')->where('is_active', 1)->get();
+
         return view('adsizes.index', compact('adSizes', 'adTypes'));
     }
 
@@ -138,20 +146,22 @@ class GeneralController extends Controller
     public function addAdSize(Request $request)
     {
         $request->validate([
-            'advertisement_size' => 'required|string|max:255',
+            'advertisement_size_en' => 'required|string|max:255',
+            'advertisement_size_si' => 'required|string|max:255',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'img_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Handle image upload if present
         $imagePath = null;
+
         if ($request->hasFile('img_url')) {
             $imagePath = $request->file('img_url')->store('adsizes', 'public');
         }
 
         $adSizeId = DB::table('advertisement_sizes')->insertGetId([
-            'advertisement_size' => $request->advertisement_size,
+            'advertisement_size_en' => $request->advertisement_size_en,
+            'advertisement_size_si' => $request->advertisement_size_si,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             'img_url' => $imagePath,
@@ -172,7 +182,8 @@ class GeneralController extends Controller
     public function updateAdSize(Request $request, $id)
     {
         $request->validate([
-            'advertisement_size' => 'required|string|max:255',
+            'advertisement_size_en' => 'required|string|max:255',
+            'advertisement_size_si' => 'required|string|max:255',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',
@@ -180,7 +191,8 @@ class GeneralController extends Controller
         ]);
 
         $data = [
-            'advertisement_size' => $request->advertisement_size,
+            'advertisement_size_en' => $request->advertisement_size_en,
+            'advertisement_size_si' => $request->advertisement_size_si,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             'is_active' => $request->is_active,
@@ -194,8 +206,10 @@ class GeneralController extends Controller
 
         DB::table('advertisement_sizes')->where('id', $id)->update($data);
 
-        // Update pivot table
-        DB::table('advertisement_type_has_advertisement_sizes')->where('advertisement_size_id', $id)->delete();
+        DB::table('advertisement_type_has_advertisement_sizes')
+            ->where('advertisement_size_id', $id)
+            ->delete();
+
         DB::table('advertisement_type_has_advertisement_sizes')->insert([
             'advertisement_type_id' => $request->advertisement_type_id,
             'advertisement_size_id' => $id,
