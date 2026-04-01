@@ -460,8 +460,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 'categories.category_name_en as category_name',
-                'districts.district_name',
-                'cities.city_name'
+                'districts.district_name_en as district_name',
+                'cities.city_name_en as city_name'
             );
 
         if ($request->has('search') && !empty($request->search)) {
@@ -497,9 +497,9 @@ class GeneralController extends Controller
                 'customers.telephone',
                 'customers.email',
                 'customers.nic_passport',
-                'categories.category_name',
-                'districts.district_name',
-                'cities.city_name'
+                'categories.category_name_en as category_name',
+                'districts.district_name_en as district_name',
+                'cities.city_name_en as city_name'
             )
             ->first();
 

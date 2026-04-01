@@ -7,7 +7,9 @@
     <!-- 🔍 Search Form -->
     <form action="{{ url('/advertisements') }}" method="GET" class="row g-3 mb-4">
         <div class="col-md-10">
-            <input type="text" name="search" class="form-control" placeholder="Search by ad title or customer name..." value="{{ request('search') }}">
+            <input type="text" name="search" class="form-control"
+                   placeholder="Search by ad title or customer name..."
+                   value="{{ request('search') }}">
         </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">Search</button>
@@ -34,7 +36,7 @@
                     <td>{{ $ad->id }}</td>
                     <td>{{ $ad->customer_name }}</td>
                     <td>{{ $ad->category_name }}</td>
-                    <td>{{ $ad->advertisement_title }}</td>
+                    <td>{{ Str::limit($ad->advertisement_description, 40) }}</td>
                     <td>{{ $ad->district_name }}</td>
                     <td>{{ $ad->city_name }}</td>
                     <td>{{ $ad->publish_date }}</td>
@@ -44,12 +46,15 @@
                             : '<span class="badge bg-danger">Inactive</span>' !!}
                     </td>
                     <td>
-                        <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-info">View</a>
+                        <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
+                           class="btn btn-sm btn-info">View</a>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center text-muted">No advertisements found.</td>
+                    <td colspan="9" class="text-center text-muted">
+                        No advertisements found.
+                    </td>
                 </tr>
             @endforelse
         </tbody>
