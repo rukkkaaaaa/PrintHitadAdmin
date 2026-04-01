@@ -36,7 +36,7 @@
       </a>
       <ul class="menu-sub">
         <li class="menu-item">
-          <a href="#" class="menu-link">
+          <a href="{{ url('/advertisements/paid') }}" class="menu-link">
             <div data-i18n="Account">Print Paid</div>
           </a>
         </li>
