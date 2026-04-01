@@ -354,11 +354,13 @@ class GeneralController extends Controller
     public function addDistrict(Request $request)
     {
         $request->validate([
-            'district_name' => 'required|string|max:255',
+            'district_name_en' => 'required|string|max:255',
+            'district_name_si' => 'required|string|max:255',
         ]);
 
         DB::table('districts')->insert([
-            'district_name' => $request->district_name,
+            'district_name_en' => $request->district_name_en,
+            'district_name_si' => $request->district_name_si,
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -371,12 +373,14 @@ class GeneralController extends Controller
     public function updateDistrict(Request $request, $id)
     {
         $request->validate([
-            'district_name' => 'required|string|max:255',
+            'district_name_en' => 'required|string|max:255',
+            'district_name_si' => 'required|string|max:255',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('districts')->where('id', $id)->update([
-            'district_name' => $request->district_name,
+            'district_name_en' => $request->district_name_en,
+            'district_name_si' => $request->district_name_si,
             'is_active' => $request->is_active,
             'updated_at' => now(),
         ]);
