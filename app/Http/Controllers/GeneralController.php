@@ -53,8 +53,16 @@ class GeneralController extends Controller
     // GET: Show all ad types
     public function getAdTypes()
     {
-        $adtypes = DB::table('advertisement_types')->get();
+        $adtypes = DB::table('advertisement_types')
+            ->join('categories', 'advertisement_types.category_id', '=', 'categories.id')
+            ->select(
+                'advertisement_types.*',
+                'categories.category_name_en as category_name'
+            )
+            ->get();
+
         $categories = DB::table('categories')->where('is_active', 1)->get();
+
         return view('adtypes.index', compact('adtypes', 'categories'));
     }
 
@@ -62,13 +70,15 @@ class GeneralController extends Controller
     public function addAdType(Request $request)
     {
         $request->validate([
-            'advertisement_type' => 'required|string|max:255',
+            'advertisement_type_en' => 'required|string|max:255',
+            'advertisement_type_si' => 'required|string|max:255',
             'category_id' => 'required|integer|exists:categories,id',
             'price' => 'required|numeric',
         ]);
 
         $adTypeId = DB::table('advertisement_types')->insertGetId([
-            'advertisement_type' => $request->advertisement_type,
+            'advertisement_type_en' => $request->advertisement_type_en,
+            'advertisement_type_si' => $request->advertisement_type_si,
             'category_id' => $request->category_id,
             'price' => $request->price,
             'is_active' => 1,
@@ -76,7 +86,6 @@ class GeneralController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Also insert into the category_has_advertisement_types pivot table
         DB::table('category_has_advertisement_types')->insert([
             'category_id' => $request->category_id,
             'advertisement_type_id' => $adTypeId,
@@ -89,22 +98,26 @@ class GeneralController extends Controller
     public function updateAdType(Request $request, $id)
     {
         $request->validate([
-            'advertisement_type' => 'required|string|max:255',
+            'advertisement_type_en' => 'required|string|max:255',
+            'advertisement_type_si' => 'required|string|max:255',
             'category_id' => 'required|integer|exists:categories,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('advertisement_types')->where('id', $id)->update([
-            'advertisement_type' => $request->advertisement_type,
+            'advertisement_type_en' => $request->advertisement_type_en,
+            'advertisement_type_si' => $request->advertisement_type_si,
             'category_id' => $request->category_id,
             'price' => $request->price,
             'is_active' => $request->is_active,
             'updated_at' => now(),
         ]);
 
-        // Update pivot table (optional logic: delete old and insert new)
-        DB::table('category_has_advertisement_types')->where('advertisement_type_id', $id)->delete();
+        DB::table('category_has_advertisement_types')
+            ->where('advertisement_type_id', $id)
+            ->delete();
+
         DB::table('category_has_advertisement_types')->insert([
             'category_id' => $request->category_id,
             'advertisement_type_id' => $id,
@@ -244,7 +257,6 @@ class GeneralController extends Controller
     // GET: Show all criteria options
     public function getAdCriteriaOptions()
     {
-        // Join with categories for label display
         $criterias = DB::table('advertisement_criterias')
             ->join('categories', 'advertisement_criterias.category_id', '=', 'categories.id')
             ->select(
@@ -252,7 +264,7 @@ class GeneralController extends Controller
                 'advertisement_criterias.advertisement_criteria_name',
                 'advertisement_criterias.field_type',
                 'advertisement_criterias.category_id',
-                'categories.category_name'
+                'categories.category_name_en as category_name'
             )
             ->where('advertisement_criterias.is_active', 1)
             ->get();
@@ -396,7 +408,7 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name',
+                'categories.category_name_en as category_name',
                 'districts.district_name',
                 'cities.city_name'
             );
@@ -409,10 +421,7 @@ class GeneralController extends Controller
             });
         }
 
-        // 👇 Paginate instead of get()
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-
-        // 👇 Append search to pagination links
         $ads->appends($request->only('search'));
 
         return view('advertisements.index', compact('ads'))
