@@ -390,8 +390,18 @@ class GeneralController extends Controller
     // GET: Show all cities
     public function getCities()
     {
-        $cities = DB::table('cities')->get();
-        $districts = DB::table('districts')->where('is_active', 1)->get();
+        $cities = DB::table('cities')
+            ->join('districts', 'cities.district_id', '=', 'districts.id')
+            ->select(
+                'cities.*',
+                'districts.district_name_en as district_name'
+            )
+            ->get();
+
+        $districts = DB::table('districts')
+            ->where('is_active', 1)
+            ->get();
+
         return view('cities.index', compact('cities', 'districts'));
     }
 
@@ -399,12 +409,14 @@ class GeneralController extends Controller
     public function addCity(Request $request)
     {
         $request->validate([
-            'city_name' => 'required|string|max:255',
+            'city_name_en' => 'required|string|max:255',
+            'city_name_si' => 'required|string|max:255',
             'district_id' => 'required|exists:districts,id',
         ]);
 
         DB::table('cities')->insert([
-            'city_name' => $request->city_name,
+            'city_name_en' => $request->city_name_en,
+            'city_name_si' => $request->city_name_si,
             'district_id' => $request->district_id,
             'is_active' => 1,
             'created_at' => now(),
@@ -418,17 +430,21 @@ class GeneralController extends Controller
     public function updateCity(Request $request, $id)
     {
         $request->validate([
-            'city_name' => 'required|string|max:255',
+            'city_name_en' => 'required|string|max:255',
+            'city_name_si' => 'required|string|max:255',
             'district_id' => 'required|exists:districts,id',
             'is_active' => 'required|boolean',
         ]);
 
-        DB::table('cities')->where('id', $id)->update([
-            'city_name' => $request->city_name,
-            'district_id' => $request->district_id,
-            'is_active' => $request->is_active,
-            'updated_at' => now(),
-        ]);
+        DB::table('cities')
+            ->where('id', $id)
+            ->update([
+                'city_name_en' => $request->city_name_en,
+                'city_name_si' => $request->city_name_si,
+                'district_id' => $request->district_id,
+                'is_active' => $request->is_active,
+                'updated_at' => now(),
+            ]);
 
         return redirect()->back()->with('success', 'City updated successfully!');
     }
