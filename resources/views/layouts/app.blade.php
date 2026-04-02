@@ -6,7 +6,7 @@
   <title>@yield('title', 'Dashboard') | Hitad</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="/assets/img/favicon/logo.png" />
+  <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/logo.png') }}" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,20 +14,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Icons -->
-  <link rel="stylesheet" href="/assets/vendor/fonts/boxicons.css" />
+  <link rel="stylesheet" href="{{ asset('assets/vendor/fonts/boxicons.css') }}" />
 
   <!-- Core CSS -->
-  <link rel="stylesheet" href="/assets/vendor/css/core.css" />
-  <link rel="stylesheet" href="/assets/vendor/css/theme-default.css" />
-  <link rel="stylesheet" href="/assets/css/demo.css" />
+  <link rel="stylesheet" href="{{ asset('assets/vendor/css/core.css') }}" />
+  <link rel="stylesheet" href="{{ asset('assets/vendor/css/theme-default.css') }}" />
+  <link rel="stylesheet" href="{{ asset('assets/css/demo.css') }}" />
 
   <!-- Vendors CSS -->
-  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
-  <link rel="stylesheet" href="/assets/vendor/libs/apex-charts/apex-charts.css" />
+  <link rel="stylesheet" href="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}" />
+  <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}" />
 
   <!-- Helpers -->
-  <script src="/assets/vendor/js/helpers.js"></script>
-  <script src="/assets/js/config.js"></script>
+  <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
+  <script src="{{ asset('assets/js/config.js') }}"></script>
 </head>
 <body>
   <!-- Layout wrapper -->
@@ -67,18 +67,18 @@
   <!-- / Layout wrapper -->
 
   <!-- Core JS -->
-  <script src="/assets/vendor/libs/jquery/jquery.js"></script>
-  <script src="/assets/vendor/libs/popper/popper.js"></script>
-  <script src="/assets/vendor/js/bootstrap.js"></script>
-  <script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
-  <script src="/assets/vendor/js/menu.js"></script>
+  <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+  <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
+  <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
+  <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+  <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
 
   <!-- Vendors JS -->
-  <script src="/assets/vendor/libs/apex-charts/apexcharts.js"></script>
+  <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 
   <!-- Main JS -->
-  <script src="/assets/js/main.js"></script>
-  <script src="/assets/js/dashboards-analytics.js"></script>
+  <script src="{{ asset('assets/js/main.js') }}"></script>
+  <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
 
   @stack('scripts')
 </body>
