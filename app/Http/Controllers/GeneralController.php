@@ -458,7 +458,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // ✅ ADD THESE
+            // ✅ PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
@@ -469,15 +469,18 @@ class GeneralController extends Controller
                 'districts.district_name_en as district_name',
                 'cities.city_name_en as city_name',
 
-                // ✅ PAYMENT DATA
                 'payments.payment_status',
                 'payments.is_success'
-            );
+            )
 
+            // ✅ 🔥 IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            ->where('advertisements.publication', 'hitad_print');
+
+        // 🔍 Search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('advertisements.advertisement_title', 'LIKE', "%{$search}%")
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
                     ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
             });
         }
@@ -550,7 +553,10 @@ class GeneralController extends Controller
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ CORRECT FILTER
+            // ✅ ONLY HITAD PRINT ADS
+            ->where('advertisements.publication', 'hitad_print')
+
+            // ✅ ONLY PAID
             ->where('payments.payment_status', 'completed')
             ->where('payments.is_success', true)
 
@@ -564,7 +570,7 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
-                'payments.is_success', // ✅ ADD THIS
+                'payments.is_success',
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -585,7 +591,10 @@ class GeneralController extends Controller
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ CORRECT UNPAID LOGIC
+            // ✅ ONLY HITAD PRINT ADS
+            ->where('advertisements.publication', 'hitad_print')
+
+            // ✅ UNPAID LOGIC
             ->where(function ($query) {
                 $query->whereNull('payments.id') // no payment
                     ->orWhere('payments.payment_status', 'pending') // pending
