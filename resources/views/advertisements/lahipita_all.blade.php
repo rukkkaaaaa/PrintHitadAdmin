@@ -31,6 +31,7 @@
                 <th>Action</th>
             </tr>
         </thead>
+
         <tbody>
             @forelse ($ads as $ad)
                 <tr>
@@ -38,14 +39,16 @@
                     <td>{{ $ad->customer_name }}</td>
                     <td>{{ $ad->category_name }}</td>
 
-                    <td>{{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}</td>
+                    <td>
+                        {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
+                    </td>
 
                     <td>{{ $ad->district_name }}</td>
                     <td>{{ $ad->city_name }}</td>
 
                     <td>{{ $ad->publish_date }}</td>
 
-                    {{-- Ad Status --}}
+                    {{-- STATUS --}}
                     <td>
                         {!! $ad->status == 1 
                             ? '<span class="badge bg-success">Active</span>' 
@@ -68,11 +71,25 @@
                         @endif
                     </td>
 
+                    {{-- ACTIONS --}}
                     <td>
                         <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
-                           class="btn btn-sm btn-info">View</a>
+                           class="btn btn-sm btn-info">
+                            View
+                        </a>
+
+                        <a href="{{ url('/advertisements/' . $ad->id . '/edit') }}"
+                           class="btn btn-sm btn-warning">
+                            Edit
+                        </a>
+
+                        <button class="btn btn-sm btn-success"
+                                onclick="confirmDownload({{ $ad->id }})">
+                            Download
+                        </button>
                     </td>
                 </tr>
+
             @empty
                 <tr>
                     <td colspan="10" class="text-center text-muted">
@@ -89,4 +106,14 @@
     </div>
 
 </div>
+
+{{-- DOWNLOAD CONFIRM SCRIPT --}}
+<script>
+function confirmDownload(adId) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = "/advertisements/" + adId + "/download";
+    }
+}
+</script>
+
 @endsection

@@ -21,6 +21,7 @@
                 <th>Action</th>
             </tr>
         </thead>
+
         <tbody>
             @forelse ($ads as $ad)
                 <tr>
@@ -49,7 +50,7 @@
 
                     <td>{{ $ad->payment_date ?? '-' }}</td>
 
-                    {{-- ✅ FIXED STATUS LOGIC --}}
+                    {{-- PAYMENT STATUS --}}
                     <td>
                         @if(is_null($ad->payment_status))
                             <span class="badge bg-secondary">No Payment Record</span>
@@ -58,7 +59,6 @@
                             <span class="badge bg-warning text-dark">Pending</span>
 
                         @elseif($ad->payment_status == 'completed' && $ad->is_success)
-                            {{-- This should NOT normally appear due to query --}}
                             <span class="badge bg-success">Paid</span>
 
                         @else
@@ -66,11 +66,25 @@
                         @endif
                     </td>
 
+                    {{-- ACTIONS --}}
                     <td>
                         <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
-                           class="btn btn-sm btn-info">View</a>
+                           class="btn btn-sm btn-info">
+                            View
+                        </a>
+
+                        <a href="{{ url('/advertisements/' . $ad->id . '/edit') }}"
+                           class="btn btn-sm btn-warning">
+                            Edit
+                        </a>
+
+                        <button class="btn btn-sm btn-success"
+                                onclick="confirmDownload({{ $ad->id }})">
+                            Download
+                        </button>
                     </td>
                 </tr>
+
             @empty
                 <tr>
                     <td colspan="12" class="text-center text-muted">
@@ -81,4 +95,14 @@
         </tbody>
     </table>
 </div>
+
+{{-- DOWNLOAD CONFIRM SCRIPT --}}
+<script>
+function confirmDownload(adId) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = "/advertisements/" + adId + "/download";
+    }
+}
+</script>
+
 @endsection
