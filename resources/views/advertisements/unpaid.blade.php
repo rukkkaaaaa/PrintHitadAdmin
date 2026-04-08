@@ -27,9 +27,14 @@
                     <td>{{ $ad->id }}</td>
                     <td>{{ $ad->customer_name }}</td>
                     <td>{{ $ad->category_name }}</td>
-                    <td>{{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}</td>
+
+                    <td>
+                        {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
+                    </td>
+
                     <td>{{ $ad->district_name }}</td>
                     <td>{{ $ad->city_name }}</td>
+
                     <td>{{ $ad->publication }}</td>
 
                     <td>
@@ -44,13 +49,20 @@
 
                     <td>{{ $ad->payment_date ?? '-' }}</td>
 
+                    {{-- ✅ FIXED STATUS LOGIC --}}
                     <td>
-                        @if(is_null($ad->is_success))
+                        @if(is_null($ad->payment_status))
                             <span class="badge bg-secondary">No Payment Record</span>
-                        @elseif($ad->is_success == 0)
-                            <span class="badge bg-warning text-dark">Unpaid</span>
-                        @else
+
+                        @elseif($ad->payment_status == 'pending')
+                            <span class="badge bg-warning text-dark">Pending</span>
+
+                        @elseif($ad->payment_status == 'completed' && $ad->is_success)
+                            {{-- This should NOT normally appear due to query --}}
                             <span class="badge bg-success">Paid</span>
+
+                        @else
+                            <span class="badge bg-danger">Unpaid</span>
                         @endif
                     </td>
 

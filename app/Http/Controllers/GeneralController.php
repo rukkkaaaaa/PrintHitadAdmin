@@ -452,16 +452,26 @@ class GeneralController extends Controller
     public function getAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
+
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+
+            // ✅ ADD THESE
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
                 'categories.category_name_en as category_name',
                 'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name'
+                'cities.city_name_en as city_name',
+
+                // ✅ PAYMENT DATA
+                'payments.payment_status',
+                'payments.is_success'
             );
 
         if ($request->has('search') && !empty($request->search)) {
@@ -537,11 +547,12 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // ✅ Only paid ads
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            ->where('payments.is_success', 1)
+            // ✅ CORRECT FILTER
+            ->where('payments.payment_status', 'completed')
+            ->where('payments.is_success', true)
 
             ->select(
                 'advertisements.*',
@@ -552,6 +563,8 @@ class GeneralController extends Controller
 
                 'payments.amount',
                 'payments.payment_date',
+                'payments.payment_status',
+                'payments.is_success', // ✅ ADD THIS
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -569,13 +582,14 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // payments can be missing, so use left join
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
+            // ✅ CORRECT UNPAID LOGIC
             ->where(function ($query) {
-                $query->whereNull('payments.id')
-                    ->orWhere('payments.is_success', 0);
+                $query->whereNull('payments.id') // no payment
+                    ->orWhere('payments.payment_status', 'pending') // pending
+                    ->orWhere('payments.is_success', false); // failed
             })
 
             ->select(

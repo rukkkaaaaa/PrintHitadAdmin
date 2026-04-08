@@ -2,8 +2,9 @@
   <div class="app-brand demo">
     <a href="{{ url('/dashboard') }}" class="app-brand-link">
       <span class="app-brand-logo demo">
-        <!-- Custom Logo -->
-        <br><img src="{{ asset('assets/img/favicon/logo.png') }}" alt="Logo" class="w-px-150 h-auto" /><br><br>
+        <br>
+        <img src="{{ asset('assets/img/favicon/logo.png') }}" alt="Logo" class="w-px-150 h-auto" />
+        <br><br>
       </span>
     </a>
 
@@ -15,6 +16,7 @@
   <div class="menu-inner-shadow"></div>
 
   <ul class="menu-inner py-1">
+
     <!-- Pages -->
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Pages</span>
@@ -24,123 +26,144 @@
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
       <a href="{{ url('/dashboard') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-home-circle"></i>
-        <div data-i18n="Dashboard">Dashboard</div>
+        <div>Dashboard</div>
       </a>
     </li>
 
-    <!-- Account Settings (dropdown) -->
-    <li class="menu-item">
+    <!-- ================= HITAD PRINT ================= -->
+    <li class="menu-item {{ request()->is('advertisements*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-dock-top"></i>
-        <div data-i18n="Account Settings">Hitad Print</div>
+        <div>Hitad Print</div>
       </a>
       <ul class="menu-sub">
-        <li class="menu-item">
+        <li class="menu-item {{ request()->is('advertisements/paid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/paid') }}" class="menu-link">
-            <div data-i18n="Account">Print Paid</div>
+            <div>Print Paid</div>
           </a>
         </li>
-        <li class="menu-item">
+        <li class="menu-item {{ request()->is('advertisements/unpaid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/unpaid') }}" class="menu-link">
-            <div data-i18n="Notifications">Print Unpaid</div>
+            <div>Print Unpaid</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements') ? 'active' : '' }}">
           <a href="{{ url('/advertisements') }}" class="menu-link">
-            <div data-i18n="Connections">Print AllAds</div>
+            <div>Print All Ads</div>
           </a>
         </li>
       </ul>
     </li>
 
+    <!-- ================= LAHIPITA PRINT ================= -->
+    <li class="menu-item {{ request()->is('lahipita*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons bx bx-printer"></i>
+        <div>Lahipita Print</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item {{ request()->is('lahipita/paid') ? 'active' : '' }}">
+          <a href="{{ url('/lahipita/paid') }}" class="menu-link">
+            <div>Lahipita Paid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('lahipita/unpaid') ? 'active' : '' }}">
+          <a href="{{ url('/lahipita/unpaid') }}" class="menu-link">
+            <div>Lahipita Unpaid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('lahipita') ? 'active' : '' }}">
+          <a href="{{ url('/lahipita') }}" class="menu-link">
+            <div>Lahipita All Ads</div>
+          </a>
+        </li>
+      </ul>
+    </li>
 
-    <!-- User Interface (dropdown) -->
+    <!-- ================= HITAD ONLINE ================= -->
     <li class="menu-item">
       <a href="javascript:void(0)" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-layout"></i>
-        <div data-i18n="HitAd Online">HitAd Online</div>
+        <div>HitAd Online</div>
       </a>
       <ul class="menu-sub">
         <li class="menu-item">
           <a href="https://www.hitad.lk/" class="menu-link" target="_blank">
-            <div data-i18n="Hitad Web">Hitad Web</div>
+            <div>Hitad Web</div>
           </a>
         </li>
-
         <li class="menu-item">
           <a href="http://betaadmin.hitad.lk/home" class="menu-link" target="_blank">
-            <div data-i18n="Hitad Web Admin">Hitad Web Admin</div>
+            <div>Hitad Web Admin</div>
           </a>
         </li>
         <li class="menu-item">
           <a href="http://betaadmin.hitad.lk/view-pendingads" class="menu-link" target="_blank">
-            <div data-i18n="Hitad Web Ads">Hitad Web Ads</div>
+            <div>Hitad Web Ads</div>
           </a>
         </li>
         <li class="menu-item">
           <a href="http://betaadmin.hitad.lk/new-ads" class="menu-link" target="_blank">
-            <div data-i18n="Hitad Web New Ad">Hitad Web New Ad</div>
+            <div>Hitad Web New Ad</div>
           </a>
         </li>
-
       </ul>
     </li>
 
+    <!-- ================= MASTER DATA ================= -->
     <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
       <a href="{{ url('/categories') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-category"></i>
-        <div data-i18n="Categories">Ad Categories</div>
+        <div>Ad Categories</div>
       </a>
     </li>
 
-    <!-- Tables -->
     <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
       <a href="{{ url('/adtypes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-file"></i>
-        <div data-i18n="Ad Type Management">Ad Type </div>
+        <div>Ad Type</div>
       </a>
     </li>
-
 
     <li class="menu-item {{ request()->is('adsizes') ? 'active' : '' }}">
       <a href="{{ url('/adsizes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-table"></i>
-        <div data-i18n="Ad Size Management">Ad Size </div>
+        <div>Ad Size</div>
       </a>
     </li>
 
     <li class="menu-item {{ request()->is('adcriterias') ? 'active' : '' }}">
       <a href="{{ url('/adcriterias') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-check-square"></i>
-        <div data-i18n="Ad Criteria Management">Ad Criteria </div>
+        <div>Ad Criteria</div>
       </a>
     </li>
 
     <li class="menu-item {{ request()->is('adcriteria-options') ? 'active' : '' }}">
       <a href="{{ url('/adcriteria-options') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-list-check"></i>
-        <div data-i18n="Criteria Options">Ad Criteria Options</div>
+        <div>Ad Criteria Options</div>
       </a>
     </li>
 
     <li class="menu-item {{ request()->is('districts') ? 'active' : '' }}">
       <a href="{{ url('/districts') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-map"></i>
-        <div data-i18n="Districts">Districts</div>
+        <div>Districts</div>
       </a>
     </li>
 
     <li class="menu-item {{ request()->is('cities') ? 'active' : '' }}">
       <a href="{{ url('/cities') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-buildings"></i>
-        <div data-i18n="Cities">Cities</div>
+        <div>Cities</div>
       </a>
     </li>
 
     <li class="menu-item {{ request()->is('users') ? 'active' : '' }}">
       <a href="{{ url('/users') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-user"></i>
-        <div data-i18n="Users">Users</div>
+        <div>Users</div>
       </a>
     </li>
 
