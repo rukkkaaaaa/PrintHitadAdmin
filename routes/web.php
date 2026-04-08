@@ -100,6 +100,8 @@ Route::middleware(['auth.session.custom'])->group(function () {
     // ✅ Advertisements
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
     Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);
+    Route::get('/advertisements/{id}/edit', [GeneralController::class, 'editAdvertisement']);
+    Route::post('/advertisements/{id}/update', [GeneralController::class, 'updateAdvertisement']);
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
     Route::get('/advertisements/unpaid', [GeneralController::class, 'getUnpaidAdvertisements']);
     Route::get('/advertisements/lahipita', [GeneralController::class, 'getLahipitaAdvertisements']);

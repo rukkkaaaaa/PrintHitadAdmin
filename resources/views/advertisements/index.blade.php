@@ -31,6 +31,7 @@
                 <th>Action</th>
             </tr>
         </thead>
+
         <tbody>
             @forelse ($ads as $ad)
                 <tr>
@@ -38,21 +39,23 @@
                     <td>{{ $ad->customer_name }}</td>
                     <td>{{ $ad->category_name }}</td>
 
-                    <td>{{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}</td>
+                    <td>
+                        {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
+                    </td>
 
                     <td>{{ $ad->district_name }}</td>
                     <td>{{ $ad->city_name }}</td>
 
                     <td>{{ $ad->publish_date }}</td>
 
-                    {{-- Ad Status --}}
+                    {{-- STATUS --}}
                     <td>
                         {!! $ad->status == 1 
                             ? '<span class="badge bg-success">Active</span>' 
                             : '<span class="badge bg-danger">Inactive</span>' !!}
                     </td>
 
-                    {{-- Payment Status --}}
+                    {{-- PAYMENT STATUS --}}
                     <td>
                         @if(is_null($ad->payment_status))
                             <span class="badge bg-secondary">No Payment</span>
@@ -68,11 +71,16 @@
                         @endif
                     </td>
 
-                    {{-- ACTION BUTTONS --}}
+                    {{-- ACTIONS --}}
                     <td>
                         <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
                            class="btn btn-sm btn-info">
                             View
+                        </a>
+
+                        <a href="{{ url('/advertisements/' . $ad->id . '/edit') }}"
+                           class="btn btn-sm btn-warning">
+                            Edit
                         </a>
 
                         <button class="btn btn-sm btn-success"
@@ -81,6 +89,7 @@
                         </button>
                     </td>
                 </tr>
+
             @empty
                 <tr>
                     <td colspan="10" class="text-center text-muted">

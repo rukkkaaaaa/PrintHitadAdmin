@@ -790,4 +790,41 @@ class GeneralController extends Controller
         // ✅ Download ZIP
         return response()->download($zipPath)->deleteFileAfterSend(true);
     }
+    public function editAdvertisement($id)
+    {
+        $ad = DB::table('advertisements')->where('id', $id)->first();
+
+        $categories = DB::table('categories')->where('is_active', 1)->get();
+        $districts = DB::table('districts')->where('is_active', 1)->get();
+        $cities = DB::table('cities')->where('is_active', 1)->get();
+
+        if (!$ad) {
+            abort(404);
+        }
+
+        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities'));
+    }
+    public function updateAdvertisement(Request $request, $id)
+    {
+        $request->validate([
+            'advertisement_description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'district_id' => 'required|exists:districts,id',
+            'city_id' => 'required|exists:cities,id',
+            'publish_date' => 'required|date',
+            'status' => 'required|boolean',
+        ]);
+
+        DB::table('advertisements')->where('id', $id)->update([
+            'advertisement_description' => $request->advertisement_description,
+            'category_id' => $request->category_id,
+            'district_id' => $request->district_id,
+            'city_id' => $request->city_id,
+            'publish_date' => $request->publish_date,
+            'status' => $request->status,
+            'updated_at' => now(),
+        ]);
+
+        return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
+    }
 }
