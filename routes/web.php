@@ -6,15 +6,11 @@ use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\GeneralController;
 use Illuminate\Support\Facades\DB;
 
-
-
-
 /*
 |--------------------------------------------------------------------------
 | Base Path
 |--------------------------------------------------------------------------
 */
-
 Route::get('/', function () {
     if (Session::has('user')) {
         $user = session('user');
@@ -28,7 +24,6 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -40,74 +35,114 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister']);
 Route::post('/register', [AuthController::class, 'register']);
 
-Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth.session.custom');
+// ✅ SECURE LOGOUT (POST)
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth.session.custom');
 
-Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])->middleware('auth.session.custom');
+// Users management
+Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])
+    ->middleware('auth.session.custom');
 
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth.session.custom'])->group(function () {
+Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
+
     Route::get('/dashboard', function () {
         $user = session('user');
 
-        // ✅ Fetch dashboard counts
         $customerCount = DB::table('customers')->count();
         $adminCount = DB::table('users')->count();
         $adCount = DB::table('advertisements')->count();
 
-        // ✅ Pass them to the dashboard view
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
     });
 
-    // ✅ Categories
+    /*
+    |--------------------------------------------------------------------------
+    | Categories
+    |--------------------------------------------------------------------------
+    */
     Route::get('/categories', [GeneralController::class, 'getCategories']);
     Route::post('/add-category', [GeneralController::class, 'addCategory']);
     Route::post('/update-category/{id}', [GeneralController::class, 'updateCategory']);
 
-    // ✅ Ad Types
+    /*
+    |--------------------------------------------------------------------------
+    | Ad Types
+    |--------------------------------------------------------------------------
+    */
     Route::get('/adtypes', [GeneralController::class, 'getAdTypes']);
     Route::post('/add-adtype', [GeneralController::class, 'addAdType']);
     Route::post('/update-adtype/{id}', [GeneralController::class, 'updateAdType']);
 
-    // ✅ Ad Sizes
+    /*
+    |--------------------------------------------------------------------------
+    | Ad Sizes
+    |--------------------------------------------------------------------------
+    */
     Route::get('/adsizes', [GeneralController::class, 'getAdSizes']);
     Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
     Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
 
-    // ✅ Ad Criterias
+    /*
+    |--------------------------------------------------------------------------
+    | Ad Criterias
+    |--------------------------------------------------------------------------
+    */
     Route::get('/adcriterias', [GeneralController::class, 'getAdCriterias']);
     Route::post('/add-adcriteria', [GeneralController::class, 'addAdCriteria']);
     Route::post('/update-adcriteria/{id}', [GeneralController::class, 'updateAdCriteria']);
 
-    // ✅ Ad Criteria Options
+    /*
+    |--------------------------------------------------------------------------
+    | Ad Criteria Options
+    |--------------------------------------------------------------------------
+    */
     Route::get('/adcriteria-options', [GeneralController::class, 'getAdCriteriaOptions']);
     Route::post('/add-adcriteria-option', [GeneralController::class, 'addAdCriteriaOption']);
     Route::post('/update-adcriteria-option/{id}', [GeneralController::class, 'updateAdCriteriaOption']);
 
-    // ✅ Districts
+    /*
+    |--------------------------------------------------------------------------
+    | Districts
+    |--------------------------------------------------------------------------
+    */
     Route::get('/districts', [GeneralController::class, 'getDistricts']);
     Route::post('/add-district', [GeneralController::class, 'addDistrict']);
     Route::post('/update-district/{id}', [GeneralController::class, 'updateDistrict']);
 
-    // ✅ Cities
+    /*
+    |--------------------------------------------------------------------------
+    | Cities
+    |--------------------------------------------------------------------------
+    */
     Route::get('/cities', [GeneralController::class, 'getCities']);
     Route::post('/add-city', [GeneralController::class, 'addCity']);
     Route::post('/update-city/{id}', [GeneralController::class, 'updateCity']);
 
-    // ✅ Advertisements
+    /*
+    |--------------------------------------------------------------------------
+    | Advertisements
+    |--------------------------------------------------------------------------
+    */
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
+
     Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);
+
     Route::get('/advertisements/{id}/edit', [GeneralController::class, 'editAdvertisement']);
     Route::post('/advertisements/{id}/update', [GeneralController::class, 'updateAdvertisement']);
+
+    Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
+
+    // Paid / Unpaid
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
     Route::get('/advertisements/unpaid', [GeneralController::class, 'getUnpaidAdvertisements']);
+
+    // Lahipita
     Route::get('/advertisements/lahipita', [GeneralController::class, 'getLahipitaAdvertisements']);
     Route::get('/advertisements/lahipita/paid', [GeneralController::class, 'getLahipitaPaidAdvertisements']);
     Route::get('/advertisements/lahipita/unpaid', [GeneralController::class, 'getLahipitaUnpaidAdvertisements']);
-
-    Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement'])
-        ->middleware('auth.session.custom');
 });

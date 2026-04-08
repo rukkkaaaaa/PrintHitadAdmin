@@ -70,10 +70,13 @@ class AuthController extends Controller
         return redirect('/dashboard');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        Session::forget('user');
-        return redirect('/login')->with('error', 'Logged out successfully.');
+        session()->flush(); // clear all session
+        session()->invalidate(); // invalidate session
+        session()->regenerateToken(); // security
+
+        return redirect('/login');
     }
 
     public function manageUsers(Request $request)

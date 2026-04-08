@@ -63,6 +63,9 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+
+        // ✅ YOUR CUSTOM MIDDLEWARES
         'auth.session.custom' => \App\Http\Middleware\EnsureUserIsLoggedIn::class,
+        'prevent.back' => \App\Http\Middleware\PreventBackHistory::class, // 👈 ADD THIS LINE
     ];
 }
