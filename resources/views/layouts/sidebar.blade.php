@@ -63,12 +63,12 @@
       </a>
       <ul class="menu-sub">
         <li class="menu-item {{ request()->is('lahipita/paid') ? 'active' : '' }}">
-          <a href="{{ url('/lahipita/paid') }}" class="menu-link">
+          <a href="{{ url('/advertisements/lahipita/paid') }}" class="menu-link">
             <div>Lahipita Paid Ads</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('lahipita/unpaid') ? 'active' : '' }}">
-          <a href="{{ url('/lahipita/unpaid') }}" class="menu-link">
+          <a href="{{ url('/advertisements/lahipita/unpaid') }}" class="menu-link">
             <div>Lahipita Unpaid Ads</div>
           </a>
         </li>
