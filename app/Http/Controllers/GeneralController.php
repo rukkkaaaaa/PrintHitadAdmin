@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use ZipArchive;
+use Illuminate\Support\Facades\Storage;
 
 class GeneralController extends Controller
 {
@@ -738,5 +741,53 @@ class GeneralController extends Controller
             ->get();
 
         return view('advertisements.lahipita_unpaid', compact('ads'));
+    }
+    public function downloadAdvertisement($id)
+    {
+        $ad = DB::table('advertisements')
+            ->where('advertisements.id', $id)
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                'customers.address',
+                'customers.telephone',
+                'customers.email',
+                'categories.category_name_en as category_name',
+                'districts.district_name_en as district_name',
+                'cities.city_name_en as city_name',
+                'payments.amount',
+                'payments.payment_status',
+                'payments.payment_date',
+                'payment_methods.payment_method_name as payment_method'
+            )
+            ->first();
+
+        if (!$ad) {
+            abort(404);
+        }
+
+        // ✅ Generate PDF
+        $pdf = Pdf::loadView('advertisements.pdf', compact('ad'));
+
+        $pdfPath = storage_path("app/public/ad_{$id}.pdf");
+        file_put_contents($pdfPath, $pdf->output());
+
+        // ✅ Create ZIP
+        $zipPath = storage_path("app/public/ad_{$id}.zip");
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+            $zip->addFile($pdfPath, "advertisement_{$id}.pdf");
+            $zip->close();
+        }
+
+        // ✅ Download ZIP
+        return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 }

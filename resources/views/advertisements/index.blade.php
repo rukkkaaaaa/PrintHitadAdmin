@@ -27,7 +27,7 @@
                 <th>City</th>
                 <th>Publish Date</th>
                 <th>Status</th>
-                <th>Payment</th> {{-- ✅ NEW --}}
+                <th>Payment</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -52,7 +52,7 @@
                             : '<span class="badge bg-danger">Inactive</span>' !!}
                     </td>
 
-                    {{-- ✅ PAYMENT STATUS --}}
+                    {{-- Payment Status --}}
                     <td>
                         @if(is_null($ad->payment_status))
                             <span class="badge bg-secondary">No Payment</span>
@@ -68,9 +68,17 @@
                         @endif
                     </td>
 
+                    {{-- ACTION BUTTONS --}}
                     <td>
                         <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
-                           class="btn btn-sm btn-info">View</a>
+                           class="btn btn-sm btn-info">
+                            View
+                        </a>
+
+                        <button class="btn btn-sm btn-success"
+                                onclick="confirmDownload({{ $ad->id }})">
+                            Download
+                        </button>
                     </td>
                 </tr>
             @empty
@@ -89,4 +97,14 @@
     </div>
 
 </div>
+
+{{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
+<script>
+function confirmDownload(adId) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = "/advertisements/" + adId + "/download";
+    }
+}
+</script>
+
 @endsection
