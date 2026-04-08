@@ -72,8 +72,8 @@
             <div>Lahipita Unpaid Ads</div>
           </a>
         </li>
-        <li class="menu-item {{ request()->is('lahipita') ? 'active' : '' }}">
-          <a href="{{ url('/lahipita') }}" class="menu-link">
+        <li class="menu-item {{ request()->is('advertisements/lahipita') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita') }}" class="menu-link">
             <div>Lahipita All Ads</div>
           </a>
         </li>

@@ -611,4 +611,44 @@ class GeneralController extends Controller
 
         return view('advertisements.unpaid', compact('ads'));
     }
+    public function getLahipitaAdvertisements(Request $request)
+    {
+        $query = DB::table('advertisements')
+
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                'categories.category_name_en as category_name',
+                'districts.district_name_en as district_name',
+                'cities.city_name_en as city_name',
+
+                'payments.payment_status',
+                'payments.is_success'
+            )
+
+            // ✅ MAIN FILTER
+            ->where('advertisements.publication', 'lahipita');
+
+        // 🔍 search (same as your existing)
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only('search'));
+
+        return view('advertisements.lahipita_all', compact('ads'))
+            ->with('search', $request->search);
+    }
 }
