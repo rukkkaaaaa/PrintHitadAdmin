@@ -20,13 +20,13 @@ class GeneralController extends Controller
     public function addCategory(Request $request)
     {
         $request->validate([
-            'category_name_en' => 'required|string|max:255',
-            'category_name_si' => 'required|string|max:255'
+            'category_name_en' => 'nullable|string|max:255|required_without:category_name_si',
+            'category_name_si' => 'nullable|string|max:255|required_without:category_name_en'
         ]);
 
         DB::table('categories')->insert([
-            'category_name_en' => $request->category_name_en,
-            'category_name_si' => $request->category_name_si,
+            'category_name_en' => $request->category_name_en ?: null,
+            'category_name_si' => $request->category_name_si ?: null,
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -37,16 +37,16 @@ class GeneralController extends Controller
     public function updateCategory(Request $request, $id)
     {
         $request->validate([
-            'category_name_en' => 'required|string|max:255',
-            'category_name_si' => 'required|string|max:255',
+            'category_name_en' => 'nullable|string|max:255|required_without:category_name_si',
+            'category_name_si' => 'nullable|string|max:255|required_without:category_name_en',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('categories')
             ->where('id', $id)
             ->update([
-                'category_name_en' => $request->category_name_en,
-                'category_name_si' => $request->category_name_si,
+                'category_name_en' => $request->category_name_en ?: null,
+                'category_name_si' => $request->category_name_si ?: null,
                 'is_active' => $request->is_active,
                 'updated_at' => now(),
             ]);
@@ -74,15 +74,15 @@ class GeneralController extends Controller
     public function addAdType(Request $request)
     {
         $request->validate([
-            'advertisement_type_en' => 'required|string|max:255',
-            'advertisement_type_si' => 'required|string|max:255',
+            'advertisement_type_en' => 'nullable|string|max:255|required_without:advertisement_type_si',
+            'advertisement_type_si' => 'nullable|string|max:255|required_without:advertisement_type_en',
             'category_id' => 'required|integer|exists:categories,id',
             'price' => 'required|numeric',
         ]);
 
         $adTypeId = DB::table('advertisement_types')->insertGetId([
-            'advertisement_type_en' => $request->advertisement_type_en,
-            'advertisement_type_si' => $request->advertisement_type_si,
+            'advertisement_type_en' => $request->advertisement_type_en ?: null,
+            'advertisement_type_si' => $request->advertisement_type_si ?: null,
             'category_id' => $request->category_id,
             'price' => $request->price,
             'is_active' => 1,
@@ -102,16 +102,16 @@ class GeneralController extends Controller
     public function updateAdType(Request $request, $id)
     {
         $request->validate([
-            'advertisement_type_en' => 'required|string|max:255',
-            'advertisement_type_si' => 'required|string|max:255',
+            'advertisement_type_en' => 'nullable|string|max:255|required_without:advertisement_type_si',
+            'advertisement_type_si' => 'nullable|string|max:255|required_without:advertisement_type_en',
             'category_id' => 'required|integer|exists:categories,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('advertisement_types')->where('id', $id)->update([
-            'advertisement_type_en' => $request->advertisement_type_en,
-            'advertisement_type_si' => $request->advertisement_type_si,
+            'advertisement_type_en' => $request->advertisement_type_en ?: null,
+            'advertisement_type_si' => $request->advertisement_type_si ?: null,
             'category_id' => $request->category_id,
             'price' => $request->price,
             'is_active' => $request->is_active,

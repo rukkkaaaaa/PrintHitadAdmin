@@ -23,52 +23,86 @@
 
 
     {{-- Add Form --}}
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Add Advertisement Type</strong>
-        </div>
-
-        <div class="card-body">
-
-            <form action="{{ url('/add-adtype') }}" method="POST">
-                @csrf
-
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Type Name (English)</label>
-                        <input type="text" name="advertisement_type_en" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Type Name (Sinhala)</label>
-                        <input type="text" name="advertisement_type_si" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Price (LKR)</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category_id" class="form-control" required>
-                            <option value="">Select</option>
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
+    <div class="row mb-4">
+        
+        {{-- Add English Type Form --}}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Add English Type</strong>
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Add Ad Type
-                </button>
+                <div class="card-body">
+                    <form action="{{ url('/add-adtype') }}" method="POST">
+                        @csrf
 
-            </form>
+                        <div class="mb-3">
+                            <label class="form-label">Type Name (English)</label>
+                            <input type="text" name="advertisement_type_en" class="form-control" required>
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Price (LKR)</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categories as $cat)
+                                    @if($cat->category_name_en)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add English Type</button>
+                    </form>
+                </div>
+            </div>
         </div>
+
+        {{-- Add Sinhala Type Form --}}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Add Sinhala Type</strong>
+                </div>
+
+                <div class="card-body">
+                    <form action="{{ url('/add-adtype') }}" method="POST">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label class="form-label">Type Name (Sinhala)</label>
+                            <input type="text" name="advertisement_type_si" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Price (LKR)</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categories as $cat)
+                                    @if($cat->category_name_si)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_si }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Sinhala Type</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -180,8 +214,8 @@
                                 <input type="text"
                                        name="advertisement_type_en"
                                        class="form-control"
-                                       value="{{ $type->advertisement_type_en }}"
-                                       required>
+                                    value="{{ $type->advertisement_type_en }}">
+                                <small class="text-muted">Either EN or SI required</small>
                             </div>
 
                             <div class="mb-3">
@@ -189,8 +223,7 @@
                                 <input type="text"
                                        name="advertisement_type_si"
                                        class="form-control"
-                                       value="{{ $type->advertisement_type_si }}"
-                                       required>
+                                    value="{{ $type->advertisement_type_si }}">
                             </div>
 
                             <div class="mb-3">

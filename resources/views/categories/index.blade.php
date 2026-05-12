@@ -43,7 +43,8 @@
                             name="category_name_en"
                             class="form-control"
                             placeholder="Enter English name"
-                            required>
+                            >
+                        <small class="text-muted">Either English or Sinhala name required</small>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -52,7 +53,7 @@
                             name="category_name_si"
                             class="form-control"
                             placeholder="Enter Sinhala name"
-                            required>
+                            >
                     </div>
 
                 </div>
@@ -186,7 +187,8 @@
                                 name="category_name_en"
                                 class="form-control"
                                 value="{{ $cat->category_name_en }}"
-                                required>
+                                >
+                            <small class="text-muted">Either English or Sinhala name required</small>
 
                         </div>
 
@@ -202,7 +204,7 @@
                                 name="category_name_si"
                                 class="form-control"
                                 value="{{ $cat->category_name_si }}"
-                                required>
+                                >
 
                         </div>
 
