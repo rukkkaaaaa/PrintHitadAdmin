@@ -56,6 +56,19 @@ return [
             'throw' => false,
         ],
 
+        'oracle' => [
+            'driver' => 's3',
+            'key' => env('OCI_ACCESS_KEY_ID'),
+            'secret' => env('OCI_SECRET_ACCESS_KEY'),
+            'region' => env('OCI_DEFAULT_REGION', 'ap-singapore-1'),
+            'bucket' => env('OCI_BUCKET'),
+            'url' => rtrim(env('OCI_URL', ''), '/') . '/' . env('OCI_BUCKET'),
+            'endpoint' => env('OCI_URL'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
     ],
 
     /*

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use ZipArchive;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class GeneralController extends Controller
 {
@@ -138,7 +139,13 @@ class GeneralController extends Controller
                 'advertisement_sizes.*',
                 'advertisement_types.advertisement_type_en as type_name'
             )
-            ->get();
+            ->orderBy('advertisement_sizes.id', 'asc')
+            ->get()
+            ->map(function ($size) {
+                $size->display_img_url = $this->resolveAdSizeImageUrl($size->img_url ?? null);
+
+                return $size;
+            });
 
         $adTypes = DB::table('advertisement_types')->where('is_active', 1)->get();
 
@@ -149,8 +156,11 @@ class GeneralController extends Controller
     public function addAdSize(Request $request)
     {
         $request->validate([
-            'advertisement_size_en' => 'required|string|max:255',
-            'advertisement_size_si' => 'required|string|max:255',
+            'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
+            'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
+            'ad_word_count' => 'required|integer|min:1',
+            'description' => 'required|string|max:1000',
+            'max_images' => 'required|integer|min:1',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'img_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -159,12 +169,21 @@ class GeneralController extends Controller
         $imagePath = null;
 
         if ($request->hasFile('img_url')) {
-            $imagePath = $request->file('img_url')->store('adsizes', 'public');
+            $imagePath = $request->file('img_url')->storePublicly('adsizes', 'oracle');
+            // convert stored key to public url and save that to DB
+            try {
+                $imagePath = Storage::disk('oracle')->url($imagePath);
+            } catch (\Throwable $e) {
+                // fallback to the returned path
+            }
         }
 
         $adSizeId = DB::table('advertisement_sizes')->insertGetId([
-            'advertisement_size_en' => $request->advertisement_size_en,
-            'advertisement_size_si' => $request->advertisement_size_si,
+            'advertisement_size_en' => $request->advertisement_size_en ?: null,
+            'advertisement_size_si' => $request->advertisement_size_si ?: null,
+            'ad_word_count' => $request->ad_word_count,
+            'description' => $request->description,
+            'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             'img_url' => $imagePath,
@@ -185,8 +204,11 @@ class GeneralController extends Controller
     public function updateAdSize(Request $request, $id)
     {
         $request->validate([
-            'advertisement_size_en' => 'required|string|max:255',
-            'advertisement_size_si' => 'required|string|max:255',
+            'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
+            'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
+            'ad_word_count' => 'required|integer|min:1',
+            'description' => 'required|string|max:1000',
+            'max_images' => 'required|integer|min:1',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',
@@ -194,8 +216,11 @@ class GeneralController extends Controller
         ]);
 
         $data = [
-            'advertisement_size_en' => $request->advertisement_size_en,
-            'advertisement_size_si' => $request->advertisement_size_si,
+            'advertisement_size_en' => $request->advertisement_size_en ?: null,
+            'advertisement_size_si' => $request->advertisement_size_si ?: null,
+            'ad_word_count' => $request->ad_word_count,
+            'description' => $request->description,
+            'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             'is_active' => $request->is_active,
@@ -203,8 +228,12 @@ class GeneralController extends Controller
         ];
 
         if ($request->hasFile('img_url')) {
-            $imagePath = $request->file('img_url')->store('adsizes', 'public');
-            $data['img_url'] = $imagePath;
+            $imagePath = $request->file('img_url')->storePublicly('adsizes', 'oracle');
+            try {
+                $data['img_url'] = Storage::disk('oracle')->url($imagePath);
+            } catch (\Throwable $e) {
+                $data['img_url'] = $imagePath;
+            }
         }
 
         DB::table('advertisement_sizes')->where('id', $id)->update($data);
@@ -219,6 +248,27 @@ class GeneralController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Advertisement size updated successfully!');
+    }
+
+    private function resolveAdSizeImageUrl(?string $imgUrl): ?string
+    {
+        if (!$imgUrl) {
+            return null;
+        }
+
+        if (Str::startsWith($imgUrl, ['http://', 'https://', '//'])) {
+            return $imgUrl;
+        }
+
+        if (Str::startsWith($imgUrl, '/')) {
+            return $imgUrl;
+        }
+
+        try {
+            return Storage::disk('oracle')->url($imgUrl);
+        } catch (\Throwable $e) {
+            return asset('storage/' . ltrim($imgUrl, '/'));
+        }
     }
 
     // GET: Show all advertisement criterias

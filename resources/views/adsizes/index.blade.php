@@ -4,7 +4,6 @@
 
 <div class="container mt-4">
 
-    ```
     <h2 class="mb-4">Advertisement Sizes</h2>
 
     {{-- Success Message --}}
@@ -38,12 +37,13 @@
 
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Size Name (EN)</label>
-                        <input type="text" name="advertisement_size_en" class="form-control" required>
+                        <input type="text" name="advertisement_size_en" class="form-control">
+                        <small class="text-muted">Either EN or SI required</small>
                     </div>
 
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Size Name (SI)</label>
-                        <input type="text" name="advertisement_size_si" class="form-control" required>
+                        <input type="text" name="advertisement_size_si" class="form-control">
                     </div>
 
                     <div class="col-md-2 mb-3">
@@ -64,8 +64,23 @@
                     </div>
 
                     <div class="col-md-2 mb-3">
+                        <label class="form-label">Ad Word Count</label>
+                        <input type="number" name="ad_word_count" min="1" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">Maximum Images</label>
+                        <input type="number" name="max_images" min="1" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Image</label>
                         <input type="file" name="img_url" class="form-control">
+                    </div>
+
+                    <div class="col-12 mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" required></textarea>
                     </div>
 
                 </div>
@@ -97,6 +112,9 @@
                         <th>Size (SI)</th>
                         <th>Ad Type</th>
                         <th>Price</th>
+                        <th>Ad Word Count</th>
+                        <th>Description</th>
+                        <th>Max Images</th>
                         <th>Image</th>
                         <th width="120">Status</th>
                         <th width="180">Updated</th>
@@ -120,11 +138,19 @@
 
                         <td>Rs. {{ number_format($size->price, 2) }}</td>
 
+                        <td>{{ data_get($size, 'ad_word_count', '-') }}</td>
+
                         <td>
-                            @if ($size->img_url)
-                            <img src="{{ asset('storage/' . $size->img_url) }}" width="80">
+                            {{ data_get($size, 'description') ? \Illuminate\Support\Str::limit(data_get($size, 'description'), 50) : '-' }}
+                        </td>
+
+                        <td>{{ data_get($size, 'max_images', '-') }}</td>
+
+                        <td>
+                            @if (data_get($size, 'display_img_url'))
+                                <img src="{{ data_get($size, 'display_img_url') }}" width="80">
                             @else
-                            -
+                                -
                             @endif
                         </td>
 
@@ -173,8 +199,8 @@
                                             <input type="text"
                                                 name="advertisement_size_en"
                                                 class="form-control"
-                                                value="{{ $size->advertisement_size_en }}"
-                                                required>
+                                                value="{{ $size->advertisement_size_en }}">
+                                            <small class="text-muted">Either EN or SI required</small>
                                         </div>
 
                                         <div class="mb-3">
@@ -182,8 +208,7 @@
                                             <input type="text"
                                                 name="advertisement_size_si"
                                                 class="form-control"
-                                                value="{{ $size->advertisement_size_si }}"
-                                                required>
+                                                value="{{ $size->advertisement_size_si }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -194,6 +219,34 @@
                                                 class="form-control"
                                                 value="{{ $size->price }}"
                                                 required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Ad Word Count</label>
+                                            <input type="number"
+                                                name="ad_word_count"
+                                                min="1"
+                                                class="form-control"
+                                                value="{{ data_get($size, 'ad_word_count') }}"
+                                                required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Maximum Images</label>
+                                            <input type="number"
+                                                name="max_images"
+                                                min="1"
+                                                class="form-control"
+                                                value="{{ data_get($size, 'max_images') }}"
+                                                required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Description</label>
+                                            <textarea name="description"
+                                                class="form-control"
+                                                rows="3"
+                                                required>{{ data_get($size, 'description') }}</textarea>
                                         </div>
 
                                         <div class="mb-3">
@@ -222,9 +275,9 @@
                                             <label>Image (optional)</label>
                                             <input type="file" name="img_url" class="form-control">
 
-                                            @if($size->img_url)
+                                            @if(data_get($size, 'display_img_url'))
                                             <div class="mt-2">
-                                                <img src="{{ asset('storage/' . $size->img_url) }}" width="100">
+                                                <img src="{{ data_get($size, 'display_img_url') }}" width="100">
                                             </div>
                                             @endif
                                         </div>
@@ -257,7 +310,7 @@
                     @empty
 
                     <tr>
-                        <td colspan="9" class="text-center">
+                        <td colspan="12" class="text-center">
                             No advertisement sizes found.
                         </td>
                     </tr>
@@ -270,7 +323,6 @@
 
         </div>
     </div>
-    ```
 
 </div>
 @endsection
