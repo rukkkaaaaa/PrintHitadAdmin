@@ -42,6 +42,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 // Users management
 Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])
     ->middleware('auth.session.custom');
+Route::post('/users/{id}/update', [AuthController::class, 'updateUser'])
+    ->middleware('auth.session.custom');
+Route::post('/users/{id}/delete', [AuthController::class, 'deleteUser'])
+    ->middleware('auth.session.custom');
 
 /*
 |--------------------------------------------------------------------------

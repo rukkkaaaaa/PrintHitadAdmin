@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -107,6 +108,64 @@ class AuthController extends Controller
         }
 
         $users = DB::select("SELECT * FROM users ORDER BY created_at DESC");
-        return view('user', ['users' => $users]);
+
+        $editUser = null;
+        if ($request->filled('edit')) {
+            $editUser = DB::table('users')->where('id', $request->query('edit'))->first();
+        }
+
+        return view('user', compact('users', 'editUser'));
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (!$user) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        $data = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'updated_at' => Carbon::now(),
+        ];
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        DB::table('users')->where('id', $id)->update($data);
+
+        if (session('user.id') == $id) {
+            Session::put('user', [
+                'id' => $id,
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
+        }
+
+        return redirect('/users')->with('success', 'User updated successfully.');
+    }
+
+    public function deleteUser($id)
+    {
+        if (session('user.id') == $id) {
+            return redirect('/users')->with('error', 'You cannot delete the currently logged-in user.');
+        }
+
+        $deleted = DB::table('users')->where('id', $id)->delete();
+
+        if (!$deleted) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        return redirect('/users')->with('success', 'User deleted successfully.');
     }
 }
