@@ -29,7 +29,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <strong>Add English Type</strong>
+                    <strong>Add Type (English)</strong>
                 </div>
 
                 <div class="card-body">
@@ -58,7 +58,7 @@
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Add English Type</button>
+                        <button type="submit" class="btn btn-primary">Add Type (English)</button>
                     </form>
                 </div>
             </div>
@@ -68,7 +68,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <strong>Add Sinhala Type</strong>
+                    <strong>Add Type (Sinhala)</strong>
                 </div>
 
                 <div class="card-body">
@@ -97,7 +97,7 @@
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Add Sinhala Type</button>
+                        <button type="submit" class="btn btn-primary">Add Type (Sinhala)</button>
                     </form>
                 </div>
             </div>

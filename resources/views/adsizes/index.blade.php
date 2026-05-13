@@ -28,7 +28,7 @@
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <strong>Add English Size</strong>
+                    <strong>Add Size (English)</strong>
                 </div>
 
                 <div class="card-body">
@@ -78,7 +78,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary">
-                            Add English Size
+                            Add Size (English)
                         </button>
 
                     </form>
@@ -90,7 +90,7 @@
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <strong>Add Sinhala Size</strong>
+                    <strong>Add Size (Sinhala)</strong>
                 </div>
 
                 <div class="card-body">
@@ -140,7 +140,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary">
-                            Add Sinhala Size
+                            Add Size (Sinhala)
                         </button>
 
                     </form>

@@ -30,7 +30,7 @@
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <strong>Add English Option</strong>
+                    <strong>Add Option (English)</strong>
                 </div>
 
                 <div class="card-body">
@@ -56,7 +56,7 @@
                             </div>
 
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Add English Option</button>
+                                <button type="submit" class="btn btn-primary">Add Option (English)</button>
                             </div>
 
                         </div>
@@ -71,7 +71,7 @@
         <div class="col-md-6">
             <div class="card h-100">
                 <div class="card-header">
-                    <strong>Add Sinhala Option</strong>
+                    <strong>Add Option (Sinhala)</strong>
                 </div>
 
                 <div class="card-body">
@@ -97,7 +97,7 @@
                             </div>
 
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Add Sinhala Option</button>
+                                <button type="submit" class="btn btn-primary">Add Option (Sinhala)</button>
                             </div>
 
                         </div>

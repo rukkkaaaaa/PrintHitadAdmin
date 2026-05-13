@@ -23,48 +23,85 @@
     @endif
 
 
-    {{-- Add Category Form --}}
-    <div class="card mb-4">
+    {{-- Add Category Forms --}}
+    <div class="row mb-4 g-4">
 
-        <div class="card-header">
-            <strong>Add New Category</strong>
-        </div>
+        {{-- Add English Category Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
 
-        <div class="card-body">
-
-            <form action="{{ url('/add-category') }}" method="POST">
-                @csrf
-
-                <div class="row">
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Category Name (English)</label>
-                        <input type="text"
-                            name="category_name_en"
-                            class="form-control"
-                            placeholder="Enter English name"
-                            >
-                        <small class="text-muted">Either English or Sinhala name required</small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Category Name (Sinhala)</label>
-                        <input type="text"
-                            name="category_name_si"
-                            class="form-control"
-                            placeholder="Enter Sinhala name"
-                            >
-                    </div>
-
+                <div class="card-header">
+                    <strong>Add English Category</strong>
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Add Category
-                </button>
+                <div class="card-body">
 
-            </form>
+                    <form action="{{ url('/add-category') }}" method="POST">
+                        @csrf
 
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Category Name (English)</label>
+                                <input type="text"
+                                    name="category_name_en"
+                                    class="form-control"
+                                    placeholder="Enter English name"
+                                    required>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add English Category
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
         </div>
+
+        {{-- Add Sinhala Category Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+
+                <div class="card-header">
+                    <strong>Add Sinhala Category</strong>
+                </div>
+
+                <div class="card-body">
+
+                    <form action="{{ url('/add-category') }}" method="POST">
+                        @csrf
+
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Category Name (Sinhala)</label>
+                                <input type="text"
+                                    name="category_name_si"
+                                    class="form-control"
+                                    placeholder="Enter Sinhala name"
+                                    required>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add Sinhala Category
+                                </button>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -188,8 +225,6 @@
                                 class="form-control"
                                 value="{{ $cat->category_name_en }}"
                                 >
-                            <small class="text-muted">Either English or Sinhala name required</small>
-
                         </div>
 
 

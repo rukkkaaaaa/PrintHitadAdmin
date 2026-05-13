@@ -31,7 +31,7 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
-                <strong>Add English Criteria</strong>
+                <strong>Add Criteria (English)</strong>
             </div>
 
             <div class="card-body">
@@ -66,7 +66,7 @@
                         </div>
 
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Add English Criteria</button>
+                            <button type="submit" class="btn btn-primary">Add Criteria (English)</button>
                         </div>
 
                     </div>
@@ -81,7 +81,7 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
-                <strong>Add Sinhala Criteria</strong>
+                <strong>Add Criteria (Sinhala)</strong>
             </div>
 
             <div class="card-body">
@@ -116,7 +116,7 @@
                         </div>
 
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Add Sinhala Criteria</button>
+                            <button type="submit" class="btn btn-primary">Add Criteria (Sinhala)</button>
                         </div>
 
                     </div>

@@ -473,13 +473,13 @@ class GeneralController extends Controller
     public function addDistrict(Request $request)
     {
         $request->validate([
-            'district_name_en' => 'required|string|max:255',
-            'district_name_si' => 'required|string|max:255',
+            'district_name_en' => 'nullable|string|max:255|required_without:district_name_si',
+            'district_name_si' => 'nullable|string|max:255|required_without:district_name_en',
         ]);
 
         DB::table('districts')->insert([
-            'district_name_en' => $request->district_name_en,
-            'district_name_si' => $request->district_name_si,
+            'district_name_en' => $request->district_name_en ?: null,
+            'district_name_si' => $request->district_name_si ?: null,
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -492,14 +492,14 @@ class GeneralController extends Controller
     public function updateDistrict(Request $request, $id)
     {
         $request->validate([
-            'district_name_en' => 'required|string|max:255',
-            'district_name_si' => 'required|string|max:255',
+            'district_name_en' => 'nullable|string|max:255|required_without:district_name_si',
+            'district_name_si' => 'nullable|string|max:255|required_without:district_name_en',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('districts')->where('id', $id)->update([
-            'district_name_en' => $request->district_name_en,
-            'district_name_si' => $request->district_name_si,
+            'district_name_en' => $request->district_name_en ?: null,
+            'district_name_si' => $request->district_name_si ?: null,
             'is_active' => $request->is_active,
             'updated_at' => now(),
         ]);
@@ -513,7 +513,7 @@ class GeneralController extends Controller
             ->join('districts', 'cities.district_id', '=', 'districts.id')
             ->select(
                 'cities.*',
-                'districts.district_name_en as district_name'
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name')
             )
             ->get();
 
@@ -521,21 +521,29 @@ class GeneralController extends Controller
             ->where('is_active', 1)
             ->get();
 
-        return view('cities.index', compact('cities', 'districts'));
+        $districtsEn = $districts
+            ->filter(fn ($dist) => filled($dist->district_name_en))
+            ->values();
+
+        $districtsSi = $districts
+            ->filter(fn ($dist) => filled($dist->district_name_si))
+            ->values();
+
+        return view('cities.index', compact('cities', 'districts', 'districtsEn', 'districtsSi'));
     }
 
     // POST: Add city
     public function addCity(Request $request)
     {
         $request->validate([
-            'city_name_en' => 'required|string|max:255',
-            'city_name_si' => 'required|string|max:255',
+            'city_name_en' => 'nullable|string|max:255|required_without:city_name_si',
+            'city_name_si' => 'nullable|string|max:255|required_without:city_name_en',
             'district_id' => 'required|exists:districts,id',
         ]);
 
         DB::table('cities')->insert([
-            'city_name_en' => $request->city_name_en,
-            'city_name_si' => $request->city_name_si,
+            'city_name_en' => $request->city_name_en ?: null,
+            'city_name_si' => $request->city_name_si ?: null,
             'district_id' => $request->district_id,
             'is_active' => 1,
             'created_at' => now(),
@@ -549,8 +557,8 @@ class GeneralController extends Controller
     public function updateCity(Request $request, $id)
     {
         $request->validate([
-            'city_name_en' => 'required|string|max:255',
-            'city_name_si' => 'required|string|max:255',
+            'city_name_en' => 'nullable|string|max:255|required_without:city_name_si',
+            'city_name_si' => 'nullable|string|max:255|required_without:city_name_en',
             'district_id' => 'required|exists:districts,id',
             'is_active' => 'required|boolean',
         ]);
@@ -558,8 +566,8 @@ class GeneralController extends Controller
         DB::table('cities')
             ->where('id', $id)
             ->update([
-                'city_name_en' => $request->city_name_en,
-                'city_name_si' => $request->city_name_si,
+                'city_name_en' => $request->city_name_en ?: null,
+                'city_name_si' => $request->city_name_si ?: null,
                 'district_id' => $request->district_id,
                 'is_active' => $request->is_active,
                 'updated_at' => now(),

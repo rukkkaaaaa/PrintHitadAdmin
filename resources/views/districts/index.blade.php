@@ -4,7 +4,6 @@
 
 <div class="container mt-4">
 
-```
 <h2 class="mb-4">Districts</h2>
 
 {{-- Success --}}
@@ -24,38 +23,70 @@
 @endif
 
 
-{{-- Add Form --}}
-<div class="card mb-4">
-    <div class="card-header">
-        <strong>Add District</strong>
-    </div>
+    {{-- Add Forms --}}
+    <div class="row mb-4 g-4">
 
-    <div class="card-body">
-        <form action="{{ url('/add-district') }}" method="POST">
-            @csrf
-
-            <div class="row">
-
-                <div class="col-md-5">
-                    <label>District Name (EN)</label>
-                    <input type="text" name="district_name_en" class="form-control" required>
+        {{-- Add English District Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add District (English)</strong>
                 </div>
 
-                <div class="col-md-5">
-                    <label>District Name (SI)</label>
-                    <input type="text" name="district_name_si" class="form-control" required>
-                </div>
+                <div class="card-body">
+                    <form action="{{ url('/add-district') }}" method="POST">
+                        @csrf
 
-                <div class="col-md-2 mt-4">
-                    <button type="submit" class="btn btn-primary mt-2 w-100">
-                        Add
-                    </button>
-                </div>
+                        <div class="row">
 
+                            <div class="col-12 mb-3">
+                                <label>District Name (EN)</label>
+                                <input type="text" name="district_name_en" class="form-control" required>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add District (English)
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
             </div>
-        </form>
+        </div>
+
+        {{-- Add Sinhala District Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add District (Sinhala)</strong>
+                </div>
+
+                <div class="card-body">
+                    <form action="{{ url('/add-district') }}" method="POST">
+                        @csrf
+
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label>District Name (SI)</label>
+                                <input type="text" name="district_name_si" class="form-control" required>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Add District (Sinhala)
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
 
 
 {{-- Table --}}
@@ -134,8 +165,7 @@
                                             <input type="text"
                                                    name="district_name_en"
                                                    class="form-control"
-                                                   value="{{ $dist->district_name_en }}"
-                                                   required>
+                                                  value="{{ $dist->district_name_en }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -143,8 +173,7 @@
                                             <input type="text"
                                                    name="district_name_si"
                                                    class="form-control"
-                                                   value="{{ $dist->district_name_si }}"
-                                                   required>
+                                                  value="{{ $dist->district_name_si }}">
                                         </div>
 
                                         <div class="mb-3">
