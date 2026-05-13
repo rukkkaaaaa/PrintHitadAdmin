@@ -286,28 +286,44 @@ class GeneralController extends Controller
             ->join('categories', 'advertisement_criterias.category_id', '=', 'categories.id')
             ->select(
                 'advertisement_criterias.*',
-                'categories.category_name_en as category_name'
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
             )
             ->get();
 
-        $categories = DB::table('categories')->where('is_active', 1)->get();
+        $categoriesEn = DB::table('categories')
+            ->where('is_active', 1)
+            ->whereNotNull('category_name_en')
+            ->where('category_name_en', '!=', '')
+            ->orderBy('category_name_en')
+            ->get();
 
-        return view('adcriterias.index', compact('criterias', 'categories'));
+        $categoriesSi = DB::table('categories')
+            ->where('is_active', 1)
+            ->whereNotNull('category_name_si')
+            ->where('category_name_si', '!=', '')
+            ->orderBy('category_name_si')
+            ->get();
+
+        $categories = DB::table('categories')
+            ->where('is_active', 1)
+            ->get();
+
+        return view('adcriterias.index', compact('criterias', 'categoriesEn', 'categoriesSi', 'categories'));
     }
 
     // POST: Add new criteria
     public function addAdCriteria(Request $request)
     {
         $request->validate([
-            'advertisement_criteria_name_en' => 'required|string|max:255',
-            'advertisement_criteria_name_si' => 'required|string|max:255',
+            'advertisement_criteria_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_name_si',
+            'advertisement_criteria_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_name_en',
             'field_type' => 'required|string|max:50',
             'category_id' => 'required|integer|exists:categories,id',
         ]);
 
         DB::table('advertisement_criterias')->insert([
-            'advertisement_criteria_name_en' => $request->advertisement_criteria_name_en,
-            'advertisement_criteria_name_si' => $request->advertisement_criteria_name_si,
+            'advertisement_criteria_name_en' => $request->advertisement_criteria_name_en ?: null,
+            'advertisement_criteria_name_si' => $request->advertisement_criteria_name_si ?: null,
             'field_type' => $request->field_type,
             'category_id' => $request->category_id,
             'is_active' => 1,
@@ -322,16 +338,16 @@ class GeneralController extends Controller
     public function updateAdCriteria(Request $request, $id)
     {
         $request->validate([
-            'advertisement_criteria_name_en' => 'required|string|max:255',
-            'advertisement_criteria_name_si' => 'required|string|max:255',
+            'advertisement_criteria_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_name_si',
+            'advertisement_criteria_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_name_en',
             'field_type' => 'required|string|max:50',
             'category_id' => 'required|integer|exists:categories,id',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('advertisement_criterias')->where('id', $id)->update([
-            'advertisement_criteria_name_en' => $request->advertisement_criteria_name_en,
-            'advertisement_criteria_name_si' => $request->advertisement_criteria_name_si,
+            'advertisement_criteria_name_en' => $request->advertisement_criteria_name_en ?: null,
+            'advertisement_criteria_name_si' => $request->advertisement_criteria_name_si ?: null,
             'field_type' => $request->field_type,
             'category_id' => $request->category_id,
             'is_active' => $request->is_active,
@@ -352,28 +368,70 @@ class GeneralController extends Controller
                 'advertisement_criterias.advertisement_criteria_name_si',
                 'advertisement_criterias.field_type',
                 'advertisement_criterias.category_id',
-                'categories.category_name_en as category_name'
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
             )
             ->where('advertisement_criterias.is_active', 1)
             ->get();
 
+        $criterias = $criterias->map(function ($crit) {
+            $label = $crit->advertisement_criteria_name_en ?: $crit->advertisement_criteria_name_si;
+
+            if (filled($crit->category_name)) {
+                $label .= ' (' . $crit->category_name . ')';
+            }
+
+            $crit->criteria_label = $label ?: 'N/A';
+
+            return $crit;
+        });
+
+        $criteriasEn = $criterias
+            ->filter(fn ($crit) => filled($crit->advertisement_criteria_name_en))
+            ->map(function ($crit) {
+                $label = $crit->advertisement_criteria_name_en;
+
+                if (filled($crit->category_name)) {
+                    $label .= ' (' . $crit->category_name . ')';
+                }
+
+                $crit->criteria_label = $label;
+
+                return $crit;
+            })
+            ->values();
+
+        $criteriasSi = $criterias
+            ->filter(fn ($crit) => filled($crit->advertisement_criteria_name_si))
+            ->map(function ($crit) {
+                $label = $crit->advertisement_criteria_name_si;
+
+                if (filled($crit->category_name)) {
+                    $label .= ' (' . $crit->category_name . ')';
+                }
+
+                $crit->criteria_label = $label;
+
+                return $crit;
+            })
+            ->values();
+
         $options = DB::table('advertisement_criteria_options')->get();
 
-        return view('adcriteriaoptions.index', compact('criterias', 'options'));
+        return view('adcriteriaoptions.index', compact('criterias', 'criteriasEn', 'criteriasSi', 'options'));
     }
 
     // POST: Add option
     public function addAdCriteriaOption(Request $request)
     {
         $request->validate([
-            'advertisement_criteria_option_name_en' => 'required|string|max:255',
-            'advertisement_criteria_option_name_si' => 'required|string|max:255',
+            'advertisement_criteria_option_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_option_name_si',
+            'advertisement_criteria_option_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_option_name_en',
             'advertisement_criteria_id' => 'required|integer|exists:advertisement_criterias,id',
         ]);
 
         DB::table('advertisement_criteria_options')->insert([
-            'advertisement_criteria_option_name_en' => $request->advertisement_criteria_option_name_en,
-            'advertisement_criteria_option_name_si' => $request->advertisement_criteria_option_name_si,
+            'advertisement_criteria_option_name_en' => $request->advertisement_criteria_option_name_en ?: null,
+            'advertisement_criteria_option_name_si' => $request->advertisement_criteria_option_name_si ?: null,
             'advertisement_criteria_id' => $request->advertisement_criteria_id,
             'is_active' => 1,
             'created_at' => now(),
@@ -387,15 +445,15 @@ class GeneralController extends Controller
     public function updateAdCriteriaOption(Request $request, $id)
     {
         $request->validate([
-            'advertisement_criteria_option_name_en' => 'required|string|max:255',
-            'advertisement_criteria_option_name_si' => 'required|string|max:255',
+            'advertisement_criteria_option_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_option_name_si',
+            'advertisement_criteria_option_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_option_name_en',
             'advertisement_criteria_id' => 'required|integer|exists:advertisement_criterias,id',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('advertisement_criteria_options')->where('id', $id)->update([
-            'advertisement_criteria_option_name_en' => $request->advertisement_criteria_option_name_en,
-            'advertisement_criteria_option_name_si' => $request->advertisement_criteria_option_name_si,
+            'advertisement_criteria_option_name_en' => $request->advertisement_criteria_option_name_en ?: null,
+            'advertisement_criteria_option_name_si' => $request->advertisement_criteria_option_name_si ?: null,
             'advertisement_criteria_id' => $request->advertisement_criteria_id,
             'is_active' => $request->is_active,
             'updated_at' => now(),

@@ -4,7 +4,6 @@
 
 <div class="container mt-4">
 
-    ```
     <h2 class="mb-4">Advertisement Criteria Options</h2>
 
     {{-- Success --}}
@@ -24,52 +23,91 @@
     @endif
 
 
-    {{-- Add Form --}}
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Add Option</strong>
-        </div>
+    {{-- Add Forms --}}
+    <div class="row mb-4 g-4">
 
-        <div class="card-body">
-
-            <form action="{{ url('/add-adcriteria-option') }}" method="POST">
-                @csrf
-
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Option Name (EN)</label>
-                        <input type="text" name="advertisement_criteria_option_name_en" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Option Name (SI)</label>
-                        <input type="text" name="advertisement_criteria_option_name_si" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Criteria</label>
-                        <select name="advertisement_criteria_id" class="form-control" required>
-                            <option value="">Select</option>
-                            @foreach ($criterias as $crit)
-                            <option value="{{ $crit->id }}">
-                                {{ $crit->advertisement_criteria_name_en }} ({{ $crit->category_name }})
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-1 mt-4">
-                        <button type="submit" class="btn btn-primary mt-2">
-                            Add
-                        </button>
-                    </div>
-
+        {{-- Add English Option Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add English Option</strong>
                 </div>
 
-            </form>
+                <div class="card-body">
 
+                    <form action="{{ url('/add-adcriteria-option') }}" method="POST">
+                        @csrf
+
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Option Name (EN)</label>
+                                <input type="text" name="advertisement_criteria_option_name_en" class="form-control" required>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Criteria</label>
+                                <select name="advertisement_criteria_id" class="form-control" required>
+                                    <option value="">Select</option>
+                                    @foreach ($criteriasEn as $crit)
+                                    <option value="{{ $crit->id }}">{{ $crit->criteria_label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Add English Option</button>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
         </div>
+
+        {{-- Add Sinhala Option Form --}}
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add Sinhala Option</strong>
+                </div>
+
+                <div class="card-body">
+
+                    <form action="{{ url('/add-adcriteria-option') }}" method="POST">
+                        @csrf
+
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Option Name (SI)</label>
+                                <input type="text" name="advertisement_criteria_option_name_si" class="form-control" required>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Criteria</label>
+                                <select name="advertisement_criteria_id" class="form-control" required>
+                                    <option value="">Select</option>
+                                    @foreach ($criteriasSi as $crit)
+                                    <option value="{{ $crit->id }}">{{ $crit->criteria_label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Add Sinhala Option</button>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -161,8 +199,7 @@
                                             <input type="text"
                                                 name="advertisement_criteria_option_name_en"
                                                 class="form-control"
-                                                value="{{ $opt->advertisement_criteria_option_name_en }}"
-                                                required>
+                                                value="{{ $opt->advertisement_criteria_option_name_en }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -170,8 +207,7 @@
                                             <input type="text"
                                                 name="advertisement_criteria_option_name_si"
                                                 class="form-control"
-                                                value="{{ $opt->advertisement_criteria_option_name_si }}"
-                                                required>
+                                                value="{{ $opt->advertisement_criteria_option_name_si }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -180,7 +216,7 @@
                                                 @foreach ($criterias as $crit)
                                                 <option value="{{ $crit->id }}"
                                                     {{ $opt->advertisement_criteria_id == $crit->id ? 'selected' : '' }}>
-                                                    {{ $crit->advertisement_criteria_name_en }} ({{ $crit->category_name }})
+                                                    {{ $crit->criteria_label }}
                                                 </option>
                                                 @endforeach
                                             </select>
@@ -235,7 +271,6 @@
 
         </div>
     </div>
-    ```
 
 </div>
 @endsection
