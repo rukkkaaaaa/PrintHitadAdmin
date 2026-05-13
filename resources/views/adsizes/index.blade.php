@@ -22,76 +22,133 @@
     </div>
     @endif
 
-    {{-- Add Form --}}
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Add Advertisement Size</strong>
-        </div>
+    {{-- Add Forms --}}
+    <div class="row mb-4 g-4">
 
-        <div class="card-body">
-
-            <form action="{{ url('/add-adsize') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-
-                <div class="row">
-
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Size Name (EN)</label>
-                        <input type="text" name="advertisement_size_en" class="form-control">
-                        <small class="text-muted">Either EN or SI required</small>
-                    </div>
-
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Size Name (SI)</label>
-                        <input type="text" name="advertisement_size_si" class="form-control">
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Price (LKR)</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Ad Type</label>
-                        <select name="advertisement_type_id" class="form-control" required>
-                            <option value="">Select</option>
-                            @foreach ($adTypes as $type)
-                            <option value="{{ $type->id }}">
-                                {{ $type->advertisement_type_en }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Ad Word Count</label>
-                        <input type="number" name="ad_word_count" min="1" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Maximum Images</label>
-                        <input type="number" name="max_images" min="1" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Image</label>
-                        <input type="file" name="img_url" class="form-control">
-                    </div>
-
-                    <div class="col-12 mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3" required></textarea>
-                    </div>
-
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add English Size</strong>
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Add Ad Size
-                </button>
+                <div class="card-body">
 
-            </form>
+                    <form action="{{ url('/add-adsize') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
 
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Size Name (EN)</label>
+                                <input type="text" name="advertisement_size_en" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price (LKR)</label>
+                                <input type="number" step="0.01" name="price" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Ad Word Count</label>
+                                <input type="number" name="ad_word_count" min="1" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Maximum Images</label>
+                                <input type="number" name="max_images" min="1" class="form-control" required>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Ad Type</label>
+                                <select name="advertisement_type_id" class="form-control" required>
+                                    <option value="">Select</option>
+                                    @foreach ($adTypesEn as $type)
+                                        <option value="{{ $type->id }}">
+                                            {{ $type->advertisement_type_en }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Image</label>
+                                <input type="file" name="img_url" class="form-control">
+                            </div>
+
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Add English Size
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
         </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Add Sinhala Size</strong>
+                </div>
+
+                <div class="card-body">
+
+                    <form action="{{ url('/add-adsize') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="row">
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Size Name (SI)</label>
+                                <input type="text" name="advertisement_size_si" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Price (LKR)</label>
+                                <input type="number" step="0.01" name="price" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Ad Word Count</label>
+                                <input type="number" name="ad_word_count" min="1" class="form-control" required>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Maximum Images</label>
+                                <input type="number" name="max_images" min="1" class="form-control" required>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Ad Type</label>
+                                <select name="advertisement_type_id" class="form-control" required>
+                                    <option value="">Select</option>
+                                    @foreach ($adTypesSi as $type)
+                                        <option value="{{ $type->id }}">
+                                            {{ $type->advertisement_type_si }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Image</label>
+                                <input type="file" name="img_url" class="form-control">
+                            </div>
+
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Add Sinhala Size
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -113,7 +170,6 @@
                         <th>Ad Type</th>
                         <th>Price</th>
                         <th>Ad Word Count</th>
-                        <th>Description</th>
                         <th>Max Images</th>
                         <th>Image</th>
                         <th width="120">Status</th>
@@ -139,10 +195,6 @@
                         <td>Rs. {{ number_format($size->price, 2) }}</td>
 
                         <td>{{ data_get($size, 'ad_word_count', '-') }}</td>
-
-                        <td>
-                            {{ data_get($size, 'description') ? \Illuminate\Support\Str::limit(data_get($size, 'description'), 50) : '-' }}
-                        </td>
 
                         <td>{{ data_get($size, 'max_images', '-') }}</td>
 
@@ -242,18 +294,10 @@
                                         </div>
 
                                         <div class="mb-3">
-                                            <label>Description</label>
-                                            <textarea name="description"
-                                                class="form-control"
-                                                rows="3"
-                                                required>{{ data_get($size, 'description') }}</textarea>
-                                        </div>
-
-                                        <div class="mb-3">
                                             <label>Ad Type</label>
                                             <select name="advertisement_type_id" class="form-control">
 
-                                                @foreach ($adTypes as $type)
+                                                @foreach ($adTypesEn as $type)
                                                 <option value="{{ $type->id }}"
                                                     {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
                                                     {{ $type->advertisement_type_en }}

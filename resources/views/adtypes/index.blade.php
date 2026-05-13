@@ -142,12 +142,7 @@
 
                             <td>{{ $type->advertisement_type_si }}</td>
 
-                            <td>
-                                {{
-                                    optional($categories->where('id', $type->category_id)->first())->category_name_en
-                                    ?? 'N/A'
-                                }}
-                            </td>
+                            <td>{{ $type->category_name ?? 'N/A' }}</td>
 
                             <td>Rs. {{ number_format($type->price, 2) }}</td>
 
@@ -240,10 +235,15 @@
                                 <label class="form-label">Category</label>
                                 <select name="category_id" class="form-control" required>
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}"
-                                            {{ $type->category_id == $cat->id ? 'selected' : '' }}>
-                                            {{ $cat->category_name_en }}
-                                        </option>
+                                        @php
+                                            $catLabel = $cat->category_name_en ?: $cat->category_name_si;
+                                        @endphp
+                                        @if($catLabel)
+                                            <option value="{{ $cat->id }}"
+                                                {{ $type->category_id == $cat->id ? 'selected' : '' }}>
+                                                {{ $catLabel }}
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>

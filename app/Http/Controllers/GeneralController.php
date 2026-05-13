@@ -61,7 +61,7 @@ class GeneralController extends Controller
             ->join('categories', 'advertisement_types.category_id', '=', 'categories.id')
             ->select(
                 'advertisement_types.*',
-                'categories.category_name_en as category_name'
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
             )
             ->get();
 
@@ -147,9 +147,21 @@ class GeneralController extends Controller
                 return $size;
             });
 
-        $adTypes = DB::table('advertisement_types')->where('is_active', 1)->get();
+        $adTypesEn = DB::table('advertisement_types')
+            ->where('is_active', 1)
+            ->whereNotNull('advertisement_type_en')
+            ->where('advertisement_type_en', '!=', '')
+            ->orderBy('advertisement_type_en')
+            ->get();
 
-        return view('adsizes.index', compact('adSizes', 'adTypes'));
+        $adTypesSi = DB::table('advertisement_types')
+            ->where('is_active', 1)
+            ->whereNotNull('advertisement_type_si')
+            ->where('advertisement_type_si', '!=', '')
+            ->orderBy('advertisement_type_si')
+            ->get();
+
+        return view('adsizes.index', compact('adSizes', 'adTypesEn', 'adTypesSi'));
     }
 
     // POST: Add new ad size
@@ -159,7 +171,6 @@ class GeneralController extends Controller
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
-            'description' => 'required|string|max:1000',
             'max_images' => 'required|integer|min:1',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
@@ -182,7 +193,6 @@ class GeneralController extends Controller
             'advertisement_size_en' => $request->advertisement_size_en ?: null,
             'advertisement_size_si' => $request->advertisement_size_si ?: null,
             'ad_word_count' => $request->ad_word_count,
-            'description' => $request->description,
             'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
@@ -207,7 +217,6 @@ class GeneralController extends Controller
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
-            'description' => 'required|string|max:1000',
             'max_images' => 'required|integer|min:1',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
@@ -219,7 +228,6 @@ class GeneralController extends Controller
             'advertisement_size_en' => $request->advertisement_size_en ?: null,
             'advertisement_size_si' => $request->advertisement_size_si ?: null,
             'ad_word_count' => $request->ad_word_count,
-            'description' => $request->description,
             'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
