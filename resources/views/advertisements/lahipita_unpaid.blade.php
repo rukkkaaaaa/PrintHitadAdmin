@@ -46,7 +46,7 @@
 
                     {{-- PAYMENT STATUS --}}
                     <td>
-                        <span class="badge bg-danger">Unpaid</span>
+                        @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                     </td>
 
                     {{-- ACTIONS --}}

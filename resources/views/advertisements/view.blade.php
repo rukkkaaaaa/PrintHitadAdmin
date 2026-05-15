@@ -57,11 +57,7 @@
             <p><strong>Payment Date:</strong> {{ $ad->payment_date }}</p>
 
             <p><strong>Status:</strong>
-                @if($ad->is_success)
-                    <span class="badge bg-success">✔ Paid</span>
-                @else
-                    <span class="badge bg-warning">Pending</span>
-                @endif
+                @include('partials.payment-status-badge', ['status' => $ad->payment_status])
             </p>
 
         @else

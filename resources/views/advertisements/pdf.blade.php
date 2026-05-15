@@ -21,7 +21,7 @@
     <tr><td><b>District</b></td><td>{{ $ad->district_name }}</td></tr>
     <tr><td><b>City</b></td><td>{{ $ad->city_name }}</td></tr>
     <tr><td><b>Publish Date</b></td><td>{{ $ad->publish_date }}</td></tr>
-    <tr><td><b>Payment Status</b></td><td>{{ $ad->payment_status }}</td></tr>
+    <tr><td><b>Payment Status</b></td><td>@include('partials.payment-status-badge', ['status' => $ad->payment_status])</td></tr>
     <tr><td><b>Payment Method</b></td><td>{{ $ad->payment_method }}</td></tr>
 </table>
 

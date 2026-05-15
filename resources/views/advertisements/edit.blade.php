@@ -116,6 +116,35 @@
                             <option value="0" {{ old('status', $ad->status) == 0 ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Status</label>
+                        <select name="payment_status" class="form-select" {{ empty($ad->payment_id) ? 'disabled' : '' }}>
+                            <option value="">-- Select --</option>
+                            <option value="pending" {{ old('payment_status', $ad->payment_status) == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="completed" {{ old('payment_status', $ad->payment_status) == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="failed" {{ old('payment_status', $ad->payment_status) == 'failed' ? 'selected' : '' }}>Failed</option>
+                        </select>
+                        @if(empty($ad->payment_id))
+                            <small class="text-muted">No payment record found for this advertisement.</small>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label">Amount</label>
+                        <input type="text" class="form-control" value="{{ isset($ad->amount) ? 'Rs. ' . number_format($ad->amount, 2) : '—' }}" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Date</label>
+                        <input type="datetime-local" name="payment_date" class="form-control"
+                               value="{{ old('payment_date', !empty($ad->payment_date) ? \Illuminate\Support\Carbon::parse($ad->payment_date)->format('Y-m-d\TH:i') : '') }}"
+                               {{ empty($ad->payment_id) ? 'disabled' : '' }}>
+                        @if(empty($ad->payment_id))
+                            <small class="text-muted">No payment record found for this advertisement.</small>
+                        @endif
+                    </div>
                 </div>
 
                 

@@ -57,18 +57,7 @@
 
                     {{-- PAYMENT --}}
                     <td>
-                        @if(is_null($ad->payment_status))
-                            <span class="badge bg-secondary">No Payment</span>
-
-                        @elseif($ad->payment_status == 'pending')
-                            <span class="badge bg-warning text-dark">Pending</span>
-
-                        @elseif($ad->payment_status == 'completed' && $ad->is_success)
-                            <span class="badge bg-success">Paid</span>
-
-                        @else
-                            <span class="badge bg-danger">Failed</span>
-                        @endif
+                        @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                     </td>
 
                     {{-- ACTIONS --}}

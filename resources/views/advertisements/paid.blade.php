@@ -66,11 +66,7 @@
 
                         {{-- PAYMENT STATUS --}}
                         <td>
-                            @if($ad->payment_status == 'completed' && $ad->is_success)
-                                <span class="badge bg-success badge-pill">Paid</span>
-                            @else
-                                <span class="badge bg-secondary badge-pill">Unknown</span>
-                            @endif
+                            @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
                         {{-- ACTIONS --}}

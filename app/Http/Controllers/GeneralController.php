@@ -649,7 +649,6 @@ class GeneralController extends Controller
                 'cities.city_name_en as city_name',
 
                 'payments.payment_status',
-                'payments.is_success'
             )
 
             // ✅ 🔥 IMPORTANT FILTER (THIS IS WHAT YOU WANT)
@@ -707,7 +706,6 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_status',
                 'payments.payment_date',
-                'payments.is_success',
 
                 'payment_methods.payment_method_name as payment_method'
             )
@@ -758,7 +756,6 @@ class GeneralController extends Controller
 
             // ✅ ONLY PAID
             ->where('payments.payment_status', 'completed')
-            ->where('payments.is_success', true)
 
             ->select(
                 'advertisements.*',
@@ -770,7 +767,6 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
-                'payments.is_success',
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -798,7 +794,7 @@ class GeneralController extends Controller
             ->where(function ($query) {
                 $query->whereNull('payments.id') // no payment
                     ->orWhere('payments.payment_status', 'pending') // pending
-                    ->orWhere('payments.is_success', false); // failed
+                    ->orWhere('payments.payment_status', 'failed'); // failed
             })
 
             ->select(
@@ -811,7 +807,6 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
-                'payments.is_success',
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -839,7 +834,6 @@ class GeneralController extends Controller
                 'cities.city_name_en as city_name',
 
                 'payments.payment_status',
-                'payments.is_success'
             )
 
             // ✅ MAIN FILTER
@@ -877,7 +871,6 @@ class GeneralController extends Controller
 
             // ✅ ONLY PAID
             ->where('payments.payment_status', 'completed')
-            ->where('payments.is_success', true)
 
             ->select(
                 'advertisements.*',
@@ -889,7 +882,6 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
-                'payments.is_success',
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -917,7 +909,7 @@ class GeneralController extends Controller
             ->where(function ($query) {
                 $query->whereNull('payments.id')
                     ->orWhere('payments.payment_status', 'pending')
-                    ->orWhere('payments.is_success', false);
+                    ->orWhere('payments.payment_status', 'failed');
             })
 
             ->select(
@@ -930,7 +922,6 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
-                'payments.is_success',
                 'payment_methods.payment_method_name as payment_method'
             )
 
@@ -991,13 +982,18 @@ class GeneralController extends Controller
     {
         $ad = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
                 'customers.address',
                 'customers.telephone',
                 'customers.email',
-                'customers.nic_passport'
+                'customers.nic_passport',
+                'payments.id as payment_id',
+                'payments.amount',
+                'payments.payment_status',
+                'payments.payment_date',
             )
             ->where('advertisements.id', $id)
             ->first();
@@ -1049,10 +1045,13 @@ class GeneralController extends Controller
             'publish_date' => 'required|date',
             'web_combined_ad' => 'required|boolean',
             'status' => 'required|boolean',
+            'payment_status' => 'nullable|in:pending,completed,failed',
+            'payment_date' => 'nullable|date_format:Y-m-d\TH:i',
         ]);
 
         DB::transaction(function () use ($request, $id) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
+            $payment = DB::table('payments')->where('advertisement_id', $id)->first();
 
             if (!$ad) {
                 abort(404);
@@ -1079,6 +1078,19 @@ class GeneralController extends Controller
                 'status' => $request->status,
                 'updated_at' => now(),
             ]);
+
+            if ($payment && $request->filled('payment_status')) {
+                DB::table('payments')
+                    ->where('id', $payment->id)
+                    ->update(array_filter([
+                        'payment_status' => $request->payment_status,
+                        'is_success' => $request->payment_status === 'completed' ? 'true' : 'false',
+                        'payment_date' => $request->filled('payment_date')
+                            ? \Illuminate\Support\Carbon::createFromFormat('Y-m-d\TH:i', $request->payment_date)->format('Y-m-d H:i:s')
+                            : $payment->payment_date,
+                        'updated_at' => now(),
+                    ], static fn ($value) => $value !== null));
+            }
 
             // Process advertisement criterias (if any)
             $criteriaInput = $request->input('criteria', []);
