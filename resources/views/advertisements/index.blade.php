@@ -1,22 +1,55 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Ensure page extends to push footer to bottom on short pages -->
+<div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
-    <h2>All Advertisements</h2>
+    <h2 class="mb-3">All Advertisements</h2>
 
-    <!-- 🔍 Search Form -->
-    <form action="{{ url('/advertisements') }}" method="GET" class="row g-3 mb-4">
-        <div class="col-md-10">
-            <input type="text" name="search" class="form-control"
-                   placeholder="Search by ad title or customer name..."
-                   value="{{ request('search') }}">
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Search</button>
-        </div>
-    </form>
+    <style>
+        /* Unified page tweaks for all advertisement tables */
+        .ads-card { border-radius: 12px; box-shadow: 0 6px 18px rgba(18,38,63,0.06); overflow: hidden; }
+        .ads-table thead th { background: #f8fafc; border-bottom: 2px solid #e9eef4; font-weight:600; color:#5b6b7a; }
+        .ads-table tbody tr:hover { background: rgba(99,102,241,0.04); }
+        .ads-table td, .ads-table th { vertical-align: middle; }
+        .ads-table td .text-muted { display:block; }
+        .badge-pill { border-radius: 999px; padding: .35rem .6rem; font-weight:600; }
+        .action-btns .btn { margin-right: .35rem; }
+        .search-input .form-control { border-right: 0; }
+        .search-input .input-group-text { background: transparent; border-left: 0; }
+        .table-responsive { padding: 0.75rem 1rem; }
+        @media (max-width: 767px) {
+            .action-btns .btn { margin-bottom: .35rem; }
+        }
+    </style>
 
-    <table class="table table-bordered mt-2">
+    <!-- Search + actions -->
+    <div class="row mb-3">
+        <div class="col-md-8 col-sm-12 mb-2">
+            <form action="{{ url('/advertisements') }}" method="GET">
+                <div class="input-group search-input">
+                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Search by ad title or customer name..."
+                           value="{{ request('search') }}">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4 col-sm-12 text-md-end text-sm-start">
+            <a href="{{ url('/advertisements/create') }}" class="btn btn-success me-2">
+                <i class="bx bx-plus"></i> New Ad
+            </a>
+            <a href="#" class="btn btn-outline-secondary">
+                <i class="bx bx-cloud-download"></i> Export
+            </a>
+        </div>
+    </div>
+
+    <div class="card ads-card">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover ads-table align-middle mb-0">
         <thead>
             <tr>
                 <th>ID</th>
@@ -50,42 +83,41 @@
 
                     {{-- STATUS --}}
                     <td>
-                        {!! $ad->status == 1 
-                            ? '<span class="badge bg-success">Active</span>' 
-                            : '<span class="badge bg-danger">Inactive</span>' !!}
+                        @if($ad->status == 1)
+                            <span class="badge bg-success badge-pill text-uppercase">Active</span>
+                        @else
+                            <span class="badge bg-danger badge-pill text-uppercase">Inactive</span>
+                        @endif
                     </td>
 
                     {{-- PAYMENT STATUS --}}
                     <td>
                         @if(is_null($ad->payment_status))
-                            <span class="badge bg-secondary">No Payment</span>
+                            <span class="badge bg-secondary badge-pill">No Payment</span>
 
                         @elseif($ad->payment_status == 'pending')
-                            <span class="badge bg-warning text-dark">Pending</span>
+                            <span class="badge bg-warning text-dark badge-pill">Pending</span>
 
                         @elseif($ad->payment_status == 'completed' && $ad->is_success)
-                            <span class="badge bg-success">Paid</span>
+                            <span class="badge bg-success badge-pill">Paid</span>
 
                         @else
-                            <span class="badge bg-danger">Failed</span>
+                            <span class="badge bg-danger badge-pill">Failed</span>
                         @endif
                     </td>
 
                     {{-- ACTIONS --}}
-                    <td>
-                        <a href="{{ url('/advertisements/' . $ad->id . '/view') }}"
-                           class="btn btn-sm btn-info">
-                            View
+                    <td class="action-btns">
+                        <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
+                            <i class="bx bx-show"></i>
                         </a>
 
-                        <a href="{{ url('/advertisements/' . $ad->id . '/edit') }}"
-                           class="btn btn-sm btn-warning">
-                            Edit
+                        <a href="{{ url('/advertisements/' . $ad->id . '/edit') }}" class="btn btn-sm btn-outline-warning">
+                            <i class="bx bx-edit-alt"></i>
                         </a>
 
-                        <button class="btn btn-sm btn-success"
-                                onclick="confirmDownload({{ $ad->id }})">
-                            Download
+                        <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                            <i class="bx bx-download"></i>
                         </button>
                     </td>
                 </tr>
@@ -107,7 +139,9 @@
 
 </div>
 
-{{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
+    {{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
+</div>
+</div>
 <script>
 function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {

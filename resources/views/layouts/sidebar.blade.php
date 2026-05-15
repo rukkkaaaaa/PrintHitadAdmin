@@ -56,18 +56,18 @@
     </li>
 
     <!-- ================= LAHIPITA PRINT ================= -->
-    <li class="menu-item {{ request()->is('lahipita*') ? 'active open' : '' }}">
+    <li class="menu-item {{ request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-printer"></i>
         <div>Lahipita Print</div>
       </a>
       <ul class="menu-sub">
-        <li class="menu-item {{ request()->is('lahipita/paid') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->is('advertisements/lahipita/paid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/lahipita/paid') }}" class="menu-link">
             <div>Lahipita Paid Ads</div>
           </a>
         </li>
-        <li class="menu-item {{ request()->is('lahipita/unpaid') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->is('advertisements/lahipita/unpaid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/lahipita/unpaid') }}" class="menu-link">
             <div>Lahipita Unpaid Ads</div>
           </a>
@@ -129,6 +129,13 @@
       <a href="{{ url('/adsizes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-table"></i>
         <div>Ad Size</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('tints') ? 'active' : '' }}">
+      <a href="{{ url('/tints') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-droplet"></i>
+        <div>Tints</div>
       </a>
     </li>
 

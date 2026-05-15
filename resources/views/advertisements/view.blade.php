@@ -70,6 +70,28 @@
 
         @endif
 
+        <hr>
+
+        <!-- Criteria -->
+        @if(isset($criterias) && $criterias->count() > 0)
+            <h5>Criteria</h5>
+            <div class="row">
+                @foreach($criterias as $crit)
+                    @php
+                        // For Hitad Print we prefer English labels (controller doesn't differentiate here)
+                        $critLabel = trim($crit->advertisement_criteria_name_en ?? '');
+                        $value = $criteriaValues[$crit->id] ?? null;
+                    @endphp
+
+                    @if($critLabel !== '')
+                        <div class="col-md-6 mb-2">
+                            <p><strong>{{ $critLabel }}:</strong> {{ $value ?? '—' }}</p>
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        @endif
+
     </div>
 </div>
 

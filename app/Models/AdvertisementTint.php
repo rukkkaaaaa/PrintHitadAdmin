@@ -8,6 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class AdvertisementTint extends Model
 {
     use HasFactory;
-    protected $fillable = ['advertisement_tint_en', 'advertisement_tint_si', 'is_active', 'price'];
+    protected $fillable = ['advertisement_tint_en', 'advertisement_tint_si', 'color', 'is_active', 'price'];
     
 }

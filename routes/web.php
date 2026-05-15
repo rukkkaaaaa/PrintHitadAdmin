@@ -84,6 +84,15 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Tints
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/tints', [GeneralController::class, 'getTints']);
+    Route::post('/add-tint', [GeneralController::class, 'addTint']);
+    Route::post('/update-tint/{id}', [GeneralController::class, 'updateTint']);
+
+    /*
+    |--------------------------------------------------------------------------
     | Ad Sizes
     |--------------------------------------------------------------------------
     */

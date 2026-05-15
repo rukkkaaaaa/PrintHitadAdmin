@@ -31,7 +31,7 @@
             <div class="card h-100">
 
                 <div class="card-header">
-                    <strong>Add English Category</strong>
+                    <strong>Add Category (English)</strong>
                 </div>
 
                 <div class="card-body">
@@ -42,7 +42,7 @@
                         <div class="row">
 
                             <div class="col-12 mb-3">
-                                <label class="form-label">Category Name (English)</label>
+                                <label class="form-label">Category Name (En)</label>
                                 <input type="text"
                                     name="category_name_en"
                                     class="form-control"
@@ -52,7 +52,7 @@
 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100">
-                                    Add English Category
+                                    Add Category (English)
                                 </button>
                             </div>
 
@@ -69,7 +69,7 @@
             <div class="card h-100">
 
                 <div class="card-header">
-                    <strong>Add Sinhala Category</strong>
+                    <strong>Add Category (Sinhala)</strong>
                 </div>
 
                 <div class="card-body">
@@ -80,7 +80,7 @@
                         <div class="row">
 
                             <div class="col-12 mb-3">
-                                <label class="form-label">Category Name (Sinhala)</label>
+                                <label class="form-label">Category Name (Si)</label>
                                 <input type="text"
                                     name="category_name_si"
                                     class="form-control"
@@ -90,7 +90,7 @@
 
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100">
-                                    Add Sinhala Category
+                                    Add Category (Sinhala)
                                 </button>
                             </div>
 

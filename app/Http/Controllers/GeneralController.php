@@ -130,6 +130,58 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement type updated successfully!');
     }
 
+    // ================= TINTS =================
+    // GET: Show all advertisement tints
+    public function getTints()
+    {
+        $tints = DB::table('advertisement_tints')->get();
+        return view('tints.index', compact('tints'));
+    }
+
+    // POST: Add new tint
+    public function addTint(Request $request)
+    {
+        $request->validate([
+            'advertisement_tint_en' => 'nullable|string|max:255|required_without:advertisement_tint_si',
+            'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
+            'price' => 'nullable|numeric',
+        ]);
+
+        DB::table('advertisement_tints')->insert([
+            'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+            'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+            'color' => $request->color ?: '',
+            'price' => $request->price ?: 0,
+            'is_active' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Tint added successfully!');
+    }
+
+    // POST: Update tint
+    public function updateTint(Request $request, $id)
+    {
+        $request->validate([
+            'advertisement_tint_en' => 'nullable|string|max:255|required_without:advertisement_tint_si',
+            'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
+            'is_active' => 'required|boolean',
+            'price' => 'nullable|numeric',
+        ]);
+
+        DB::table('advertisement_tints')->where('id', $id)->update([
+            'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+            'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+            'color' => $request->color ?: '',
+            'is_active' => $request->is_active,
+            'price' => $request->price ?: 0,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Tint updated successfully!');
+    }
+
     // GET: Show all ad sizes
     public function getAdSizes()
     {
@@ -665,7 +717,28 @@ class GeneralController extends Controller
             abort(404);
         }
 
-        return view('advertisements.view', compact('ad'));
+        // Load category-specific criterias and existing values for display
+        $criterias = DB::table('advertisement_criterias')
+            ->where('category_id', $ad->category_id)
+            ->where('is_active', 1)
+            ->get();
+
+        $criteriaOptions = DB::table('advertisement_criteria_options')
+            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+            ->where('is_active', 1)
+            ->get()
+            ->groupBy('advertisement_criteria_id');
+
+        $criteriaValuesRaw = DB::table('advertisement_criteria_values')
+            ->where('advertisement_id', $id)
+            ->get();
+
+        $criteriaValues = [];
+        foreach ($criteriaValuesRaw as $cv) {
+            $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
+        }
+
+        return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues'));
     }
 
     public function getPaidAdvertisements()
@@ -916,38 +989,132 @@ class GeneralController extends Controller
     }
     public function editAdvertisement($id)
     {
-        $ad = DB::table('advertisements')->where('id', $id)->first();
+        $ad = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                'customers.address',
+                'customers.telephone',
+                'customers.email',
+                'customers.nic_passport'
+            )
+            ->where('advertisements.id', $id)
+            ->first();
 
         $categories = DB::table('categories')->where('is_active', 1)->get();
         $districts = DB::table('districts')->where('is_active', 1)->get();
         $cities = DB::table('cities')->where('is_active', 1)->get();
 
+        // Load category-specific criterias and options
+        $criterias = DB::table('advertisement_criterias')
+            ->where('category_id', $ad->category_id)
+            ->where('is_active', 1)
+            ->get();
+
+        $criteriaOptions = DB::table('advertisement_criteria_options')
+            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+            ->where('is_active', 1)
+            ->get()
+            ->groupBy('advertisement_criteria_id');
+
+        // Existing values for this advertisement
+        $criteriaValuesRaw = DB::table('advertisement_criteria_values')
+            ->where('advertisement_id', $id)
+            ->get();
+
+        $criteriaValues = [];
+        foreach ($criteriaValuesRaw as $cv) {
+            $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
+        }
+
         if (!$ad) {
             abort(404);
         }
 
-        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities'));
+        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues'));
     }
     public function updateAdvertisement(Request $request, $id)
     {
         $request->validate([
+            'customer_name' => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'telephone' => 'required|string|max:255',
+            'nic_passport' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
             'advertisement_description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'required|exists:cities,id',
             'publish_date' => 'required|date',
+            'web_combined_ad' => 'required|boolean',
             'status' => 'required|boolean',
         ]);
 
-        DB::table('advertisements')->where('id', $id)->update([
-            'advertisement_description' => $request->advertisement_description,
-            'category_id' => $request->category_id,
-            'district_id' => $request->district_id,
-            'city_id' => $request->city_id,
-            'publish_date' => $request->publish_date,
-            'status' => $request->status,
-            'updated_at' => now(),
-        ]);
+        DB::transaction(function () use ($request, $id) {
+            $ad = DB::table('advertisements')->where('id', $id)->first();
+
+            if (!$ad) {
+                abort(404);
+            }
+
+            DB::table('customers')
+                ->where('id', $ad->customer_id)
+                ->update([
+                    'customer_name' => $request->customer_name,
+                    'address' => $request->address,
+                    'telephone' => $request->telephone,
+                    'nic_passport' => $request->nic_passport,
+                    'email' => $request->email,
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('advertisements')->where('id', $id)->update([
+                'advertisement_description' => $request->advertisement_description,
+                'category_id' => $request->category_id,
+                'district_id' => $request->district_id,
+                'city_id' => $request->city_id,
+                'publish_date' => $request->publish_date,
+                'web_combined_ad' => $request->web_combined_ad,
+                'status' => $request->status,
+                'updated_at' => now(),
+            ]);
+
+            // Process advertisement criterias (if any)
+            $criteriaInput = $request->input('criteria', []);
+            if (is_array($criteriaInput) && count($criteriaInput) > 0) {
+                foreach ($criteriaInput as $criteriaId => $criteriaValue) {
+                    // normalize scalar values
+                    if (is_array($criteriaValue)) {
+                        $value = implode(', ', $criteriaValue);
+                    } else {
+                        $value = $criteriaValue;
+                    }
+
+                    $existing = DB::table('advertisement_criteria_values')
+                        ->where('advertisement_id', $id)
+                        ->where('advertisement_criteria_id', $criteriaId)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('advertisement_criteria_values')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'advertisement_criteria_option_value' => $value,
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('advertisement_criteria_values')->insert([
+                            'advertisement_id' => $id,
+                            'advertisement_criteria_id' => $criteriaId,
+                            'advertisement_criteria_option_value' => $value,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
+        });
 
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
     }

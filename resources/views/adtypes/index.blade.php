@@ -37,7 +37,7 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label class="form-label">Type Name (English)</label>
+                            <label class="form-label">Type Name (En)</label>
                             <input type="text" name="advertisement_type_en" class="form-control" required>
                         </div>
 
@@ -76,7 +76,7 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label class="form-label">Type Name (Sinhala)</label>
+                            <label class="form-label">Type Name (Si)</label>
                             <input type="text" name="advertisement_type_si" class="form-control" required>
                         </div>
 
@@ -205,7 +205,7 @@
                         <div class="modal-body">
 
                             <div class="mb-3">
-                                <label class="form-label">Type Name (English)</label>
+                                <label class="form-label">Type Name (En)</label>
                                 <input type="text"
                                        name="advertisement_type_en"
                                        class="form-control"
@@ -214,7 +214,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Type Name (Sinhala)</label>
+                                <label class="form-label">Type Name (Si)</label>
                                 <input type="text"
                                        name="advertisement_type_si"
                                        class="form-control"
