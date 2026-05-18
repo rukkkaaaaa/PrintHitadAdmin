@@ -225,7 +225,79 @@
 
     </div>
 </div>
-```
+
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[id^="editDistrict"]').forEach(function(modalEl){
+        modalEl.addEventListener('shown.bs.modal', function(){
+            try {
+                var en = modalEl.querySelector('input[name="district_name_en"]');
+                var si = modalEl.querySelector('input[name="district_name_si"]');
+
+                if (en && si) {
+                    var enVal = (en.value || '').toString().trim();
+                    var siVal = (si.value || '').toString().trim();
+
+                    if (enVal && !siVal) {
+                        si.readOnly = true;
+                        si.classList.add('bg-light');
+                    } else if (siVal && !enVal) {
+                        en.readOnly = true;
+                        en.classList.add('bg-light');
+                    } else {
+                        if (en) en.readOnly = false;
+                        if (si) si.readOnly = false;
+                        en && en.classList.remove('bg-light');
+                        si && si.classList.remove('bg-light');
+                    }
+                }
+            } catch (e) {
+                console.error('error applying readonly rule for district modal', e);
+            }
+
+            // Optional diagnostics
+            var inputs = modalEl.querySelectorAll('input, textarea, select');
+            console.group('Edit district diagnostics for ' + modalEl.id);
+            inputs.forEach(function(inp, idx){
+                try {
+                    var cs = window.getComputedStyle(inp);
+                    console.log(idx, inp.name || inp.id || inp.tagName, {
+                        disabled: inp.disabled,
+                        readOnly: inp.readOnly,
+                        value: inp.value,
+                        tabIndex: inp.tabIndex,
+                        display: cs.display,
+                        visibility: cs.visibility,
+                        pointerEvents: cs.pointerEvents,
+                        opacity: cs.opacity
+                    });
+
+                    var rect = inp.getBoundingClientRect();
+                    var x = Math.round(rect.left + rect.width/2);
+                    var y = Math.round(rect.top + rect.height/2);
+                    var topEl = document.elementFromPoint(x, y);
+                    console.log(' elementFromPoint center ->', topEl, topEl && topEl.className, topEl && topEl.id);
+                } catch (e) {
+                    console.error('diagnostic error for input', inp, e);
+                }
+            });
+            console.groupEnd();
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function(){
+            try {
+                var en = modalEl.querySelector('input[name="district_name_en"]');
+                var si = modalEl.querySelector('input[name="district_name_si"]');
+                if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
+                if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
+            } catch (e) { /* ignore */ }
+        });
+    });
+});
+</script>
+@endpush

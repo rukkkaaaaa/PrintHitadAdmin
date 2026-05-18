@@ -150,9 +150,12 @@
                         <td>{{ $opt->advertisement_criteria_option_name_si }}</td>
 
                         <td>
-                            {{ $crit->advertisement_criteria_name_en ?? 'N/A' }}
+                            @php
+                                $critLabel = $crit?->advertisement_criteria_name_en ?: $crit?->advertisement_criteria_name_si ?: 'N/A';
+                            @endphp
+                            {{ $critLabel }}
                             @if($crit?->category_name)
-                            ({{ $crit->category_name }})
+                                ({{ $crit->category_name }})
                             @endif
                         </td>
 

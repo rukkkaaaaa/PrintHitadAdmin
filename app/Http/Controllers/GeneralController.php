@@ -186,11 +186,14 @@ class GeneralController extends Controller
     public function getAdSizes()
     {
         $adSizes = DB::table('advertisement_sizes')
-            // use leftJoin and prefer English label but fall back to Sinhala when EN is missing
+            // join advertisement_types and categories. prefer English labels but fall back to Sinhala when EN is missing
             ->leftJoin('advertisement_types', 'advertisement_sizes.advertisement_type_id', '=', 'advertisement_types.id')
+            ->leftJoin('categories', 'advertisement_types.category_id', '=', 'categories.id')
             ->select(
                 'advertisement_sizes.*',
-                DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as type_name')
+                'advertisement_types.category_id as type_category_id',
+                DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as type_name'),
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
             )
             ->orderBy('advertisement_sizes.id', 'asc')
             ->get()
@@ -220,7 +223,45 @@ class GeneralController extends Controller
             ->unique('advertisement_type_si')
             ->values();
 
-        return view('adsizes.index', compact('adSizes', 'adTypesEn', 'adTypesSi'));
+        $categoriesEn = DB::table('categories')
+            ->where('is_active', 1)
+            ->whereNotNull('category_name_en')
+            ->where('category_name_en', '!=', '')
+            ->orderBy('category_name_en')
+            ->get();
+
+        $categoriesSi = DB::table('categories')
+            ->where('is_active', 1)
+            ->whereNotNull('category_name_si')
+            ->where('category_name_si', '!=', '')
+            ->orderBy('category_name_si')
+            ->get();
+
+        return view('adsizes.index', compact('adSizes', 'adTypesEn', 'adTypesSi', 'categoriesEn', 'categoriesSi'));
+    }
+
+    // AJAX: return ad types for a given category
+    public function getAdTypesByCategory(Request $request, $categoryId)
+    {
+        $lang = $request->query('lang', 'en');
+
+        $types = DB::table('advertisement_types')
+            ->where('is_active', 1)
+            ->where('category_id', $categoryId)
+            ->get()
+            ->map(function ($t) use ($lang) {
+                $label = $lang === 'si'
+                    ? ($t->advertisement_type_si ?: $t->advertisement_type_en)
+                    : ($t->advertisement_type_en ?: $t->advertisement_type_si);
+
+                return [
+                    'id' => $t->id,
+                    'label' => $label,
+                    'category_id' => $t->category_id,
+                ];
+            });
+
+        return response()->json($types);
     }
 
     // POST: Add new ad size
@@ -231,6 +272,7 @@ class GeneralController extends Controller
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
             'max_images' => 'required|integer|min:0',
+            'category_id' => 'required|integer|exists:categories,id',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'img_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -278,6 +320,7 @@ class GeneralController extends Controller
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
             'max_images' => 'required|integer|min:0',
+            'category_id' => 'required|integer|exists:categories,id',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',

@@ -100,6 +100,9 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
     Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
 
+    // AJAX: get ad types for a category
+    Route::get('/adtypes/by-category/{id}', [GeneralController::class, 'getAdTypesByCategory']);
+
     /*
     |--------------------------------------------------------------------------
     | Ad Criterias

@@ -59,11 +59,21 @@
                             </div>
 
                             <div class="col-12 mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category_id" class="form-control category-select" data-lang="en" required>
+                                    <option value="">Select</option>
+                                    @foreach ($categoriesEn as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
                                 <label class="form-label">Ad Type</label>
-                                <select name="advertisement_type_id" class="form-control" required>
+                                <select name="advertisement_type_id" class="form-control adtype-select" required>
                                     <option value="">Select</option>
                                     @foreach ($adTypesEn as $type)
-                                        <option value="{{ $type->id }}">
+                                        <option value="{{ $type->id }}" data-category="{{ $type->category_id }}">
                                             {{ $type->advertisement_type_en }}
                                         </option>
                                     @endforeach
@@ -121,11 +131,21 @@
                             </div>
 
                             <div class="col-12 mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category_id" class="form-control category-select" data-lang="si" required>
+                                    <option value="">Select</option>
+                                    @foreach ($categoriesSi as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_si }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-3">
                                 <label class="form-label">Ad Type</label>
-                                <select name="advertisement_type_id" class="form-control" required>
+                                <select name="advertisement_type_id" class="form-control adtype-select" required>
                                     <option value="">Select</option>
                                     @foreach ($adTypesSi as $type)
-                                        <option value="{{ $type->id }}">
+                                        <option value="{{ $type->id }}" data-category="{{ $type->category_id }}">
                                             {{ $type->advertisement_type_si }}
                                         </option>
                                     @endforeach
@@ -168,6 +188,7 @@
                         <th>Size (EN)</th>
                         <th>Size (SI)</th>
                         <th>Ad Type</th>
+                        <th>Category</th>
                         <th>Price</th>
                         <th>Ad Word Count</th>
                         <th>Max Images</th>
@@ -188,9 +209,12 @@
 
                         <td>{{ $size->advertisement_size_en }}</td>
 
+
                         <td>{{ $size->advertisement_size_si }}</td>
 
                         <td>{{ $size->type_name ?? 'N/A' }}</td>
+
+                        <td>{{ $size->category_name ?? '-' }}</td>
 
                         <td>Rs. {{ number_format($size->price, 2) }}</td>
 
@@ -294,28 +318,47 @@
                                         </div>
 
                                         <div class="mb-3">
+                                            <label>Category</label>
+                                            @php
+                                                $showEnOnly = filled($size->advertisement_size_en) && !filled($size->advertisement_size_si);
+                                                $showSiOnly = filled($size->advertisement_size_si) && !filled($size->advertisement_size_en);
+                                            @endphp
+                                            <select name="category_id" class="form-control category-select-modal" data-lang="{{ $showSiOnly ? 'si' : 'en' }}">
+                                                <option value="">Select</option>
+                                                @if($showSiOnly)
+                                                    @foreach($categoriesSi as $cat)
+                                                        <option value="{{ $cat->id }}" {{ (isset($size->type_category_id) && $size->type_category_id == $cat->id) ? 'selected' : '' }}>
+                                                            {{ $cat->category_name_si }}
+                                                        </option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($categoriesEn as $cat)
+                                                        <option value="{{ $cat->id }}" {{ (isset($size->type_category_id) && $size->type_category_id == $cat->id) ? 'selected' : '' }}>
+                                                            {{ $cat->category_name_en }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
                                             <label>Ad Type</label>
-                                                <select name="advertisement_type_id" class="form-control">
-                                                    @php
-                                                        $showEnOnly = filled($size->advertisement_size_en) && !filled($size->advertisement_size_si);
-                                                        $showSiOnly = filled($size->advertisement_size_si) && !filled($size->advertisement_size_en);
-                                                    @endphp
-
-                                                    @if($showSiOnly)
-                                                        @foreach ($adTypesSi as $type)
-                                                            <option value="{{ $type->id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
-                                                                {{ $type->advertisement_type_si }}
-                                                            </option>
-                                                        @endforeach
-                                                    @else
-                                                        @foreach ($adTypesEn as $type)
-                                                            <option value="{{ $type->id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
-                                                                {{ $type->advertisement_type_en }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-
-                                                </select>
+                                            <select name="advertisement_type_id" class="form-control adtype-select-modal">
+                                                <option value="">Select</option>
+                                                @if($showSiOnly)
+                                                    @foreach ($adTypesSi as $type)
+                                                        <option value="{{ $type->id }}" data-category="{{ $type->category_id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
+                                                            {{ $type->advertisement_type_si }}
+                                                        </option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach ($adTypesEn as $type)
+                                                        <option value="{{ $type->id }}" data-category="{{ $type->category_id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
+                                                            {{ $type->advertisement_type_en }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
                                         </div>
 
                                         <div class="mb-3">
@@ -445,6 +488,64 @@
                     if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
                     if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
                 } catch (e) { /* ignore */ }
+            });
+        });
+
+        // Load ad types for a category from server and populate the ad type select
+        function loadAdTypesForSelect(adtypeSelect, categoryId, lang, selectedId) {
+            if (!adtypeSelect) return;
+            // default option
+            adtypeSelect.innerHTML = '<option value="">Select</option>';
+
+            if (!categoryId) return;
+
+            fetch('/adtypes/by-category/' + encodeURIComponent(categoryId) + '?lang=' + encodeURIComponent(lang || 'en'))
+                .then(function(res){ return res.json(); })
+                .then(function(items){
+                    items.forEach(function(it){
+                        var opt = document.createElement('option');
+                        opt.value = it.id;
+                        opt.textContent = it.label;
+                        adtypeSelect.appendChild(opt);
+                    });
+
+                    if (selectedId) {
+                        adtypeSelect.value = selectedId;
+                    }
+                })
+                .catch(function(err){
+                    console.error('failed to load ad types for category', err);
+                });
+        }
+
+        document.querySelectorAll('.category-select').forEach(function(catSel){
+            var parent = catSel.closest('form') || catSel.parentElement;
+            var adSel = parent.querySelector('.adtype-select');
+            var lang = catSel.dataset.lang || 'en';
+            // initial load
+            loadAdTypesForSelect(adSel, catSel.value, lang);
+            catSel.addEventListener('change', function(){
+                loadAdTypesForSelect(adSel, this.value, lang);
+            });
+        });
+
+        // Modal category/adtype linkage - fetch types when modal opens and when category changes
+        document.querySelectorAll('[id^="editSize"]').forEach(function(modalEl){
+            modalEl.addEventListener('shown.bs.modal', function(){
+                try {
+                    var catSel = modalEl.querySelector('.category-select-modal');
+                    var adSel = modalEl.querySelector('.adtype-select-modal');
+                    var lang = catSel && catSel.dataset.lang ? catSel.dataset.lang : 'en';
+                    var currentAdType = adSel && adSel.value ? adSel.value : null;
+                    if (catSel && adSel) {
+                        loadAdTypesForSelect(adSel, catSel.value, lang, currentAdType);
+                        catSel.addEventListener('change', function(){
+                            loadAdTypesForSelect(adSel, this.value, lang);
+                        });
+                    }
+                } catch (e) {
+                    console.error('error loading ad types for modal', e);
+                }
             });
         });
     });
