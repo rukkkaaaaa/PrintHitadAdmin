@@ -186,10 +186,11 @@ class GeneralController extends Controller
     public function getAdSizes()
     {
         $adSizes = DB::table('advertisement_sizes')
-            ->join('advertisement_types', 'advertisement_sizes.advertisement_type_id', '=', 'advertisement_types.id')
+            // use leftJoin and prefer English label but fall back to Sinhala when EN is missing
+            ->leftJoin('advertisement_types', 'advertisement_sizes.advertisement_type_id', '=', 'advertisement_types.id')
             ->select(
                 'advertisement_sizes.*',
-                'advertisement_types.advertisement_type_en as type_name'
+                DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as type_name')
             )
             ->orderBy('advertisement_sizes.id', 'asc')
             ->get()
@@ -204,14 +205,20 @@ class GeneralController extends Controller
             ->whereNotNull('advertisement_type_en')
             ->where('advertisement_type_en', '!=', '')
             ->orderBy('advertisement_type_en')
-            ->get();
+            ->get()
+            // remove duplicates by English label (keep first)
+            ->unique('advertisement_type_en')
+            ->values();
 
         $adTypesSi = DB::table('advertisement_types')
             ->where('is_active', 1)
             ->whereNotNull('advertisement_type_si')
             ->where('advertisement_type_si', '!=', '')
             ->orderBy('advertisement_type_si')
-            ->get();
+            ->get()
+            // remove duplicates by Sinhala label (keep first)
+            ->unique('advertisement_type_si')
+            ->values();
 
         return view('adsizes.index', compact('adSizes', 'adTypesEn', 'adTypesSi'));
     }
@@ -223,7 +230,7 @@ class GeneralController extends Controller
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
-            'max_images' => 'required|integer|min:1',
+            'max_images' => 'required|integer|min:0',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'img_url' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -248,7 +255,8 @@ class GeneralController extends Controller
             'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
-            'img_url' => $imagePath,
+            // if storage isn't configured or migration not run yet, store empty string instead of null
+            'img_url' => $imagePath ?: '',
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -269,7 +277,7 @@ class GeneralController extends Controller
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
             'ad_word_count' => 'required|integer|min:1',
-            'max_images' => 'required|integer|min:1',
+            'max_images' => 'required|integer|min:0',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
             'is_active' => 'required|boolean',

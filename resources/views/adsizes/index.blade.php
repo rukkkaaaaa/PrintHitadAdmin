@@ -55,7 +55,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Maximum Images</label>
-                                <input type="number" name="max_images" min="1" class="form-control" required>
+                                <input type="number" name="max_images" min="0" class="form-control" required>
                             </div>
 
                             <div class="col-12 mb-3">
@@ -117,7 +117,7 @@
 
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Maximum Images</label>
-                                <input type="number" name="max_images" min="1" class="form-control" required>
+                                <input type="number" name="max_images" min="0" class="form-control" required>
                             </div>
 
                             <div class="col-12 mb-3">
@@ -287,7 +287,7 @@
                                             <label>Maximum Images</label>
                                             <input type="number"
                                                 name="max_images"
-                                                min="1"
+                                                min="0"
                                                 class="form-control"
                                                 value="{{ data_get($size, 'max_images') }}"
                                                 required>
@@ -295,16 +295,27 @@
 
                                         <div class="mb-3">
                                             <label>Ad Type</label>
-                                            <select name="advertisement_type_id" class="form-control">
+                                                <select name="advertisement_type_id" class="form-control">
+                                                    @php
+                                                        $showEnOnly = filled($size->advertisement_size_en) && !filled($size->advertisement_size_si);
+                                                        $showSiOnly = filled($size->advertisement_size_si) && !filled($size->advertisement_size_en);
+                                                    @endphp
 
-                                                @foreach ($adTypesEn as $type)
-                                                <option value="{{ $type->id }}"
-                                                    {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
-                                                    {{ $type->advertisement_type_en }}
-                                                </option>
-                                                @endforeach
+                                                    @if($showSiOnly)
+                                                        @foreach ($adTypesSi as $type)
+                                                            <option value="{{ $type->id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
+                                                                {{ $type->advertisement_type_si }}
+                                                            </option>
+                                                        @endforeach
+                                                    @else
+                                                        @foreach ($adTypesEn as $type)
+                                                            <option value="{{ $type->id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
+                                                                {{ $type->advertisement_type_en }}
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
 
-                                            </select>
+                                                </select>
                                         </div>
 
                                         <div class="mb-3">
@@ -368,5 +379,76 @@
         </div>
     </div>
 
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('[id^="editSize"]').forEach(function(modalEl){
+            modalEl.addEventListener('shown.bs.modal', function(){
+                try {
+                    var en = modalEl.querySelector('input[name="advertisement_size_en"]');
+                    var si = modalEl.querySelector('input[name="advertisement_size_si"]');
+
+                    if (en && si) {
+                        var enVal = (en.value || '').toString().trim();
+                        var siVal = (si.value || '').toString().trim();
+
+                        if (enVal && !siVal) {
+                            si.readOnly = true;
+                            si.classList.add('bg-light');
+                        } else if (siVal && !enVal) {
+                            en.readOnly = true;
+                            en.classList.add('bg-light');
+                        } else {
+                            if (en) en.readOnly = false;
+                            if (si) si.readOnly = false;
+                            en && en.classList.remove('bg-light');
+                            si && si.classList.remove('bg-light');
+                        }
+                    }
+                } catch (e) {
+                    console.error('error applying readonly rule for ad size modal', e);
+                }
+
+                // Diagnostics (optional)
+                var inputs = modalEl.querySelectorAll('input, textarea, select');
+                console.group('Edit ad size diagnostics for ' + modalEl.id);
+                inputs.forEach(function(inp, idx){
+                    try {
+                        var cs = window.getComputedStyle(inp);
+                        console.log(idx, inp.name || inp.id || inp.tagName, {
+                            disabled: inp.disabled,
+                            readOnly: inp.readOnly,
+                            value: inp.value,
+                            tabIndex: inp.tabIndex,
+                            display: cs.display,
+                            visibility: cs.visibility,
+                            pointerEvents: cs.pointerEvents,
+                            opacity: cs.opacity
+                        });
+
+                        var rect = inp.getBoundingClientRect();
+                        var x = Math.round(rect.left + rect.width/2);
+                        var y = Math.round(rect.top + rect.height/2);
+                        var topEl = document.elementFromPoint(x, y);
+                        console.log(' elementFromPoint center ->', topEl, topEl && topEl.className, topEl && topEl.id);
+                    } catch (e) {
+                        console.error('diagnostic error for input', inp, e);
+                    }
+                });
+                console.groupEnd();
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function(){
+                try {
+                    var en = modalEl.querySelector('input[name="advertisement_size_en"]');
+                    var si = modalEl.querySelector('input[name="advertisement_size_si"]');
+                    if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
+                    if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
+                } catch (e) { /* ignore */ }
+            });
+        });
+    });
+    </script>
+    @endpush
 </div>
 @endsection
