@@ -1149,9 +1149,24 @@ class GeneralController extends Controller
                 foreach ($criteriaInput as $criteriaId => $criteriaValue) {
                     // normalize scalar values
                     if (is_array($criteriaValue)) {
-                        $value = implode(', ', $criteriaValue);
+                        $value = implode(', ', array_filter($criteriaValue, static fn ($item) => filled($item)));
                     } else {
                         $value = $criteriaValue;
+                    }
+
+                    if (is_string($value)) {
+                        $value = trim($value);
+                    }
+
+                    // Skip empty values so we do not violate the NOT NULL column constraint.
+                    // If an existing value was previously saved, remove it to keep the data clean.
+                    if (!filled($value)) {
+                        DB::table('advertisement_criteria_values')
+                            ->where('advertisement_id', $id)
+                            ->where('advertisement_criteria_id', $criteriaId)
+                            ->delete();
+
+                        continue;
                     }
 
                     $existing = DB::table('advertisement_criteria_values')

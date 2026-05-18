@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>Advertisement Details</h2>
 
-```
+
 <div class="card">
     <div class="card-body">
 
@@ -94,7 +94,7 @@
 <a href="{{ url('/advertisements') }}" class="btn btn-secondary mt-3">
     Back to All Ads
 </a>
-```
+
 
 </div>
 @endsection
