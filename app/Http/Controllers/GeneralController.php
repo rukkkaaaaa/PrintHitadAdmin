@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use ZipArchive;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use ZipStream\ZipStream;
 
 class GeneralController extends Controller
 {
@@ -1044,6 +1044,7 @@ class GeneralController extends Controller
                 'customers.address',
                 'customers.telephone',
                 'customers.email',
+                'customers.nic_passport',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 'districts.district_name_en as district_name',
                 'cities.city_name_en as city_name',
@@ -1058,23 +1059,130 @@ class GeneralController extends Controller
             abort(404);
         }
 
-        // ✅ Generate PDF
-        $pdf = Pdf::loadView('advertisements.pdf', compact('ad'));
+        $criterias = DB::table('advertisement_criterias')
+            ->where('category_id', $ad->category_id)
+            ->where('is_active', 1)
+            ->get();
 
-        $pdfPath = storage_path("app/public/ad_{$id}.pdf");
-        file_put_contents($pdfPath, $pdf->output());
+        $criteriaValuesRaw = DB::table('advertisement_criteria_values')
+            ->where('advertisement_id', $id)
+            ->get();
 
-        // ✅ Create ZIP
-        $zipPath = storage_path("app/public/ad_{$id}.zip");
-
-        $zip = new ZipArchive;
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-            $zip->addFile($pdfPath, "advertisement_{$id}.pdf");
-            $zip->close();
+        $criteriaValues = [];
+        foreach ($criteriaValuesRaw as $cv) {
+            $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
         }
 
-        // ✅ Download ZIP
-        return response()->download($zipPath)->deleteFileAfterSend(true);
+        $images = DB::table('advertisement_images')
+            ->where('advertisement_id', $id)
+            ->where('is_active', 1)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $pdfBytes = Pdf::loadView('advertisements.pdf', compact('ad', 'criterias', 'criteriaValues'))->output();
+        $zipName = "advertisement_{$id}.zip";
+
+        return response()->streamDownload(function () use ($id, $pdfBytes, $images) {
+            $zip = new ZipStream(
+                sendHttpHeaders: false,
+                outputName: "advertisement_{$id}.zip"
+            );
+
+            $zip->addFile(
+                fileName: "advertisement_{$id}.pdf",
+                data: $pdfBytes
+            );
+
+            foreach ($images as $index => $image) {
+                $source = $this->resolveAdvertisementImageSource($image->img_url ?? null);
+
+                if (!$source) {
+                    continue;
+                }
+
+                $imageData = @file_get_contents($source);
+                if ($imageData === false) {
+                    continue;
+                }
+
+                $zip->addFile(
+                    fileName: $this->buildAdvertisementImageZipName($image->img_url ?? null, $index + 1),
+                    data: $imageData
+                );
+            }
+
+            $zip->finish();
+        }, $zipName, [
+            'Content-Type' => 'application/zip',
+        ]);
+    }
+
+    private function resolveAdvertisementImageSource(?string $imgUrl): ?string
+    {
+        if (!$imgUrl) {
+            return null;
+        }
+
+        if (Str::startsWith($imgUrl, ['http://', 'https://'])) {
+            return $imgUrl;
+        }
+
+        if (file_exists($imgUrl)) {
+            return $imgUrl;
+        }
+
+        $normalized = ltrim($imgUrl, '/');
+
+        if (Str::startsWith($normalized, 'storage/')) {
+            $storageRelative = substr($normalized, strlen('storage/'));
+            $publicStoragePath = public_path('storage/' . $storageRelative);
+
+            if (file_exists($publicStoragePath)) {
+                return $publicStoragePath;
+            }
+
+            $appPublicPath = storage_path('app/public/' . $storageRelative);
+            if (file_exists($appPublicPath)) {
+                return $appPublicPath;
+            }
+        }
+
+        $publicPath = public_path($normalized);
+        if (file_exists($publicPath)) {
+            return $publicPath;
+        }
+
+        $appPublicPath = storage_path('app/public/' . $normalized);
+        if (file_exists($appPublicPath)) {
+            return $appPublicPath;
+        }
+
+        try {
+            if (Storage::disk('oracle')->exists($imgUrl)) {
+                return Storage::disk('oracle')->path($imgUrl);
+            }
+        } catch (\Throwable $e) {
+            // Ignore storage lookup failures and fall back to URL-style handling below.
+        }
+
+        if (filter_var($imgUrl, FILTER_VALIDATE_URL)) {
+            return $imgUrl;
+        }
+
+        return null;
+    }
+
+    private function buildAdvertisementImageZipName(?string $imgUrl, int $index): string
+    {
+        $path = $imgUrl ? (parse_url($imgUrl, PHP_URL_PATH) ?: $imgUrl) : '';
+        $basename = pathinfo($path, PATHINFO_BASENAME);
+        $extension = pathinfo($basename, PATHINFO_EXTENSION);
+
+        if (!$basename) {
+            $basename = 'image_' . $index . ($extension ? '.' . $extension : '.jpg');
+        }
+
+        return 'images/' . sprintf('%02d_%s', $index, $basename);
     }
     public function editAdvertisement($id)
     {
