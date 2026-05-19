@@ -11,6 +11,15 @@ use Illuminate\Support\Str;
 
 class GeneralController extends Controller
 {
+    public function getMembers()
+    {
+        $members = DB::table('customers')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('members.index', compact('members'));
+    }
+
     public function getCategories()
     {
         $categories = DB::table('categories')->get();

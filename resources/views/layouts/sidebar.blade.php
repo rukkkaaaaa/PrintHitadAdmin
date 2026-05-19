@@ -174,5 +174,12 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('members') ? 'active' : '' }}">
+      <a href="{{ url('/members') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-group"></i>
+        <div>List Member</div>
+      </a>
+    </li>
+
   </ul>
 </aside>
