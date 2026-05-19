@@ -74,8 +74,8 @@
             <div class="row">
                 @foreach($criterias as $crit)
                     @php
-                        // For Hitad Print we prefer English labels (controller doesn't differentiate here)
-                        $critLabel = trim($crit->advertisement_criteria_name_en ?? '');
+                        // Use Sinhala labels for Lahipita publication, otherwise English
+                        $critLabel = trim((($ad->publication ?? '') === 'lahipita') ? ($crit->advertisement_criteria_name_si ?? '') : ($crit->advertisement_criteria_name_en ?? ''));
                         $value = $criteriaValues[$crit->id] ?? null;
                     @endphp
 

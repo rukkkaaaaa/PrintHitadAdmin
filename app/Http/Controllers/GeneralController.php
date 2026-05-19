@@ -928,8 +928,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'districts.district_name_si as district_name',
+                'cities.city_name_si as city_name',
 
                 'payments.payment_status',
             )
@@ -974,8 +974,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'districts.district_name_si as district_name',
+                'cities.city_name_si as city_name',
 
                 'payments.amount',
                 'payments.payment_date',
@@ -1014,8 +1014,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'districts.district_name_si as district_name',
+                'cities.city_name_si as city_name',
 
                 'payments.amount',
                 'payments.payment_date',
@@ -1208,6 +1208,24 @@ class GeneralController extends Controller
         $districts = DB::table('districts')->where('is_active', 1)->get();
         $cities = DB::table('cities')->where('is_active', 1)->get();
 
+        // If this advertisement is for Lahipita, load Sinhala names into the fields
+        // the view expects (which currently use *_en properties). This keeps the
+        // view unchanged while showing Sinhala labels for Lahipita edits.
+        if (!empty($ad) && ($ad->publication ?? '') === 'lahipita') {
+            foreach ($categories as $cat) {
+                // override the English label with Sinhala when available
+                $cat->category_name_en = trim($cat->category_name_si ?? '') !== '' ? $cat->category_name_si : ($cat->category_name_en ?? '');
+            }
+
+            foreach ($districts as $d) {
+                $d->district_name_en = trim($d->district_name_si ?? '') !== '' ? $d->district_name_si : ($d->district_name_en ?? '');
+            }
+
+            foreach ($cities as $c) {
+                $c->city_name_en = trim($c->city_name_si ?? '') !== '' ? $c->city_name_si : ($c->city_name_en ?? '');
+            }
+        }
+
         // Load category-specific criterias and options
         $criterias = DB::table('advertisement_criterias')
             ->where('category_id', $ad->category_id)
@@ -1248,7 +1266,18 @@ class GeneralController extends Controller
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'required|exists:cities,id',
-            'publish_date' => 'required|date',
+            'publish_date' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) use ($id) {
+                    $ad = DB::table('advertisements')->where('id', $id)->first();
+                    if ($ad && in_array($ad->publication ?? '', ['lahipita', 'hitad_print', 'hitad'])) {
+                        if (\Illuminate\Support\Carbon::parse($value)->dayOfWeek !== \Illuminate\Support\Carbon::SUNDAY) {
+                            $fail('The publish date must be a Sunday.');
+                        }
+                    }
+                },
+            ],
             'web_combined_ad' => 'required|boolean',
             'status' => 'required|boolean',
             'payment_status' => 'nullable|in:pending,completed,failed',

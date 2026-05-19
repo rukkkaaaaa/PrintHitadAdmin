@@ -52,20 +52,30 @@
                         {{-- Category should show but not be editable --}}
                             @php
                                 $cat = $categories->firstWhere('id', $ad->category_id);
-                                // Show only English name
-                                $catLabel = trim($cat->category_name_en ?? '');
+                                // If this is a Lahipita ad prefer Sinhala labels, otherwise English
+                                if (trim($ad->publication ?? '') === 'lahipita') {
+                                    $catLabel = trim($cat->category_name_si ?? '');
+                                    $catFallback = '(no Sinhala name)';
+                                } else {
+                                    $catLabel = trim($cat->category_name_en ?? '');
+                                    $catFallback = '(no English name)';
+                                }
                             @endphp
-                            <input type="text" class="form-control" value="{{ $catLabel ?: '(no English name)' }}" disabled>
+                            <input type="text" class="form-control" value="{{ $catLabel ?: $catFallback }}" disabled>
                         <input type="hidden" name="category_id" value="{{ $ad->category_id }}">
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">District</label>
-                        <select name="district_id" class="form-select">
+                        <select name="district_id" id="district_id" class="form-select">
                             @foreach($districts as $d)
                                 @php
-                                    // Show only English district names
-                                    $distLabel = trim($d->district_name_en ?? '');
+                                    // Use Sinhala labels for Lahipita, otherwise English
+                                    if (trim($ad->publication ?? '') === 'lahipita') {
+                                        $distLabel = trim($d->district_name_si ?? '');
+                                    } else {
+                                        $distLabel = trim($d->district_name_en ?? '');
+                                    }
                                 @endphp
                                 @if(trim($distLabel) !== '')
                                     <option value="{{ $d->id }}" {{ old('district_id', $ad->district_id) == $d->id ? 'selected' : '' }}>
@@ -78,25 +88,40 @@
 
                     <div class="col-md-6">
                         <label class="form-label">City</label>
-                        <select name="city_id" class="form-select">
+                        <select name="city_id" id="city_id" class="form-select">
                             @foreach($cities as $c)
                                     @php
-                                        // Show only English city names
-                                        $cityLabel = trim($c->city_name_en ?? '');
-                                @endphp
-                                @if(trim($cityLabel) !== '')
-                                    <option value="{{ $c->id }}" {{ old('city_id', $ad->city_id) == $c->id ? 'selected' : '' }}>
-                                        {{ $cityLabel }}
-                                    </option>
-                                @endif
+                                        // Use Sinhala labels for Lahipita, otherwise English
+                                        if (trim($ad->publication ?? '') === 'lahipita') {
+                                            $cityLabel = trim($c->city_name_si ?? '');
+                                        } else {
+                                            $cityLabel = trim($c->city_name_en ?? '');
+                                        }
+                                    @endphp
+                                    @if(trim($cityLabel) !== '')
+                                        <option value="{{ $c->id }}" data-district="{{ $c->district_id }}" {{ old('city_id', $ad->city_id) == $c->id ? 'selected' : '' }}>
+                                            {{ $cityLabel }}
+                                        </option>
+                                    @endif
                             @endforeach
                         </select>
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Publish Date</label>
+                        @php
+                            $isSundayPub = in_array($ad->publication ?? '', ['lahipita', 'hitad_print', 'hitad']);
+                            $today = \Illuminate\Support\Carbon::today();
+                            $minSunday = $today->isSunday() ? $today : $today->copy()->next(\Illuminate\Support\Carbon::SUNDAY);
+                        @endphp
                         <input type="date" name="publish_date" class="form-control"
-                               value="{{ old('publish_date', \Illuminate\Support\Carbon::parse($ad->publish_date)->format('Y-m-d')) }}">
+                               value="{{ old('publish_date', \Illuminate\Support\Carbon::parse($ad->publish_date)->format('Y-m-d')) }}"
+                               @if($isSundayPub)
+                               min="{{ $minSunday->format('Y-m-d') }}" step="7"
+                               @endif>
+                        @error('publish_date')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
                     </div>
 
 
@@ -157,8 +182,12 @@
                         @foreach($criterias as $crit)
                             <div class="col-12">
                                         @php
-                                            // Show only English criteria labels
-                                            $critLabel = trim($crit->advertisement_criteria_name_en ?? '');
+                                            // Use Sinhala labels for Lahipita edits, otherwise English
+                                            if (trim($ad->publication ?? '') === 'lahipita') {
+                                                $critLabel = trim($crit->advertisement_criteria_name_si ?? '');
+                                            } else {
+                                                $critLabel = trim($crit->advertisement_criteria_name_en ?? '');
+                                            }
                                         @endphp
                                 <label class="form-label">{{ $critLabel }}</label>
 
@@ -174,11 +203,15 @@
                                     <select name="criteria[{{ $crit->id }}]" class="form-select">
                                         <option value="">-- Select --</option>
                                         @foreach($options as $opt)
-                                                @php
-                                                    // Show only English option labels/values
-                                                    $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
-                                                    $optValue = $optLabel;
-                                                @endphp
+                                                    @php
+                                                        // Use Sinhala option labels for Lahipita edits, otherwise English
+                                                        if (trim($ad->publication ?? '') === 'lahipita') {
+                                                            $optLabel = trim($opt->advertisement_criteria_option_name_si ?? '');
+                                                        } else {
+                                                            $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
+                                                        }
+                                                        $optValue = $optLabel;
+                                                    @endphp
                                             @if(trim($optLabel) !== '')
                                                 <option value="{{ $optValue }}" {{ (old('criteria.' . $crit->id, $existing) == $optValue) ? 'selected' : '' }}>
                                                     {{ $optLabel }}
@@ -190,17 +223,21 @@
                                 @elseif($crit->field_type === 'radio')
                                     <div>
                                         @foreach($options as $opt)
-                                                @php
-                                                    // Show only English option labels/values
-                                                    $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
-                                                    $optValue = $optLabel;
-                                                @endphp
-                                            @if(trim($optLabel) !== '')
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="radio" name="criteria[{{ $crit->id }}]" id="crit_{{ $crit->id }}_{{ $opt->id }}" value="{{ $optValue }}" {{ (old('criteria.' . $crit->id, $existing) == $optValue) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="crit_{{ $crit->id }}_{{ $opt->id }}">{{ $optLabel }}</label>
-                                                </div>
-                                            @endif
+                                                    @php
+                                                        // Use Sinhala option labels for Lahipita edits, otherwise English
+                                                        if (trim($ad->publication ?? '') === 'lahipita') {
+                                                            $optLabel = trim($opt->advertisement_criteria_option_name_si ?? '');
+                                                        } else {
+                                                            $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
+                                                        }
+                                                        $optValue = $optLabel;
+                                                    @endphp
+                                                @if(trim($optLabel) !== '')
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="criteria[{{ $crit->id }}]" id="crit_{{ $crit->id }}_{{ $opt->id }}" value="{{ $optValue }}" {{ (old('criteria.' . $crit->id, $existing) == $optValue) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="crit_{{ $crit->id }}_{{ $opt->id }}">{{ $optLabel }}</label>
+                                                    </div>
+                                                @endif
                                         @endforeach
                                     </div>
                                 @endif
@@ -216,5 +253,62 @@
             </div>
         </div>
     </form>
-</div>
+                </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var districtSelect = document.getElementById('district_id');
+                    var citySelect = document.getElementById('city_id');
+                    if (!districtSelect || !citySelect) return;
+
+                    var adCityId = '{{ old('city_id', $ad->city_id) }}';
+                    var adDistrictId = '{{ old('district_id', $ad->district_id) }}';
+
+                    function filterCities() {
+                        var districtId = districtSelect.value;
+                        var options = citySelect.querySelectorAll('option');
+                        var found = false;
+                        options.forEach(function(opt){
+                            // always keep the advertisement's current city option visible so it stays selected
+                            if (opt.value == adCityId) {
+                                opt.style.display = '';
+                                opt.disabled = false;
+                                opt.selected = true;
+                                found = true;
+                                return;
+                            }
+
+                            if (opt.dataset.district == districtId) {
+                                opt.style.display = '';
+                                opt.disabled = false;
+                            } else {
+                                opt.style.Display = opt.style.display; // noop to keep formatting
+                                opt.style.display = 'none';
+                                opt.disabled = true;
+                                opt.selected = false;
+                            }
+                        });
+
+                        if (!found) {
+                            // if ad city wasn't present (or wasn't in the district), select the first visible option
+                            for (var i=0;i<options.length;i++){
+                                if (options[i].style.display !== 'none') { options[i].selected = true; break; }
+                            }
+                        }
+                    }
+
+                    // ensure district is set to the ad's district on load (preserve selection)
+                    if (adDistrictId && districtSelect.value !== adDistrictId) {
+                        districtSelect.value = adDistrictId;
+                    }
+
+                    // initial filter on page load
+                    filterCities();
+
+                    districtSelect.addEventListener('change', function(){
+                        filterCities();
+                    });
+                });
+                </script>
+
 @endsection
