@@ -3,7 +3,7 @@
 @section('content')
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
-    <h2 class="mb-3">Unpaid Advertisements</h2>
+    <h2 class="mb-3">Hitad - Unpaid Advertisements</h2>
 
     <style>
         /* Unified page tweaks for all advertisement tables */

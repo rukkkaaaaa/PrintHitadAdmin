@@ -30,8 +30,15 @@
       </a>
     </li>
 
+    <!-- <li class="menu-item {{ request()->is('all-print-ads') ? 'active' : '' }}">
+      <a href="{{ url('/all-print-ads') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-news"></i>
+        <div>All Print Ads</div>
+      </a>
+    </li> -->
+
     <!-- ================= HITAD PRINT ================= -->
-    <li class="menu-item {{ request()->is('advertisements*') ? 'active open' : '' }}">
+    <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-dock-top"></i>
         <div>Hitad Print</div>
@@ -39,17 +46,17 @@
       <ul class="menu-sub">
         <li class="menu-item {{ request()->is('advertisements/paid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/paid') }}" class="menu-link">
-            <div>Print Paid</div>
+            <div>Hitad Paid Ads</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/unpaid') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/unpaid') }}" class="menu-link">
-            <div>Print Unpaid</div>
+            <div>Hitad Unpaid Ads</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements') ? 'active' : '' }}">
           <a href="{{ url('/advertisements') }}" class="menu-link">
-            <div>Print All Ads</div>
+            <div>Hitad All Ads</div>
           </a>
         </li>
       </ul>

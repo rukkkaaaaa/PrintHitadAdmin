@@ -151,6 +151,8 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     | Advertisements
     |--------------------------------------------------------------------------
     */
+    Route::get('/all-print-ads', [GeneralController::class, 'getAllPrintAdvertisements']);
+
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
 
     Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);

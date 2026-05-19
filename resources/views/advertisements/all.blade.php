@@ -1,10 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
-    <h2 class="mb-3">Hitad - Paid Advertisements</h2>
+    <h2 class="mb-3">All Print Advertisements</h2>
 
     <style>
         /* Unified page tweaks for all advertisement tables */
@@ -18,13 +17,15 @@
         .search-input .form-control { border-right: 0; }
         .search-input .input-group-text { background: transparent; border-left: 0; }
         .table-responsive { padding: 0.75rem 1rem; }
-        @media (max-width: 767px) { .action-btns .btn { margin-bottom: .35rem; } }
+        @media (max-width: 767px) {
+            .action-btns .btn { margin-bottom: .35rem; }
+        }
     </style>
 
     <!-- Search + actions -->
     <div class="row mb-3">
         <div class="col-md-8 col-sm-12 mb-2">
-            <form action="{{ url('/advertisements/paid') }}" method="GET">
+            <form action="{{ url('/all-print-ads') }}" method="GET">
                 <div class="input-group search-input">
                     <span class="input-group-text"><i class="bx bx-search"></i></span>
                     <input type="text" name="search" class="form-control"
@@ -54,13 +55,12 @@
                     <th>Customer</th>
                     <th>Category</th>
                     <th>Description</th>
+                    <th>Publication</th>
                     <th>District</th>
                     <th>City</th>
-                    <th>Publication</th>
-                    <th>Amount</th>
-                    <th>Payment Method</th>
-                    <th>Payment Date</th>
-                    <th>Payment Status</th>
+                    <th>Publish Date</th>
+                    <th>Status</th>
+                    <th>Payment</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -76,23 +76,24 @@
                             {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
                         </td>
 
+                        <td>{{ $ad->publication_label ?? $ad->publication }}</td>
                         <td>{{ $ad->district_name }}</td>
                         <td>{{ $ad->city_name }}</td>
 
-                        <td>{{ $ad->publication }}</td>
+                        <td>{{ $ad->publish_date }}</td>
 
-                        <td>Rs. {{ number_format($ad->amount, 2) }}</td>
+                        <td>
+                            @if($ad->status == 1)
+                                <span class="badge bg-success badge-pill text-uppercase">Active</span>
+                            @else
+                                <span class="badge bg-danger badge-pill text-uppercase">Inactive</span>
+                            @endif
+                        </td>
 
-                        <td>{{ $ad->payment_method }}</td>
-
-                        <td>{{ $ad->payment_date }}</td>
-
-                        {{-- PAYMENT STATUS --}}
                         <td>
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
-                        {{-- ACTIONS --}}
                         <td class="action-btns">
                             <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
                                 <i class="bx bx-show"></i>
@@ -110,20 +111,17 @@
 
                 @empty
                     <tr>
-                        <td colspan="12" class="text-center text-muted">
-                            No paid advertisements found.
+                        <td colspan="11" class="text-center text-muted">
+                            No advertisements found.
                         </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
 
-        {{-- Pagination --}}
-        @if(method_exists($ads, 'links'))
-            <div class="mt-3 px-3">
-                {{ $ads->links() }}
-            </div>
-        @endif
+        <div class="mt-3 px-3">
+            {{ $ads->links() }}
+        </div>
 
         </div>
       </div>
@@ -132,7 +130,6 @@
 </div>
 </div>
 
-{{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
 <script>
 function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {

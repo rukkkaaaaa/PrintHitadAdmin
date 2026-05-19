@@ -688,6 +688,44 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'City updated successfully!');
     }
     // GET: Show all advertisements
+    public function getAllPrintAdvertisements(Request $request)
+    {
+        $query = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->select(
+                'advertisements.*',
+                'customers.customer_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'payments.payment_status',
+                DB::raw("CASE
+                    WHEN advertisements.publication = 'hitad_print' THEN 'Hitad Print'
+                    WHEN advertisements.publication = 'lahipita' THEN 'Lahipita Print'
+                    ELSE advertisements.publication
+                END as publication_label")
+            );
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only('search'));
+
+        return view('advertisements.all', compact('ads'))
+            ->with('search', $request->search);
+    }
+
     public function getAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -704,9 +742,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.payment_status',
             )
@@ -758,9 +796,9 @@ class GeneralController extends Controller
                 'customers.email',
                 'customers.nic_passport',
 
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 // ✅ Payment fields
                 'payments.amount',
@@ -820,9 +858,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.amount',
                 'payments.payment_date',
@@ -860,9 +898,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.amount',
                 'payments.payment_date',
@@ -889,9 +927,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.payment_status',
             )
@@ -935,9 +973,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.amount',
                 'payments.payment_date',
@@ -975,9 +1013,9 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
-                'categories.category_name_en as category_name',
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
 
                 'payments.amount',
                 'payments.payment_date',
@@ -1006,7 +1044,7 @@ class GeneralController extends Controller
                 'customers.address',
                 'customers.telephone',
                 'customers.email',
-                'categories.category_name_en as category_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 'districts.district_name_en as district_name',
                 'cities.city_name_en as city_name',
                 'payments.amount',
@@ -1139,17 +1177,41 @@ class GeneralController extends Controller
                 'updated_at' => now(),
             ]);
 
-            if ($payment && $request->filled('payment_status')) {
-                DB::table('payments')
-                    ->where('id', $payment->id)
-                    ->update(array_filter([
-                        'payment_status' => $request->payment_status,
-                        'is_success' => $request->payment_status === 'completed' ? 'true' : 'false',
-                        'payment_date' => $request->filled('payment_date')
-                            ? \Illuminate\Support\Carbon::createFromFormat('Y-m-d\TH:i', $request->payment_date)->format('Y-m-d H:i:s')
-                            : $payment->payment_date,
+            if ($request->filled('payment_status')) {
+                $paymentStatus = $request->payment_status;
+                $isSuccess = $paymentStatus === 'completed' ? 'true' : 'false';
+
+                if ($request->filled('payment_date')) {
+                    $paymentDate = \Illuminate\Support\Carbon::createFromFormat('Y-m-d\TH:i', $request->payment_date)->format('Y-m-d H:i:s');
+                } elseif ($paymentStatus === 'completed') {
+                    // if status is completed and no date provided, set now (or keep existing)
+                    $paymentDate = $payment && !empty($payment->payment_date) ? $payment->payment_date : now()->format('Y-m-d H:i:s');
+                } else {
+                    $paymentDate = $payment ? $payment->payment_date : null;
+                }
+
+                $data = array_filter([
+                    'payment_status' => $paymentStatus,
+                    'is_success' => $isSuccess,
+                    'payment_date' => $paymentDate,
+                    'updated_at' => now(),
+                ], static fn ($value) => $value !== null);
+
+                if ($payment) {
+                    DB::table('payments')->where('id', $payment->id)->update($data);
+                } else {
+                    // create a minimal payment record when none exists
+                    $insert = [
+                        'advertisement_id' => $id,
+                        'payment_status' => $paymentStatus,
+                        'is_success' => $isSuccess,
+                        'payment_date' => $paymentDate,
+                        'created_at' => now(),
                         'updated_at' => now(),
-                    ], static fn ($value) => $value !== null));
+                    ];
+
+                    DB::table('payments')->insert($insert);
+                }
             }
 
             // Process advertisement criterias (if any)
