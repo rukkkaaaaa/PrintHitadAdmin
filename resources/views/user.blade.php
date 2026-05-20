@@ -29,17 +29,28 @@
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label>Name</label>
-                        <input type="text" name="name" class="form-control" required />
+                        <input type="text" name="name" class="form-control" value="{{ old('name') }}" required />
                     </div>
                     <div class="col-md-4 mb-3">
                         <label>Email</label>
-                        <input type="email" name="email" class="form-control" required />
+                        <input type="email" name="email" class="form-control" value="{{ old('email') }}" required />
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-4 mb-3">
+                        <label>Role</label>
+                        <select name="role" class="form-select" required>
+                            <option value="" disabled {{ old('role') ? '' : 'selected' }}>Select role</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role }}" {{ old('role', 'reporting') === $role ? 'selected' : '' }}>{{ $role }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label>Password</label>
                         <input type="password" name="password" class="form-control" required />
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label>Confirm</label>
                         <input type="password" name="password_confirmation" class="form-control" required />
                     </div>
@@ -59,6 +70,7 @@
                         <th>#</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Role</th>
                         <th>Created At</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -69,6 +81,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
+                            <td>{{ $user->role ?? 'N/A' }}</td>
                             <td>{{ \Carbon\Carbon::parse($user->created_at)->format('Y-m-d H:i') }}</td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm btn-warning me-1" data-bs-toggle="modal" data-bs-target="#editUser{{ $user->id }}">Edit</button>
@@ -80,7 +93,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">No users found.</td>
+                            <td colspan="6">No users found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -108,6 +121,16 @@
                             <div class="mb-3">
                                 <label>Email</label>
                                 <input type="email" name="email" class="form-control" value="{{ $user->email }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Role</label>
+                                <select name="role" class="form-select" required>
+                                    <option value="" disabled>Select role</option>
+                                    @foreach($roles as $role)
+                                        <option value="{{ $role }}" {{ $user->role === $role ? 'selected' : '' }}>{{ $role }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="mb-3">

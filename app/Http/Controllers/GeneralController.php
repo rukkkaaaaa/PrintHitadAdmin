@@ -444,6 +444,83 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement size updated successfully!');
     }
 
+        // GET: Show ad rates (read table structure and rows)
+        public function getAdRates()
+        {
+            // get columns from the ad_rates table
+            $columns = DB::select('SHOW COLUMNS FROM ad_rates');
+
+            // get existing rates with readable labels for related IDs
+            $adRates = DB::table('ad_rates as ar')
+                ->leftJoin('categories as c', 'ar.category_id', '=', 'c.id')
+                ->leftJoin('advertisement_types as at', 'ar.advertisement_type_id', '=', 'at.id')
+                ->leftJoin('advertisement_sizes as asz', 'ar.advertisement_size_id', '=', 'asz.id')
+                ->select(
+                    'ar.*',
+                    DB::raw("COALESCE(c.category_name_en, c.category_name_si) as category_name"),
+                    DB::raw("COALESCE(at.advertisement_type_en, at.advertisement_type_si) as advertisement_type_name"),
+                    DB::raw("COALESCE(asz.advertisement_size_en, asz.advertisement_size_si) as advertisement_size_name")
+                )
+                ->orderBy('ar.id', 'asc')
+                ->get();
+
+            // fetch lookup data for dropdowns
+            $categoriesEn = DB::table('categories')
+                ->where('is_active', 1)
+                ->whereNotNull('category_name_en')
+                ->where('category_name_en', '!=', '')
+                ->orderBy('category_name_en')
+                ->get();
+
+            $categoriesSi = DB::table('categories')
+                ->where('is_active', 1)
+                ->whereNotNull('category_name_si')
+                ->where('category_name_si', '!=', '')
+                ->orderBy('category_name_si')
+                ->get();
+
+            return view('adrates.index', compact('columns', 'adRates', 'categoriesEn', 'categoriesSi'));
+        }
+
+        // POST: Add new ad rate
+        public function addAdRate(Request $request)
+        {
+            // Basic validation for the dropdowns we added
+            $request->validate([
+                'category_id' => 'required|integer|exists:categories,id',
+                'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
+                'advertisement_size_id' => 'required|integer|exists:advertisement_sizes,id',
+                'publication' => 'required|in:hitad_print,lahipita',
+            ]);
+
+            // get column list so we know which inputs to accept
+            $columns = DB::select('SHOW COLUMNS FROM ad_rates');
+
+            $data = [];
+
+            foreach ($columns as $col) {
+                $field = $col->Field;
+
+                if (in_array($field, ['id', 'created_at', 'updated_at'])) {
+                    // skip auto fields
+                    continue;
+                }
+
+                // use request value when present, otherwise default
+                if ($request->has($field)) {
+                    $data[$field] = $request->input($field);
+                } elseif (!is_null($col->Default)) {
+                    $data[$field] = $col->Default;
+                } else {
+                    $data[$field] = null;
+                }
+            }
+
+            DB::table('ad_rates')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+
+            return redirect()->back()->with('success', 'Ad rate added successfully!');
+        }
+
     private function resolveAdSizeImageUrl(?string $imgUrl): ?string
     {
         if (!$imgUrl) {

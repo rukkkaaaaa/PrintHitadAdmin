@@ -181,6 +181,13 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('adrates') ? 'active' : '' }}">
+      <a href="{{ url('/adrates') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-table"></i>
+        <div>Ad Rates</div>
+      </a>
+    </li>
+
     <li class="menu-item {{ request()->is('users') ? 'active' : '' }}">
       <a href="{{ url('/users') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-user"></i>

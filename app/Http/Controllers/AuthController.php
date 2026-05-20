@@ -11,6 +11,13 @@ use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+    private const USER_ROLES = [
+        'super admin',
+        'Advertice admin',
+        'site admin',
+        'reporting',
+    ];
+
     public function showLogin()
     {
         return view('login');
@@ -27,6 +34,7 @@ class AuthController extends Controller
         $email = $request->input('email');
         $password = $request->input('password');
         $password_confirmation = $request->input('password_confirmation');
+        $role = 'reporting';
 
         if ($password !== $password_confirmation) {
             return redirect('/register')->with('error', 'Passwords do not match.');
@@ -40,9 +48,10 @@ class AuthController extends Controller
         $hashedPassword = Hash::make($password);
         $timestamp = Carbon::now();
 
-        DB::insert("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)", [
+        DB::insert("INSERT INTO users (name, email, role, password, created_at) VALUES (?, ?, ?, ?, ?)", [
             $name,
             $email,
+            $role,
             $hashedPassword,
             $timestamp
         ]);
@@ -65,7 +74,8 @@ class AuthController extends Controller
         Session::put('user', [
             'id' => $user[0]->id,
             'name' => $user[0]->name,
-            'email' => $user[0]->email
+            'email' => $user[0]->email,
+            'role' => $user[0]->role ?? null,
         ]);
 
         return redirect('/dashboard');
@@ -85,6 +95,7 @@ class AuthController extends Controller
         if ($request->isMethod('post')) {
             $name = $request->input('name');
             $email = $request->input('email');
+            $role = $request->input('role');
             $password = $request->input('password');
             $password_confirmation = $request->input('password_confirmation');
 
@@ -97,9 +108,14 @@ class AuthController extends Controller
                 return back()->with('error', 'Email already exists.');
             }
 
-            DB::insert("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)", [
+            if (!in_array($role, self::USER_ROLES, true)) {
+                return back()->with('error', 'Please select a valid user role.');
+            }
+
+            DB::insert("INSERT INTO users (name, email, role, password, created_at) VALUES (?, ?, ?, ?, ?)", [
                 $name,
                 $email,
+                $role,
                 Hash::make($password),
                 Carbon::now()
             ]);
@@ -108,13 +124,14 @@ class AuthController extends Controller
         }
 
         $users = DB::select("SELECT * FROM users ORDER BY created_at DESC");
+        $roles = self::USER_ROLES;
 
         $editUser = null;
         if ($request->filled('edit')) {
             $editUser = DB::table('users')->where('id', $request->query('edit'))->first();
         }
 
-        return view('user', compact('users', 'editUser'));
+        return view('user', compact('users', 'editUser', 'roles'));
     }
 
     public function updateUser(Request $request, $id)
@@ -122,6 +139,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
+            'role' => ['required', Rule::in(self::USER_ROLES)],
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
@@ -134,6 +152,7 @@ class AuthController extends Controller
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'role' => $request->role,
             'updated_at' => Carbon::now(),
         ];
 
@@ -148,6 +167,7 @@ class AuthController extends Controller
                 'id' => $id,
                 'name' => $request->name,
                 'email' => $request->email,
+                'role' => $request->role,
             ]);
         }
 
