@@ -23,25 +23,17 @@
 
     <!-- Search + actions -->
     <div class="row mb-3">
-        <div class="col-md-8 col-sm-12 mb-2">
-            <form action="{{ url('/advertisements/paid') }}" method="GET">
-                <div class="input-group search-input">
-                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                    <input type="text" name="search" class="form-control"
-                           placeholder="Search by ad title or customer name..."
-                           value="{{ request('search') }}">
-                    <button class="btn btn-primary" type="submit">Search</button>
-                </div>
-            </form>
+        <div class="col-12 mb-2">
+            @include('advertisements._filters', ['action' => url('/advertisements/paid')])
         </div>
-        <div class="col-md-4 col-sm-12 text-md-end text-sm-start">
+        <!-- <div class="col-md-4 col-sm-12 text-md-end text-sm-start">
             <a href="{{ url('/advertisements/create') }}" class="btn btn-success me-2">
                 <i class="bx bx-plus"></i> New Ad
             </a>
             <a href="#" class="btn btn-outline-secondary">
                 <i class="bx bx-cloud-download"></i> Export
             </a>
-        </div>
+        </div> -->
     </div>
 
     <div class="card ads-card">

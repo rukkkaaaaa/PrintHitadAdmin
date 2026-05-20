@@ -25,16 +25,8 @@
 
     <!-- Search + actions -->
     <div class="row mb-3">
-        <div class="col-md-8 col-sm-12 mb-2">
-            <form action="{{ url('/advertisements/lahipita/unpaid') }}" method="GET">
-                <div class="input-group search-input">
-                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                    <input type="text" name="search" class="form-control"
-                           placeholder="Search by ad title or customer name..."
-                           value="{{ request('search') }}">
-                    <button class="btn btn-primary" type="submit">Search</button>
-                </div>
-            </form>
+        <div class="col-12 mb-2">
+            @include('advertisements._filters', ['action' => url('/advertisements/lahipita/unpaid')])
         </div>
     </div>
 

@@ -711,19 +711,52 @@ class GeneralController extends Controller
                 END as publication_label")
             );
 
+        // legacy free-text search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
-                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
             });
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only('search'));
+        // advanced filters: category (name), publish date, title, customer name, phone, email
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
 
-        return view('advertisements.all', compact('ads'))
-            ->with('search', $request->search);
+        if ($request->filled('publish_date')) {
+            // filter by exact publish date (YYYY-MM-DD)
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+
+        // preserve all filter params in pagination links
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
+
+        return view('advertisements.all', compact('ads'));
     }
 
     public function getAdvertisements(Request $request)
@@ -752,20 +785,49 @@ class GeneralController extends Controller
             // ✅ 🔥 IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
-        // 🔍 Search
+        // legacy free-text search
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
-                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
             });
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only('search'));
+        // advanced filters
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
 
-        return view('advertisements.index', compact('ads'))
-            ->with('search', $request->search);
+        if ($request->filled('publish_date')) {
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
+
+        return view('advertisements.index', compact('ads'));
     }
 
 
@@ -837,9 +899,9 @@ class GeneralController extends Controller
         return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues'));
     }
 
-    public function getPaidAdvertisements()
+    public function getPaidAdvertisements(Request $request)
     {
-        $ads = DB::table('advertisements')
+        $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
@@ -866,16 +928,54 @@ class GeneralController extends Controller
                 'payments.payment_date',
                 'payments.payment_status',
                 'payment_methods.payment_method_name as payment_method'
-            )
+            );
 
-            ->orderBy('advertisements.id', 'desc')
-            ->get();
+        // apply filters (same as other lists)
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
+
+        if ($request->filled('publish_date')) {
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
 
         return view('advertisements.paid', compact('ads'));
     }
-    public function getUnpaidAdvertisements()
+    public function getUnpaidAdvertisements(Request $request)
     {
-        $ads = DB::table('advertisements')
+        $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
@@ -889,8 +989,8 @@ class GeneralController extends Controller
             ->where('advertisements.publication', 'hitad_print')
 
             // ✅ UNPAID LOGIC
-            ->where(function ($query) {
-                $query->whereNull('payments.id') // no payment
+            ->where(function ($q) {
+                $q->whereNull('payments.id') // no payment
                     ->orWhere('payments.payment_status', 'pending') // pending
                     ->orWhere('payments.payment_status', 'failed'); // failed
             })
@@ -908,8 +1008,48 @@ class GeneralController extends Controller
                 'payment_methods.payment_method_name as payment_method'
             )
 
-            ->orderBy('advertisements.id', 'desc')
-            ->get();
+            ;
+
+        // apply filters
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
+
+        if ($request->filled('publish_date')) {
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
 
         return view('advertisements.unpaid', compact('ads'));
     }
@@ -952,9 +1092,9 @@ class GeneralController extends Controller
         return view('advertisements.lahipita_all', compact('ads'))
             ->with('search', $request->search);
     }
-    public function getLahipitaPaidAdvertisements()
+    public function getLahipitaPaidAdvertisements(Request $request)
     {
-        $ads = DB::table('advertisements')
+        $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
@@ -981,16 +1121,54 @@ class GeneralController extends Controller
                 'payments.payment_date',
                 'payments.payment_status',
                 'payment_methods.payment_method_name as payment_method'
-            )
+            );
 
-            ->orderBy('advertisements.id', 'desc')
-            ->get();
+        // apply filters
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
+
+        if ($request->filled('publish_date')) {
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
 
         return view('advertisements.lahipita_paid', compact('ads'));
     }
-    public function getLahipitaUnpaidAdvertisements()
+    public function getLahipitaUnpaidAdvertisements(Request $request)
     {
-        $ads = DB::table('advertisements')
+        $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
@@ -1004,8 +1182,8 @@ class GeneralController extends Controller
             ->where('advertisements.publication', 'lahipita')
 
             // ✅ UNPAID LOGIC (IMPORTANT)
-            ->where(function ($query) {
-                $query->whereNull('payments.id')
+            ->where(function ($q) {
+                $q->whereNull('payments.id')
                     ->orWhere('payments.payment_status', 'pending')
                     ->orWhere('payments.payment_status', 'failed');
             })
@@ -1023,8 +1201,48 @@ class GeneralController extends Controller
                 'payment_methods.payment_method_name as payment_method'
             )
 
-            ->orderBy('advertisements.id', 'desc')
-            ->get();
+            ;
+
+        // apply filters
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%")
+                    ->orWhere('advertisements.ad_title', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->where(function($q) use ($cat) {
+                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
+
+        if ($request->filled('publish_date')) {
+            $query->whereDate('advertisements.publish_date', $request->publish_date);
+        }
+
+        if ($request->filled('title')) {
+            $query->where('advertisements.ad_title', 'LIKE', "%{$request->title}%");
+        }
+
+        if ($request->filled('customer_name')) {
+            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+        }
+
+        if ($request->filled('phone')) {
+            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+        }
+
+        if ($request->filled('email')) {
+            $query->where('customers.email', 'LIKE', "%{$request->email}%");
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads->appends($request->only(['search','category','publish_date','title','customer_name','phone','email']));
 
         return view('advertisements.lahipita_unpaid', compact('ads'));
     }
