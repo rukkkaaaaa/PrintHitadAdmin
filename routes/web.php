@@ -102,6 +102,10 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     // AJAX: get ad types for a category
     Route::get('/adtypes/by-category/{id}', [GeneralController::class, 'getAdTypesByCategory']);
+    // AJAX: get ad sizes for a type
+    Route::get('/adsizes/by-type/{id}', [GeneralController::class, 'getAdSizesByType']);
+    // AJAX: get criterias for a category
+    Route::get('/adcriterias/by-category/{id}', [GeneralController::class, 'getCriteriasByCategory']);
 
     /*
     |--------------------------------------------------------------------------
@@ -152,6 +156,9 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/all-print-ads', [GeneralController::class, 'getAllPrintAdvertisements']);
+
+    Route::get('/advertisements/create', [GeneralController::class, 'createAdvertisement']);
+    Route::post('/advertisements/store', [GeneralController::class, 'storeAdvertisement']);
 
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
 
