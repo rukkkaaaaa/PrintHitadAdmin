@@ -2,6 +2,7 @@
   @php
     $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
     $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole'], true);
+    $isSiteAdmin = $currentRole === 'site admin';
   @endphp
 
   <div class="app-brand demo">
@@ -28,6 +29,7 @@
     </li>
 
     @if($isReportingRole)
+    <!-- Reporting user menu: Dashboard + Reports only -->
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
       <a href="{{ url('/dashboard') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-home-circle"></i>
@@ -40,8 +42,74 @@
         <div>Get Reports</div>
       </a>
     </li>
-    @else
 
+    @elseif($isSiteAdmin)
+    <!-- Site admin menu: Dashboard + Admin configuration only -->
+    <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
+      <a href="{{ url('/dashboard') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-home-circle"></i>
+        <div>Dashboard</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
+      <a href="{{ url('/categories') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-category"></i>
+        <div>Ad Categories</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
+      <a href="{{ url('/adtypes') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-file"></i>
+        <div>Ad Type</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('adsizes') ? 'active' : '' }}">
+      <a href="{{ url('/adsizes') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-ruler"></i>
+        <div>Ad Size</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('tints') ? 'active' : '' }}">
+      <a href="{{ url('/tints') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-droplet"></i>
+        <div>Tints</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('adcriterias') ? 'active' : '' }}">
+      <a href="{{ url('/adcriterias') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-check-square"></i>
+        <div>Ad Criteria</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('adcriteria-options') ? 'active' : '' }}">
+      <a href="{{ url('/adcriteria-options') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-list-check"></i>
+        <div>Ad Criteria Options</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('districts') ? 'active' : '' }}">
+      <a href="{{ url('/districts') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-map"></i>
+        <div>Districts</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('cities') ? 'active' : '' }}">
+      <a href="{{ url('/cities') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-buildings"></i>
+        <div>Cities</div>
+      </a>
+    </li>
+
+    @else
+    <!-- Other roles (super admin, advertise admin, etc): Full menu -->
     <!-- Dashboard -->
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
       <a href="{{ url('/dashboard') }}" class="menu-link">
@@ -56,13 +124,6 @@
         <div>Add Advertisement</div>
       </a>
     </li>
-
-    <!-- <li class="menu-item {{ request()->is('all-print-ads') ? 'active' : '' }}">
-      <a href="{{ url('/all-print-ads') }}" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-news"></i>
-        <div>All Print Ads</div>
-      </a>
-    </li> -->
 
     <!-- ================= HITAD PRINT ================= -->
     <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
@@ -145,7 +206,7 @@
     </li>
 
     <!-- ================= MASTER DATA ================= -->
-     <li class="menu-item {{ request()->is('reports') ? 'active' : '' }}">
+    <li class="menu-item {{ request()->is('reports') ? 'active' : '' }}">
       <a href="{{ url('/reports') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
         <div>Get Reports</div>
