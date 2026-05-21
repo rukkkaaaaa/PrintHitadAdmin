@@ -125,6 +125,13 @@
     </li>
 
     <!-- ================= MASTER DATA ================= -->
+     <li class="menu-item {{ request()->is('reports') ? 'active' : '' }}">
+      <a href="{{ url('/reports') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+        <div>Get Reports</div>
+      </a>
+    </li>
+
     <li class="menu-item {{ request()->is('categories') ? 'active' : '' }}">
       <a href="{{ url('/categories') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-category"></i>
@@ -141,7 +148,7 @@
 
     <li class="menu-item {{ request()->is('adsizes') ? 'active' : '' }}">
       <a href="{{ url('/adsizes') }}" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-table"></i>
+        <i class="menu-icon tf-icons bx bx-ruler"></i>
         <div>Ad Size</div>
       </a>
     </li>

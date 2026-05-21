@@ -18,16 +18,32 @@ class AuthController extends Controller
         'reporting',
     ];
 
+    /**
+     * Show the login page.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showLogin()
     {
         return view('login');
     }
 
+    /**
+     * Show the registration page.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showRegister()
     {
         return view('register');
     }
 
+    /**
+     * Handle user registration. Validates passwords, checks for existing email and creates a new user.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function register(Request $request)
     {
         $name = $request->input('name');
@@ -59,6 +75,12 @@ class AuthController extends Controller
         return redirect('/login')->with('error', 'Registered successfully. Please login.');
     }
 
+    /**
+     * Authenticate user by email and password and store user info in session.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function login(Request $request)
     {
         $email = $request->input('email');
@@ -81,6 +103,12 @@ class AuthController extends Controller
         return redirect('/dashboard');
     }
 
+    /**
+     * Logout the current user by clearing and invalidating the session.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function logout(Request $request)
     {
         session()->flush(); // clear all session
@@ -90,6 +118,12 @@ class AuthController extends Controller
         return redirect('/login');
     }
 
+    /**
+     * Manage users page and handler. On GET shows users and optional edit; on POST creates a new user after validation.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
     public function manageUsers(Request $request)
     {
         if ($request->isMethod('post')) {
@@ -134,6 +168,13 @@ class AuthController extends Controller
         return view('user', compact('users', 'editUser', 'roles'));
     }
 
+    /**
+     * Update an existing user by id. Validates input and optionally updates the password.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function updateUser(Request $request, $id)
     {
         $request->validate([
@@ -174,6 +215,12 @@ class AuthController extends Controller
         return redirect('/users')->with('success', 'User updated successfully.');
     }
 
+    /**
+     * Delete a user by id (cannot delete the currently logged-in user).
+     *
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function deleteUser($id)
     {
         if (session('user.id') == $id) {

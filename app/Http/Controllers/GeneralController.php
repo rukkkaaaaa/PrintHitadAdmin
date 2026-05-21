@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -20,6 +21,11 @@ class GeneralController extends Controller
         return view('members.index', compact('members'));
     }
 
+    /**
+     * Return list of categories and render the categories.index view.
+     *
+     * @return \Illuminate\View\View
+     */
     public function getCategories()
     {
         $categories = DB::table('categories')->get();
@@ -43,6 +49,14 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'Category added successfully!');
     }
+    /**
+     * Update an existing category by id.
+     * Validates input and updates category_name_en/si and is_active flag.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function updateCategory(Request $request, $id)
     {
         $request->validate([
@@ -107,6 +121,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement type added successfully!');
     }
 
+    /**
+     * Update advertisement type by id and its category mapping.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update ad type
     public function updateAdType(Request $request, $id)
     {
@@ -249,6 +270,14 @@ class GeneralController extends Controller
         return view('adsizes.index', compact('adSizes', 'adTypesEn', 'adTypesSi', 'categoriesEn', 'categoriesSi'));
     }
 
+    /**
+     * AJAX: Return advertisement types for a given category.
+     * Responds with JSON containing id, localized label and category_id.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
     // AJAX: return ad types for a given category
     public function getAdTypesByCategory(Request $request, $categoryId)
     {
@@ -273,6 +302,14 @@ class GeneralController extends Controller
         return response()->json($types);
     }
 
+    /**
+     * AJAX: Return advertisement sizes for a given advertisement type.
+     * Returns localized label, word count and max images as JSON.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $typeId
+     * @return \Illuminate\Http\JsonResponse
+     */
     // AJAX: get ad sizes for a type
     public function getAdSizesByType(Request $request, $typeId)
     {
@@ -298,6 +335,14 @@ class GeneralController extends Controller
         return response()->json($sizes);
     }
 
+    /**
+     * AJAX: Get advertisement criterias and their options for a category.
+     * Returns an array of criterias with localized labels and options grouped.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
     // AJAX: get criterias with options for a category
     public function getCriteriasByCategory(Request $request, $categoryId)
     {
@@ -395,6 +440,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement size added successfully!');
     }
 
+    /**
+     * POST: Update advertisement size record by id. Handles optional image upload and updates the mapping to the ad type.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update ad size
     public function updateAdSize(Request $request, $id)
     {
@@ -444,6 +496,12 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement size updated successfully!');
     }
 
+        /**
+         * GET: Show ad rates — reads `ad_rates` table structure (columns) and rows for display.
+         * Returns columns metadata and existing ad rates with human-readable labels for category/type/size.
+         *
+         * @return \Illuminate\View\View
+         */
         // GET: Show ad rates (read table structure and rows)
         public function getAdRates()
         {
@@ -482,6 +540,12 @@ class GeneralController extends Controller
             return view('adrates.index', compact('columns', 'adRates', 'categoriesEn', 'categoriesSi'));
         }
 
+        /**
+         * POST: Add new ad rate row. Uses SHOW COLUMNS to determine which inputs to accept and fills defaults where available.
+         *
+         * @param \Illuminate\Http\Request $request
+         * @return \Illuminate\Http\RedirectResponse
+         */
         // POST: Add new ad rate
         public function addAdRate(Request $request)
         {
@@ -542,6 +606,11 @@ class GeneralController extends Controller
         }
     }
 
+    /**
+     * GET: Show all advertisement criterias joined with their category names.
+     *
+     * @return \Illuminate\View\View
+     */
     // GET: Show all advertisement criterias
     public function getAdCriterias()
     {
@@ -574,6 +643,12 @@ class GeneralController extends Controller
         return view('adcriterias.index', compact('criterias', 'categoriesEn', 'categoriesSi', 'categories'));
     }
 
+    /**
+     * POST: Add a new advertisement criteria for a category.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Add new criteria
     public function addAdCriteria(Request $request)
     {
@@ -597,6 +672,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement criteria added successfully!');
     }
 
+    /**
+     * POST: Update an existing advertisement criteria by id.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update criteria
     public function updateAdCriteria(Request $request, $id)
     {
@@ -620,6 +702,11 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Advertisement criteria updated successfully!');
     }
 
+    /**
+     * GET: Show all criteria options and provide pre-formatted labels for use in the UI.
+     *
+     * @return \Illuminate\View\View
+     */
     // GET: Show all criteria options
     public function getAdCriteriaOptions()
     {
@@ -683,6 +770,12 @@ class GeneralController extends Controller
         return view('adcriteriaoptions.index', compact('criterias', 'criteriasEn', 'criteriasSi', 'options'));
     }
 
+    /**
+     * POST: Add a new advertisement criteria option.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Add option
     public function addAdCriteriaOption(Request $request)
     {
@@ -704,6 +797,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Criteria option added successfully!');
     }
 
+    /**
+     * POST: Update an existing advertisement criteria option.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update option
     public function updateAdCriteriaOption(Request $request, $id)
     {
@@ -725,6 +825,11 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'Criteria option updated successfully!');
     }
 
+    /**
+     * GET: Show all districts and return the districts.index view.
+     *
+     * @return \Illuminate\View\View
+     */
     // GET: Show all districts
     public function getDistricts()
     {
@@ -732,6 +837,12 @@ class GeneralController extends Controller
         return view('districts.index', compact('districts'));
     }
 
+    /**
+     * POST: Add a new district.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Add district
     public function addDistrict(Request $request)
     {
@@ -751,6 +862,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'District added successfully!');
     }
 
+    /**
+     * POST: Update an existing district by id.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update district
     public function updateDistrict(Request $request, $id)
     {
@@ -769,6 +887,11 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'District updated successfully!');
     }
+    /**
+     * GET: Show all cities joined with districts and prepare localized district lists.
+     *
+     * @return \Illuminate\View\View
+     */
     // GET: Show all cities
     public function getCities()
     {
@@ -795,6 +918,12 @@ class GeneralController extends Controller
         return view('cities.index', compact('cities', 'districts', 'districtsEn', 'districtsSi'));
     }
 
+    /**
+     * POST: Add a new city associated with a district.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Add city
     public function addCity(Request $request)
     {
@@ -816,6 +945,13 @@ class GeneralController extends Controller
         return redirect()->back()->with('success', 'City added successfully!');
     }
 
+    /**
+     * POST: Update an existing city by id.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Update city
     public function updateCity(Request $request, $id)
     {
@@ -838,6 +974,13 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'City updated successfully!');
     }
+    
+
+    /**
+     * GET: Prepare data for the create advertisement form (categories, districts, cities, criterias, payment methods).
+     *
+     * @return \Illuminate\View\View
+     */
     // GET: Create advertisement form
     public function createAdvertisement()
     {
@@ -874,6 +1017,13 @@ class GeneralController extends Controller
         return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods'));
     }
 
+    /**
+     * POST: Store a new advertisement along with customer, criteria values, images and optional payment record.
+     * All writes are wrapped in a DB transaction. Uploaded images are stored to the configured disk.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     // POST: Store advertisement
     public function storeAdvertisement(Request $request)
     {
@@ -1009,6 +1159,13 @@ class GeneralController extends Controller
         return redirect('/advertisements')->with('success', 'Advertisement added successfully!');
     }
 
+    /**
+     * GET: Show all advertisements with optional filters and pagination.
+     * This aggregates customers, categories, districts, cities and payment info.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     // GET: Show all advertisements
     public function getAllPrintAdvertisements(Request $request)
     {
@@ -1073,6 +1230,12 @@ class GeneralController extends Controller
         return view('advertisements.all', compact('ads'));
     }
 
+    /**
+     * GET: List advertisements for 'hitad_print' publication with filters and pagination.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1141,6 +1304,13 @@ class GeneralController extends Controller
 
 
 
+    /**
+     * GET: View a single advertisement by id including customer, location and payment details.
+     * Also loads category-specific criterias and existing criteria values for display.
+     *
+     * @param int $id
+     * @return \Illuminate\View\View
+     */
     // GET: View single advertisement
     public function viewAdvertisement($id)
     {
@@ -1208,6 +1378,13 @@ class GeneralController extends Controller
         return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues'));
     }
 
+    /**
+     * List hitad_print advertisements that have completed payments (paid).
+     * Supports search and filter parameters and returns a paginated view.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getPaidAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1277,6 +1454,12 @@ class GeneralController extends Controller
 
         return view('advertisements.paid', compact('ads'));
     }
+    /**
+     * List hitad_print advertisements that are unpaid (no payment record or pending/failed).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getUnpaidAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1352,6 +1535,12 @@ class GeneralController extends Controller
 
         return view('advertisements.unpaid', compact('ads'));
     }
+    /**
+     * List all 'lahipita' advertisements (Sinhala publication) with search and pagination.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getLahipitaAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1391,6 +1580,12 @@ class GeneralController extends Controller
         return view('advertisements.lahipita_all', compact('ads'))
             ->with('search', $request->search);
     }
+    /**
+     * List 'lahipita' advertisements with completed payments.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getLahipitaPaidAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1460,6 +1655,12 @@ class GeneralController extends Controller
 
         return view('advertisements.lahipita_paid', compact('ads'));
     }
+    /**
+     * List 'lahipita' advertisements that are unpaid (no payment or pending/failed).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
     public function getLahipitaUnpaidAdvertisements(Request $request)
     {
         $query = DB::table('advertisements')
@@ -1535,6 +1736,166 @@ class GeneralController extends Controller
 
         return view('advertisements.lahipita_unpaid', compact('ads'));
     }
+
+    /**
+     * Reports page: build monthly report sections for both publications and payment groups.
+     * Accepts `month` input in Y-m format.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
+     */
+    public function reports(Request $request)
+    {
+        $monthInput = $request->input('month', now()->format('Y-m'));
+
+        try {
+            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
+        } catch (\Throwable $e) {
+            $month = now()->startOfMonth();
+            $monthInput = $month->format('Y-m');
+        }
+
+        $reportSections = [
+            'hitad_paid' => $this->buildMonthlyAdvertisementReport('hitad_print', 'paid', $month),
+            'hitad_unpaid' => $this->buildMonthlyAdvertisementReport('hitad_print', 'unpaid', $month),
+            'lahipita_paid' => $this->buildMonthlyAdvertisementReport('lahipita', 'paid', $month),
+            'lahipita_unpaid' => $this->buildMonthlyAdvertisementReport('lahipita', 'unpaid', $month),
+        ];
+
+        $monthLabel = $month->format('F Y');
+
+        return view('reports', compact('monthInput', 'monthLabel', 'reportSections'));
+    }
+
+    /**
+     * Download a monthly report PDF for the requested type (e.g. hitad-paid, lahipita-unpaid).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param string $type
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function downloadMonthlyReport(Request $request, string $type)
+    {
+        $config = $this->getMonthlyReportConfig($type);
+        abort_unless($config, 404);
+
+        $monthInput = $request->input('month', now()->format('Y-m'));
+
+        try {
+            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
+        } catch (\Throwable $e) {
+            $month = now()->startOfMonth();
+            $monthInput = $month->format('Y-m');
+        }
+
+        $report = $this->buildMonthlyAdvertisementReport($config['publication'], $config['group'], $month);
+        $filename = sprintf('%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
+
+        return Pdf::loadView('reports.pdf', [
+            'title' => $config['title'],
+            'monthLabel' => $month->format('F Y'),
+            'monthInput' => $monthInput,
+            'report' => $report,
+        ])->download($filename);
+    }
+
+    /**
+     * Map report type slug to internal report configuration (slug, title, publication, group).
+     *
+     * @param string $type
+     * @return array|null
+     */
+    private function getMonthlyReportConfig(string $type): ?array
+    {
+        // normalize type (accept both hyphen and underscore forms)
+        $type = str_replace('_', '-', $type);
+
+        $configs = [
+            'hitad-paid' => [
+                'slug' => 'hitad_paid',
+                'title' => 'Hitad Paid Report',
+                'publication' => 'hitad_print',
+                'group' => 'paid',
+            ],
+            'hitad-unpaid' => [
+                'slug' => 'hitad_unpaid',
+                'title' => 'Hitad Unpaid Report',
+                'publication' => 'hitad_print',
+                'group' => 'unpaid',
+            ],
+            'lahipita-paid' => [
+                'slug' => 'lahipita_paid',
+                'title' => 'Lahipita Paid Report',
+                'publication' => 'lahipita',
+                'group' => 'paid',
+            ],
+            'lahipita-unpaid' => [
+                'slug' => 'lahipita_unpaid',
+                'title' => 'Lahipita Unpaid Report',
+                'publication' => 'lahipita',
+                'group' => 'unpaid',
+            ],
+        ];
+
+        return $configs[$type] ?? null;
+    }
+
+    /**
+     * Build the monthly advertisement report for a given publication and payment group (paid/unpaid).
+     * Returns an array with 'count' and 'ads' collection.
+     *
+     * @param string $publication
+     * @param string $paymentGroup
+     * @param \Illuminate\Support\Carbon $month
+     * @return array
+     */
+    private function buildMonthlyAdvertisementReport(string $publication, string $paymentGroup, Carbon $month): array
+    {
+        $query = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('advertisements.publication', $publication)
+            ->whereBetween('advertisements.publish_date', [
+                $month->copy()->startOfMonth()->toDateString(),
+                $month->copy()->endOfMonth()->toDateString(),
+            ])
+            ->select(
+                'advertisements.id',
+                'advertisements.advertisement_description',
+                'advertisements.publish_date',
+                'advertisements.publication',
+                'customers.customer_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'payments.amount',
+                'payments.payment_date',
+                'payments.payment_status',
+                'payment_methods.payment_method_name as payment_method'
+            );
+
+        if ($paymentGroup === 'paid') {
+            $query->where('payments.payment_status', 'completed');
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('payments.id')
+                    ->orWhere('payments.payment_status', 'pending')
+                    ->orWhere('payments.payment_status', 'failed');
+            });
+        }
+
+        $ads = $query->orderBy('advertisements.id', 'desc')->get();
+
+        return [
+            'count' => $ads->count(),
+            'ads' => $ads,
+        ];
+    }
+
     public function downloadAdvertisement($id)
     {
         $ad = DB::table('advertisements')
@@ -1624,6 +1985,13 @@ class GeneralController extends Controller
         ]);
     }
 
+    /**
+     * Resolve an advertisement image source to a readable filesystem path or URL suitable for inclusion in a ZIP.
+     * Tries several fallbacks: direct URL, local filesystem paths under public/storage or storage/app/public, and configured storage disk.
+     *
+     * @param string|null $imgUrl
+     * @return string|null
+     */
     private function resolveAdvertisementImageSource(?string $imgUrl): ?string
     {
         if (!$imgUrl) {
@@ -1691,6 +2059,13 @@ class GeneralController extends Controller
 
         return 'images/' . sprintf('%02d_%s', $index, $basename);
     }
+    /**
+     * GET: Load advertisement for editing — join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
+     *
+     * @param int $id
+     * @return \Illuminate\View\View
+     */
     public function editAdvertisement($id)
     {
         $ad = DB::table('advertisements')
@@ -1761,6 +2136,15 @@ class GeneralController extends Controller
 
         return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues'));
     }
+
+    /**
+     * POST: Update advertisement, customer and payment records and process criteria values.
+     * All writes are performed inside a DB transaction.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function updateAdvertisement(Request $request, $id)
     {
         $request->validate([

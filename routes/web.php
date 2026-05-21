@@ -64,6 +64,9 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
     });
 
+    Route::get('/reports', [GeneralController::class, 'reports']);
+    Route::get('/reports/{type}/pdf', [GeneralController::class, 'downloadMonthlyReport']);
+
     /*
     |--------------------------------------------------------------------------
     | Categories
