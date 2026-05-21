@@ -100,6 +100,7 @@ class AuthController extends Controller
             'role' => $user[0]->role ?? null,
         ]);
 
+        // send users to dashboard (reporting users are allowed to view dashboard too)
         return redirect('/dashboard');
     }
 

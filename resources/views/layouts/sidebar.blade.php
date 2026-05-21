@@ -1,6 +1,11 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+  @php
+    $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+    $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole'], true);
+  @endphp
+
   <div class="app-brand demo">
-    <a href="{{ url('/dashboard') }}" class="app-brand-link">
+    <a href="{{ url($isReportingRole ? '/reports' : '/dashboard') }}" class="app-brand-link">
       <span class="app-brand-logo demo">
         <br>
         <img src="{{ asset('assets/img/favicon/logo.png') }}" alt="Logo" class="w-px-150 h-auto" />
@@ -21,6 +26,21 @@
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Pages</span>
     </li>
+
+    @if($isReportingRole)
+    <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
+      <a href="{{ url('/dashboard') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-home-circle"></i>
+        <div>Dashboard</div>
+      </a>
+    </li>
+    <li class="menu-item {{ request()->is('reports') ? 'active' : '' }}">
+      <a href="{{ url('/reports') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+        <div>Get Reports</div>
+      </a>
+    </li>
+    @else
 
     <!-- Dashboard -->
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
@@ -208,6 +228,7 @@
         <div>List Member</div>
       </a>
     </li>
+    @endif
 
   </ul>
 </aside>
