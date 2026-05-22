@@ -2,6 +2,7 @@
   @php
     $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
     $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole'], true);
+    $isAdvertisingRole = in_array($currentRole, ['advertice admin', 'advertising', 'advertising role'], true);
     $isSiteAdmin = $currentRole === 'site admin';
   @endphp
 
@@ -28,7 +29,107 @@
       <span class="menu-header-text">Pages</span>
     </li>
 
-    @if($isReportingRole)
+    @if($isAdvertisingRole)
+    <!-- Advertising menu: Dashboard + Add Advertisement + Print sections + Online links only -->
+    <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
+      <a href="{{ url('/dashboard') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-home-circle"></i>
+        <div>Dashboard</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
+      <a href="{{ url('/advertisements/create') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-plus-circle"></i>
+        <div>Add Advertisement</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('all-print-ads') ? 'active' : '' }}">
+      <a href="{{ url('/all-print-ads') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-news"></i>
+        <div>All Print Ads</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons bx bx-dock-top"></i>
+        <div>Hitad Print</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item {{ request()->is('advertisements/paid') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/paid') }}" class="menu-link">
+            <div>Hitad Paid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/unpaid') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/unpaid') }}" class="menu-link">
+            <div>Hitad Unpaid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements') }}" class="menu-link">
+            <div>Hitad All Ads</div>
+          </a>
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item {{ request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons bx bx-printer"></i>
+        <div>Lahipita Print</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item {{ request()->is('advertisements/lahipita/paid') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/paid') }}" class="menu-link">
+            <div>Lahipita Paid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/unpaid') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/unpaid') }}" class="menu-link">
+            <div>Lahipita Unpaid Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita') }}" class="menu-link">
+            <div>Lahipita All Ads</div>
+          </a>
+        </li>
+      </ul>
+    </li>
+
+    <li class="menu-item">
+      <a href="javascript:void(0)" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons bx bx-layout"></i>
+        <div>HitAd Online</div>
+      </a>
+      <ul class="menu-sub">
+        <li class="menu-item">
+          <a href="https://www.hitad.lk/" class="menu-link" target="_blank">
+            <div>Hitad Web</div>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="http://betaadmin.hitad.lk/home" class="menu-link" target="_blank">
+            <div>Hitad Web Admin</div>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="http://betaadmin.hitad.lk/view-pendingads" class="menu-link" target="_blank">
+            <div>Hitad Web Ads</div>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="http://betaadmin.hitad.lk/new-ads" class="menu-link" target="_blank">
+            <div>Hitad Web New Ad</div>
+          </a>
+        </li>
+      </ul>
+    </li>
+
+    @elseif($isReportingRole)
     <!-- Reporting user menu: Dashboard + Reports only -->
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
       <a href="{{ url('/dashboard') }}" class="menu-link">

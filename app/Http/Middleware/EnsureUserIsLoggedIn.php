@@ -17,6 +17,7 @@ class EnsureUserIsLoggedIn
         $user = Session::get('user', []);
         $role = strtolower(trim((string) ($user['role'] ?? '')));
         $isReportingRole = in_array($role, ['reporting', 'reportingrole'], true);
+        $isAdvertisingRole = in_array($role, ['advertice admin', 'advertising', 'advertising role'], true);
 
         if ($isReportingRole) {
             $isAllowedPath = $request->is('reports')
@@ -27,6 +28,34 @@ class EnsureUserIsLoggedIn
 
             if (!$isAllowedPath) {
                 return redirect('/reports')->with('error', 'Reporting role can only access reports and dashboard.');
+            }
+        }
+
+        if ($isAdvertisingRole) {
+            $isAllowedPath =
+                $request->getRequestUri() === '/' ||
+                $request->is('dashboard') ||
+                $request->is('advertisements/create') ||
+                $request->is('advertisements/store') ||
+                $request->is('all-print-ads') ||
+                $request->is('advertisements') ||
+                $request->is('advertisements/paid') ||
+                $request->is('advertisements/unpaid') ||
+                $request->is('advertisements/lahipita') ||
+                $request->is('advertisements/lahipita/paid') ||
+                $request->is('advertisements/lahipita/unpaid') ||
+                $request->is('advertisements/*/view') ||
+                $request->is('advertisements/*/edit') ||
+                $request->is('advertisements/*/update') ||
+                $request->is('advertisements/*/download') ||
+                $request->is('advertisements/lahipita/*/view') ||
+                $request->is('advertisements/lahipita/*/edit') ||
+                $request->is('advertisements/lahipita/*/update') ||
+                $request->is('advertisements/lahipita/*/download') ||
+                $request->is('logout');
+
+            if (!$isAllowedPath) {
+                return redirect('/dashboard')->with('error', 'Advertising role can only access dashboard and advertisement pages.');
             }
         }
 

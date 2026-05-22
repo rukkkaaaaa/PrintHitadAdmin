@@ -4,6 +4,11 @@
 <div class="container mt-4">
     <h2 class="mb-3">Edit Advertisement</h2>
 
+    @php
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        $canEditPaymentFields = $currentRole === 'super admin';
+    @endphp
+
     <style>
         .edit-card { border-radius: 14px; box-shadow: 0 8px 24px rgba(18,38,63,0.08); }
         .section-title { font-size: 1rem; font-weight: 700; color: #566a7f; margin-bottom: 1rem; }
@@ -144,7 +149,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Payment Status</label>
-                        <select name="payment_status" class="form-select" {{ empty($ad->payment_id) ? 'disabled' : '' }}>
+                        <select name="payment_status" class="form-select" {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}>
                             <option value="">-- Select --</option>
                             <option value="pending" {{ old('payment_status', $ad->payment_status) == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="completed" {{ old('payment_status', $ad->payment_status) == 'completed' ? 'selected' : '' }}>Completed</option>
@@ -152,6 +157,8 @@
                         </select>
                         @if(empty($ad->payment_id))
                             <small class="text-muted">No payment record found for this advertisement.</small>
+                        @elseif(!$canEditPaymentFields)
+                            <small class="text-muted">Only super admin can edit payment status.</small>
                         @endif
                     </div>
                 </div>
@@ -165,9 +172,11 @@
                         <label class="form-label">Payment Date</label>
                         <input type="datetime-local" name="payment_date" class="form-control"
                                value="{{ old('payment_date', !empty($ad->payment_date) ? \Illuminate\Support\Carbon::parse($ad->payment_date)->format('Y-m-d\TH:i') : '') }}"
-                               {{ empty($ad->payment_id) ? 'disabled' : '' }}>
+                               {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}>
                         @if(empty($ad->payment_id))
                             <small class="text-muted">No payment record found for this advertisement.</small>
+                        @elseif(!$canEditPaymentFields)
+                            <small class="text-muted">Only super admin can edit payment date.</small>
                         @endif
                     </div>
                 </div>
@@ -180,64 +189,49 @@
                     <div class="section-title">Criteria</div>
                     <div class="row g-3">
                         @foreach($criterias as $crit)
-                            <div class="col-12">
-                                        @php
-                                            // Use Sinhala labels for Lahipita edits, otherwise English
-                                            if (trim($ad->publication ?? '') === 'lahipita') {
-                                                $critLabel = trim($crit->advertisement_criteria_name_si ?? '');
-                                            } else {
-                                                $critLabel = trim($crit->advertisement_criteria_name_en ?? '');
-                                            }
-                                        @endphp
-                                <label class="form-label">{{ $critLabel }}</label>
+                            @php
+                                $critLabel = trim((trim($ad->publication ?? '') === 'lahipita'
+                                    ? ($crit->advertisement_criteria_name_si ?? '')
+                                    : ($crit->advertisement_criteria_name_en ?? '')));
+                                $existing = $criteriaValues[$crit->id] ?? null;
+                                $options = $criteriaOptions[$crit->id] ?? collect();
+                            @endphp
 
-                                @php
-                                    $existing = $criteriaValues[$crit->id] ?? null;
-                                    $options = $criteriaOptions[$crit->id] ?? collect();
-                                @endphp
+                            <div class="col-12">
+                                <label class="form-label">{{ $critLabel }}</label>
 
                                 @if($crit->field_type === 'textarea')
                                     <textarea name="criteria[{{ $crit->id }}]" class="form-control" rows="3">{{ old('criteria.' . $crit->id, $existing) }}</textarea>
-
                                 @elseif($crit->field_type === 'dropdown')
                                     <select name="criteria[{{ $crit->id }}]" class="form-select">
                                         <option value="">-- Select --</option>
                                         @foreach($options as $opt)
-                                                    @php
-                                                        // Use Sinhala option labels for Lahipita edits, otherwise English
-                                                        if (trim($ad->publication ?? '') === 'lahipita') {
-                                                            $optLabel = trim($opt->advertisement_criteria_option_name_si ?? '');
-                                                        } else {
-                                                            $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
-                                                        }
-                                                        $optValue = $optLabel;
-                                                    @endphp
-                                            @if(trim($optLabel) !== '')
-                                                <option value="{{ $optValue }}" {{ (old('criteria.' . $crit->id, $existing) == $optValue) ? 'selected' : '' }}>
+                                            @php
+                                                $optLabel = trim((trim($ad->publication ?? '') === 'lahipita'
+                                                    ? ($opt->advertisement_criteria_option_name_si ?? '')
+                                                    : ($opt->advertisement_criteria_option_name_en ?? '')));
+                                            @endphp
+                                            @if($optLabel !== '')
+                                                <option value="{{ $optLabel }}" {{ old('criteria.' . $crit->id, $existing) == $optLabel ? 'selected' : '' }}>
                                                     {{ $optLabel }}
                                                 </option>
                                             @endif
                                         @endforeach
                                     </select>
-
                                 @elseif($crit->field_type === 'radio')
                                     <div>
                                         @foreach($options as $opt)
-                                                    @php
-                                                        // Use Sinhala option labels for Lahipita edits, otherwise English
-                                                        if (trim($ad->publication ?? '') === 'lahipita') {
-                                                            $optLabel = trim($opt->advertisement_criteria_option_name_si ?? '');
-                                                        } else {
-                                                            $optLabel = trim($opt->advertisement_criteria_option_name_en ?? '');
-                                                        }
-                                                        $optValue = $optLabel;
-                                                    @endphp
-                                                @if(trim($optLabel) !== '')
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input" type="radio" name="criteria[{{ $crit->id }}]" id="crit_{{ $crit->id }}_{{ $opt->id }}" value="{{ $optValue }}" {{ (old('criteria.' . $crit->id, $existing) == $optValue) ? 'checked' : '' }}>
-                                                        <label class="form-check-label" for="crit_{{ $crit->id }}_{{ $opt->id }}">{{ $optLabel }}</label>
-                                                    </div>
-                                                @endif
+                                            @php
+                                                $optLabel = trim((trim($ad->publication ?? '') === 'lahipita'
+                                                    ? ($opt->advertisement_criteria_option_name_si ?? '')
+                                                    : ($opt->advertisement_criteria_option_name_en ?? '')));
+                                            @endphp
+                                            @if($optLabel !== '')
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="criteria[{{ $crit->id }}]" id="crit_{{ $crit->id }}_{{ $opt->id }}" value="{{ $optLabel }}" {{ old('criteria.' . $crit->id, $existing) == $optLabel ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="crit_{{ $crit->id }}_{{ $opt->id }}">{{ $optLabel }}</label>
+                                                </div>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif

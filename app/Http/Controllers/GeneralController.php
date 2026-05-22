@@ -2147,6 +2147,9 @@ class GeneralController extends Controller
      */
     public function updateAdvertisement(Request $request, $id)
     {
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        $canEditPaymentFields = $currentRole === 'super admin';
+
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
@@ -2171,8 +2174,12 @@ class GeneralController extends Controller
             ],
             'web_combined_ad' => 'required|boolean',
             'status' => 'required|boolean',
-            'payment_status' => 'nullable|in:pending,completed,failed',
-            'payment_date' => 'nullable|date_format:Y-m-d\TH:i',
+            'payment_status' => $canEditPaymentFields
+                ? ['nullable', 'in:pending,completed,failed']
+                : ['prohibited'],
+            'payment_date' => $canEditPaymentFields
+                ? ['nullable', 'date_format:Y-m-d\TH:i']
+                : ['prohibited'],
         ]);
 
         DB::transaction(function () use ($request, $id) {
@@ -2205,7 +2212,7 @@ class GeneralController extends Controller
                 'updated_at' => now(),
             ]);
 
-            if ($request->filled('payment_status')) {
+            if ($canEditPaymentFields && $request->filled('payment_status')) {
                 $paymentStatus = $request->payment_status;
                 $isSuccess = $paymentStatus === 'completed' ? 'true' : 'false';
 
