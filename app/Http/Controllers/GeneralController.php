@@ -9,6 +9,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use ZipStream\ZipStream;
+use Illuminate\Support\Facades\Mail;
+use App\Models\AdvertisementEmail;
 
 class GeneralController extends Controller
 {
@@ -2118,6 +2120,81 @@ class GeneralController extends Controller
 
         return 'images/' . sprintf('%02d_%s', $index, $basename);
     }
+
+    /**
+     * Send advertisement link via email to customer with payment details.
+     * 
+     * @param int $id Advertisement ID
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function sendLinkEmail($id)
+    {
+        $ad = DB::table('advertisements')
+            ->where('advertisements.id', $id)
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->select(
+                'advertisements.id',
+                'advertisements.advertisement_description',
+                'customers.customer_name',
+                'customers.email',
+                'payments.amount',
+                'payments.payment_status'
+            )
+            ->first();
+
+        if (!$ad) {
+            return redirect()->back()->with('error', 'Advertisement not found.');
+        }
+
+        if (!$ad->email) {
+            return redirect()->back()->with('error', 'Customer email not found.');
+        }
+
+        try {
+            $adViewUrl = url('/advertisements/' . $ad->id . '/view');
+            $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
+
+            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount) {
+                $message->to($ad->email)
+                    ->from(config('mail.from.address'), config('mail.from.name'))
+                    ->subject('Your Advertisement Link - Print Hitad')
+                    ->html(
+                        "<p>Dear {$ad->customer_name},</p>" .
+                        "<p>Your advertisement is ready for review.</p>" .
+                        "<p style='color: #d32f2f; font-weight: bold; font-size: 16px;'>You have a pending payment due: <span style='font-size: 20px;'>{$amount}</span></p>" .
+                        "<p>Please click the button below to view your advertisement and proceed with payment:</p>" .
+                        "<p><a href='{$adViewUrl}' style='display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>View Advertisement & Pay Now</a></p>" .
+                        "<p style='margin-top: 20px; font-size: 14px; color: #666;'><strong>Payment Details:</strong><br>Amount Due: {$amount}</p>" .
+                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.</p>"
+                    );
+            });
+
+            // ✅ SAVE TO DATABASE
+            AdvertisementEmail::create([
+                'advertisement_id' => $ad->id,
+                'customer_email' => $ad->email,
+                'customer_name' => $ad->customer_name,
+                'amount' => $ad->amount,
+                'status' => 'sent',
+            ]);
+
+            return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
+        } catch (\Exception $e) {
+            // ✅ SAVE FAILED EMAIL TO DATABASE
+            AdvertisementEmail::create([
+                'advertisement_id' => $ad->id,
+                'customer_email' => $ad->email,
+                'customer_name' => $ad->customer_name,
+                'amount' => $ad->amount,
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        }
+    }
+
     /**
      * GET: Load advertisement for editing — join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.

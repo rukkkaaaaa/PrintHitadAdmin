@@ -179,6 +179,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::post('/advertisements/{id}/update', [GeneralController::class, 'updateAdvertisement']);
 
     Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
+    Route::post('/advertisements/{id}/send-link-email', [GeneralController::class, 'sendLinkEmail']);
 
     // Paid / Unpaid
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);

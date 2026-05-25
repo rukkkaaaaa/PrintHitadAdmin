@@ -52,6 +52,7 @@
                     <th>Amount</th>
                     <th>Payment Method</th>
                     <th>Payment Status</th>
+                    <th>Send Link</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -85,6 +86,19 @@
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
+                        {{-- SEND LINK --}}
+                        <td>
+                            <form method="POST" action="{{ url('/advertisements/' . $ad->id . '/send-link-email') }}" style="display:inline;">
+                                @csrf
+                                <button type="submit" 
+                                        class="btn btn-sm btn-outline-primary"
+                                        title="Send ad link via email"
+                                        onclick="return confirm('Send this advertisement link to customer?');">
+                                    <i class="bx bx-send"></i>
+                                </button>
+                            </form>
+                        </td>
+
                         {{-- ACTIONS --}}
                         <td class="action-btns">
                             <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
@@ -103,7 +117,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted">
+                        <td colspan="11" class="text-center text-muted">
                             No unpaid advertisements found.
                         </td>
                     </tr>
