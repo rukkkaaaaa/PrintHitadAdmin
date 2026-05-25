@@ -182,13 +182,7 @@
                         <option value="1" {{ old('web_combined_ad') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label d-block">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="1" {{ old('status', 1) == 1 ? 'selected' : '' }}>Active</option>
-                        <option value="0" {{ old('status') === '0' ? 'selected' : '' }}>Inactive</option>
-                    </select>
-                </div>
+                {{-- Status removed: advertisement status is no longer stored on advertisements table --}}
             </div>
         </div>
 

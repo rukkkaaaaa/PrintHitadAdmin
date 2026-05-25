@@ -140,11 +140,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="1" {{ old('status', $ad->status) == 1 ? 'selected' : '' }}>Active</option>
-                            <option value="0" {{ old('status', $ad->status) == 0 ? 'selected' : '' }}>Inactive</option>
-                        </select>
+                        {{-- Status removed: advertisement-level status removed from model/table --}}
                     </div>
 
                     <div class="col-md-6">

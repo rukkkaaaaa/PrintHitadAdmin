@@ -22,7 +22,7 @@ class Advertisement extends Model
         'publish_date',
         'publication',
         'web_combined_ad',
-        'status'
+        //'status' removed: managed by payments now
     ];
 
 

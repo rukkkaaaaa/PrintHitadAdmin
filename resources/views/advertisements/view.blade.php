@@ -19,12 +19,6 @@
         <p><strong>Publication:</strong> {{ $ad->publication }}</p>
         <p><strong>Publish Date:</strong> {{ $ad->publish_date }}</p>
 
-        <p><strong>Status:</strong>
-            {!! $ad->status == 1
-                ? '<span class="badge bg-success">Active</span>'
-                : '<span class="badge bg-danger">Inactive</span>' !!}
-        </p>
-
         <hr>
 
         <!-- Customer Info -->

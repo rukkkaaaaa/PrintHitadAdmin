@@ -30,7 +30,6 @@
                         <th>Telephone</th>
                         <th>NIC / Passport</th>
                         <th>Email</th>
-                        <th width="120">Email Verified</th>
                         <th width="120">Status</th>
                         <th width="180">Created At</th>
                     </tr>
@@ -44,13 +43,6 @@
                             <td>{{ $member->telephone }}</td>
                             <td>{{ $member->nic_passport }}</td>
                             <td>{{ $member->email ?: 'N/A' }}</td>
-                            <td>
-                                @if($member->email_verified)
-                                    <span class="badge bg-success">Yes</span>
-                                @else
-                                    <span class="badge bg-secondary">No</span>
-                                @endif
-                            </td>
                             <td>
                                 @if($member->is_active)
                                     <span class="badge bg-success">Active</span>

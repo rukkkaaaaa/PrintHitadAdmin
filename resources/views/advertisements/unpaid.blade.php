@@ -46,10 +46,11 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Title</th>
+                    <th>Description</th>
                     <th>District</th>
                     <th>City</th>
                     <th>Amount</th>
+                    <th>Payment Method</th>
                     <th>Payment Status</th>
                     <th>Action</th>
                 </tr>
@@ -76,6 +77,8 @@
                                 -
                             @endif
                         </td>
+
+                        <td>{{ $ad->payment_method ?? '-' }}</td>
 
                         {{-- PAYMENT STATUS --}}
                         <td>

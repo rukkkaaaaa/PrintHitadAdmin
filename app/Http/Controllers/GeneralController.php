@@ -1051,7 +1051,6 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad' => 'nullable|boolean',
-            'status' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
@@ -1096,7 +1095,6 @@ class GeneralController extends Controller
                 'publish_date' => $request->publish_date,
                 'publication' => $request->publication,
                 'web_combined_ad' => $request->boolean('web_combined_ad'),
-                'status' => $request->boolean('status', true),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -2173,7 +2171,6 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad' => 'required|boolean',
-            'status' => 'required|boolean',
             'payment_status' => $canEditPaymentFields
                 ? ['nullable', 'in:pending,completed,failed']
                 : ['prohibited'],
@@ -2208,7 +2205,6 @@ class GeneralController extends Controller
                 'city_id' => $request->city_id,
                 'publish_date' => $request->publish_date,
                 'web_combined_ad' => $request->web_combined_ad,
-                'status' => $request->status,
                 'updated_at' => now(),
             ]);
 

@@ -42,7 +42,6 @@
                     <th>Description</th>
                     <th>District</th>
                     <th>City</th>
-                    <th>Publication</th>
                     <th>Amount</th>
                     <th>Payment Method</th>
                     <th>Payment Status</th>
@@ -63,8 +62,6 @@
 
                         <td>{{ $ad->district_name }}</td>
                         <td>{{ $ad->city_name }}</td>
-
-                        <td>{{ $ad->publication }}</td>
 
                         <td>
                             {{ $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : '-' }}

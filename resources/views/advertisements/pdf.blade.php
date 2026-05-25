@@ -26,7 +26,6 @@
         <tr><td class="label">Description</td><td>{{ $ad->advertisement_description }}</td></tr>
         <tr><td class="label">Publication</td><td>{{ $ad->publication }}</td></tr>
         <tr><td class="label">Publish Date</td><td>{{ $ad->publish_date }}</td></tr>
-        <tr><td class="label">Status</td><td>{{ (int) $ad->status === 1 ? 'Active' : 'Inactive' }}</td></tr>
     </table>
 </div>
 

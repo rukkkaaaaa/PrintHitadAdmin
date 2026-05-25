@@ -47,11 +47,10 @@
                 <th>ID</th>
                 <th>Customer</th>
                 <th>Category</th>
-                <th>Title</th>
+                <th>Description</th>
                 <th>District</th>
                 <th>City</th>
                 <th>Publish Date</th>
-                <th>Status</th>
                 <th>Payment</th>
                 <th>Action</th>
             </tr>
@@ -72,15 +71,6 @@
                     <td>{{ $ad->city_name }}</td>
 
                     <td>{{ $ad->publish_date }}</td>
-
-                    {{-- STATUS --}}
-                    <td>
-                        @if($ad->status == 1)
-                            <span class="badge bg-success badge-pill text-uppercase">Active</span>
-                        @else
-                            <span class="badge bg-danger badge-pill text-uppercase">Inactive</span>
-                        @endif
-                    </td>
 
                     {{-- PAYMENT STATUS --}}
                     <td>
