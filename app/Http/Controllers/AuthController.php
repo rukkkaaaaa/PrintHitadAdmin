@@ -13,10 +13,36 @@ class AuthController extends Controller
 {
     private const USER_ROLES = [
         'super admin',
-        'Advertice admin',
+        'report admin',
         'site admin',
-        'reporting',
+        'advertising admin',
     ];
+
+    private function getPriorityLevelForRole(string $role): int
+    {
+        $r = strtolower(trim($role));
+
+        return match ($r) {
+            'super admin' => 1,
+            'site admin' => 2,
+            'advertising admin' => 3,
+            'report admin' => 4,
+            default => 4,
+        };
+    }
+
+    private function normalizeRoleName(?string $role): string
+    {
+        $r = strtolower(trim((string) $role));
+
+        return match ($r) {
+            'super admin' => 'super admin',
+            'reporter', 'reporting', 'reportingrole', 'report admin' => 'report admin',
+            'site admin' => 'site admin',
+            'advertice admin', 'advertising', 'advertising role', 'advertising admin' => 'advertising admin',
+            default => 'report admin',
+        };
+    }
 
     /**
      * Show the login page.
@@ -39,7 +65,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle user registration. Validates passwords, checks for existing email and creates a new user.
+    * Handle admin registration. Validates passwords, checks for existing email and creates a new admin.
      *
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
@@ -50,13 +76,13 @@ class AuthController extends Controller
         $email = $request->input('email');
         $password = $request->input('password');
         $password_confirmation = $request->input('password_confirmation');
-        $role = 'reporting';
+        $role = $this->normalizeRoleName('report admin');
 
         if ($password !== $password_confirmation) {
             return redirect('/register')->with('error', 'Passwords do not match.');
         }
 
-        $existing = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+        $existing = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
         if ($existing) {
             return redirect('/register')->with('error', 'Email already exists.');
         }
@@ -64,11 +90,13 @@ class AuthController extends Controller
         $hashedPassword = Hash::make($password);
         $timestamp = Carbon::now();
 
-        DB::insert("INSERT INTO users (name, email, role, password, created_at) VALUES (?, ?, ?, ?, ?)", [
+        DB::insert("INSERT INTO admins (admin_name, priority_level, email, role, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [
             $name,
+            $this->getPriorityLevelForRole($role),
             $email,
             $role,
             $hashedPassword,
+            1,
             $timestamp
         ]);
 
@@ -86,7 +114,7 @@ class AuthController extends Controller
         $email = $request->input('email');
         $password = $request->input('password');
 
-        $user = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+        $user = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
 
         if (!$user || !Hash::check($password, $user[0]->password)) {
             return redirect('/login')->with('error', 'Invalid credentials.');
@@ -95,9 +123,9 @@ class AuthController extends Controller
         // Store user in session
         Session::put('user', [
             'id' => $user[0]->id,
-            'name' => $user[0]->name,
+            'name' => $user[0]->admin_name,
             'email' => $user[0]->email,
-            'role' => $user[0]->role ?? null,
+            'role' => $this->normalizeRoleName($user[0]->role ?? null),
         ]);
 
         // send users to dashboard (reporting users are allowed to view dashboard too)
@@ -120,7 +148,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Manage users page and handler. On GET shows users and optional edit; on POST creates a new user after validation.
+    * Manage admins page and handler. On GET shows admins and optional edit; on POST creates a new admin after validation.
      *
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
@@ -130,7 +158,7 @@ class AuthController extends Controller
         if ($request->isMethod('post')) {
             $name = $request->input('name');
             $email = $request->input('email');
-            $role = $request->input('role');
+            $role = $this->normalizeRoleName($request->input('role'));
             $password = $request->input('password');
             $password_confirmation = $request->input('password_confirmation');
 
@@ -138,7 +166,7 @@ class AuthController extends Controller
                 return back()->with('error', 'Passwords do not match.');
             }
 
-            $existing = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+            $existing = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
             if ($existing) {
                 return back()->with('error', 'Email already exists.');
             }
@@ -147,23 +175,28 @@ class AuthController extends Controller
                 return back()->with('error', 'Please select a valid user role.');
             }
 
-            DB::insert("INSERT INTO users (name, email, role, password, created_at) VALUES (?, ?, ?, ?, ?)", [
+            DB::insert("INSERT INTO admins (admin_name, priority_level, email, role, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [
                 $name,
+                $this->getPriorityLevelForRole($role),
                 $email,
                 $role,
                 Hash::make($password),
+                1,
                 Carbon::now()
             ]);
 
             return redirect('/users')->with('success', 'User created successfully.');
         }
 
-        $users = DB::select("SELECT * FROM users ORDER BY created_at DESC");
+        $users = DB::select("SELECT id, admin_name as name, email, role, created_at FROM admins ORDER BY created_at DESC");
         $roles = self::USER_ROLES;
 
         $editUser = null;
         if ($request->filled('edit')) {
-            $editUser = DB::table('users')->where('id', $request->query('edit'))->first();
+            $editUser = DB::table('admins')
+                ->select('id', 'admin_name as name', 'email', 'role', 'created_at', 'updated_at')
+                ->where('id', $request->query('edit'))
+                ->first();
         }
 
         return view('user', compact('users', 'editUser', 'roles'));
@@ -180,21 +213,22 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('admins', 'email')->ignore($id)],
             'role' => ['required', Rule::in(self::USER_ROLES)],
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
-        $user = DB::table('users')->where('id', $id)->first();
+        $user = DB::table('admins')->where('id', $id)->first();
 
         if (!$user) {
             return redirect('/users')->with('error', 'User not found.');
         }
 
         $data = [
-            'name' => $request->name,
+            'admin_name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'role' => $this->normalizeRoleName($request->role),
+            'priority_level' => $this->getPriorityLevelForRole($this->normalizeRoleName($request->role)),
             'updated_at' => Carbon::now(),
         ];
 
@@ -202,14 +236,14 @@ class AuthController extends Controller
             $data['password'] = Hash::make($request->password);
         }
 
-        DB::table('users')->where('id', $id)->update($data);
+        DB::table('admins')->where('id', $id)->update($data);
 
         if (session('user.id') == $id) {
             Session::put('user', [
                 'id' => $id,
                 'name' => $request->name,
                 'email' => $request->email,
-                'role' => $request->role,
+                'role' => $this->normalizeRoleName($request->role),
             ]);
         }
 
@@ -228,7 +262,7 @@ class AuthController extends Controller
             return redirect('/users')->with('error', 'You cannot delete the currently logged-in user.');
         }
 
-        $deleted = DB::table('users')->where('id', $id)->delete();
+        $deleted = DB::table('admins')->where('id', $id)->delete();
 
         if (!$deleted) {
             return redirect('/users')->with('error', 'User not found.');

@@ -16,7 +16,7 @@ Route::get('/', function () {
         $user = session('user');
 
         $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('users')->count();
+        $adminCount = DB::table('admins')->count();
         $adCount = DB::table('advertisements')->count();
 
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
@@ -58,7 +58,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
         $user = session('user');
 
         $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('users')->count();
+        $adminCount = DB::table('admins')->count();
         $adCount = DB::table('advertisements')->count();
 
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));

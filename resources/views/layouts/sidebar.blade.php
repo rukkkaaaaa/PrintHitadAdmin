@@ -1,8 +1,8 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
   @php
     $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-    $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole'], true);
-    $isAdvertisingRole = in_array($currentRole, ['advertice admin', 'advertising', 'advertising role'], true);
+    $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);
+    $isAdvertisingRole = in_array($currentRole, ['advertice admin', 'advertising', 'advertising role', 'advertising admin'], true);
     $isSiteAdmin = $currentRole === 'site admin';
   @endphp
 

@@ -16,8 +16,8 @@ class EnsureUserIsLoggedIn
 
         $user = Session::get('user', []);
         $role = strtolower(trim((string) ($user['role'] ?? '')));
-        $isReportingRole = in_array($role, ['reporting', 'reportingrole'], true);
-        $isAdvertisingRole = in_array($role, ['advertice admin', 'advertising', 'advertising role'], true);
+        $isReportingRole = in_array($role, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);
+        $isAdvertisingRole = in_array($role, ['advertice admin', 'advertising', 'advertising role', 'advertising admin'], true);
 
         if ($isReportingRole) {
             $isAllowedPath = $request->is('reports')

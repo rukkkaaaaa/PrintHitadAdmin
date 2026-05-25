@@ -39,8 +39,8 @@
                         <label>Role</label>
                         <select name="role" class="form-select" required>
                             <option value="" disabled {{ old('role') ? '' : 'selected' }}>Select role</option>
-                            @foreach($roles as $role)
-                                <option value="{{ $role }}" {{ old('role', 'reporting') === $role ? 'selected' : '' }}>{{ $role }}</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role }}" {{ old('role', 'report admin') === $role ? 'selected' : '' }}>{{ $role }}</option>
                             @endforeach
                         </select>
                     </div>
