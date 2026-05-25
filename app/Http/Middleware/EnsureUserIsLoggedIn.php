@@ -16,6 +16,11 @@ class EnsureUserIsLoggedIn
 
         $user = Session::get('user', []);
         $role = strtolower(trim((string) ($user['role'] ?? '')));
+
+        // Super admin has unrestricted access to the whole system
+        if ($role === 'super admin' || $role === 'superadmin' || $role === 'super') {
+            return $next($request);
+        }
         $isReportingRole = in_array($role, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);
         $isAdvertisingRole = in_array($role, ['advertice admin', 'advertising', 'advertising role', 'advertising admin'], true);
 

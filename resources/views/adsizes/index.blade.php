@@ -48,15 +48,7 @@
                                 <input type="number" step="0.01" name="price" class="form-control" required>
                             </div>
 
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Ad Word Count</label>
-                                <input type="number" name="ad_word_count" min="1" class="form-control" required>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Maximum Images</label>
-                                <input type="number" name="max_images" min="0" class="form-control" required>
-                            </div>
+                            <!-- ad_word_count and max_images removed -->
 
                             <div class="col-12 mb-3">
                                 <label class="form-label">Category</label>
@@ -120,15 +112,7 @@
                                 <input type="number" step="0.01" name="price" class="form-control" required>
                             </div>
 
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Ad Word Count</label>
-                                <input type="number" name="ad_word_count" min="1" class="form-control" required>
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Maximum Images</label>
-                                <input type="number" name="max_images" min="0" class="form-control" required>
-                            </div>
+                            <!-- ad_word_count and max_images removed -->
 
                             <div class="col-12 mb-3">
                                 <label class="form-label">Category</label>
@@ -190,8 +174,7 @@
                         <th>Ad Type</th>
                         <th>Category</th>
                         <th>Price</th>
-                        <th>Ad Word Count</th>
-                        <th>Max Images</th>
+                        <!-- Ad word count and Max images columns removed -->
                         <th>Image</th>
                         <th width="120">Status</th>
                         <th width="180">Updated</th>
@@ -218,9 +201,7 @@
 
                         <td>Rs. {{ number_format($size->price, 2) }}</td>
 
-                        <td>{{ data_get($size, 'ad_word_count', '-') }}</td>
-
-                        <td>{{ data_get($size, 'max_images', '-') }}</td>
+                        <!-- ad_word_count and max_images removed -->
 
                         <td>
                             @if (data_get($size, 'display_img_url'))
@@ -297,25 +278,7 @@
                                                 required>
                                         </div>
 
-                                        <div class="mb-3">
-                                            <label>Ad Word Count</label>
-                                            <input type="number"
-                                                name="ad_word_count"
-                                                min="1"
-                                                class="form-control"
-                                                value="{{ data_get($size, 'ad_word_count') }}"
-                                                required>
-                                        </div>
-
-                                        <div class="mb-3">
-                                            <label>Maximum Images</label>
-                                            <input type="number"
-                                                name="max_images"
-                                                min="0"
-                                                class="form-control"
-                                                value="{{ data_get($size, 'max_images') }}"
-                                                required>
-                                        </div>
+                                        <!-- ad_word_count and max_images removed from edit modal -->
 
                                         <div class="mb-3">
                                             <label>Category</label>
@@ -408,7 +371,7 @@
                     @empty
 
                     <tr>
-                        <td colspan="12" class="text-center">
+                        <td colspan="10" class="text-center">
                             No advertisement sizes found.
                         </td>
                     </tr>

@@ -16,8 +16,6 @@ class Advertisement extends Model
         'order_ref',
         'price',
         'ad_title',
-        'advertisement_type_id',
-        'advertisement_size_id',
         'advertisement_description',
         'publish_date',
         'publication',

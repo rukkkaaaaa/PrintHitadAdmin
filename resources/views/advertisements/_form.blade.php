@@ -373,8 +373,7 @@
     const imagesHint     = form.querySelector('#imagesHint');
 
     /* ── State ───────────────────────────────────────────────────────── */
-    let currentWordLimit = 0;
-    let currentMaxImages = 0;
+    // word count / max images feature removed
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
 
     /* ── Helpers ─────────────────────────────────────────────────────── */
@@ -450,12 +449,8 @@
 
     /* ── Live word counter ────────────────────────────────────────────── */
     function updateWordCount() {
-        if (!descTA || !wcDisplay) return;
-        if (currentWordLimit <= 0) { wcDisplay.textContent = ''; return; }
-        const count = wordCount(descTA.value);
-        const over  = count > currentWordLimit;
-        wcDisplay.innerHTML = '<span class="wc-badge' + (over ? ' over' : '') + '">'
-            + count + ' / ' + currentWordLimit + ' words</span>';
+        // word count display removed
+        return;
     }
 
     /* ── City filter by district + language ───────────────────────────── */
@@ -555,10 +550,7 @@
         hide(sizeCard);
         hide(sizeHints);
         revealFromSize(false);
-        currentWordLimit = 0;
-        currentMaxImages = 0;
-        pendingCriterias = [];
-        updateWordCount();
+            pendingCriterias = [];
 
         if (!categoryId) return;
 
@@ -590,9 +582,7 @@
         hide(sizeCard);
         hide(sizeHints);
         revealFromSize(false);
-        currentWordLimit = 0;
-        currentMaxImages = 0;
-        updateWordCount();
+            pendingCriterias = [];
 
         if (!typeId) return;
 
@@ -604,8 +594,7 @@
                     var opt = document.createElement('option');
                     opt.value = s.id;
                     opt.textContent = s.label;
-                    opt.dataset.wc = s.ad_word_count;
-                    opt.dataset.mi = s.max_images;
+                    
                     sizeSel.appendChild(opt);
                 });
                 show(sizeCard);
@@ -617,43 +606,11 @@
     function applySize() {
         var opt = sizeSel.options[sizeSel.selectedIndex];
         if (!opt || !opt.value) {
-            hide(sizeHints);
             revealFromSize(false);
-            currentWordLimit = 0;
-            currentMaxImages = 0;
-            updateWordCount();
             return;
         }
 
-        currentWordLimit = parseInt(opt.dataset.wc, 10) || 0;
-        currentMaxImages = parseInt(opt.dataset.mi, 10) || 0;
-
-        if (currentWordLimit > 0) {
-            wcHint.textContent = 'Max ' + currentWordLimit + ' words';
-            show(wcHint);
-        } else {
-            hide(wcHint);
-        }
-
-        if (currentMaxImages > 0) {
-            imgHint.textContent = 'Up to ' + currentMaxImages + ' image' + (currentMaxImages !== 1 ? 's' : '');
-            show(imgHint);
-            if (imagesHint) {
-                imagesHint.textContent = 'Upload up to ' + currentMaxImages
-                    + ' image' + (currentMaxImages !== 1 ? 's' : '') + '. JPG, PNG, GIF supported.';
-            }
-        } else {
-            hide(imgHint);
-            if (imagesHint) imagesHint.textContent = 'JPG, PNG, GIF supported.';
-        }
-
-        if (currentWordLimit > 0 || currentMaxImages > 0) {
-            show(sizeHints);
-        } else {
-            hide(sizeHints);
-        }
-
-        updateWordCount();
+        // Word count / max images no longer used — just reveal dependent sections
         revealFromSize(true);
         updateLocationLabels();
         filterCities();
@@ -704,8 +661,7 @@
                         var opt = document.createElement('option');
                         opt.value = s.id;
                         opt.textContent = s.label;
-                        opt.dataset.wc = s.ad_word_count;
-                        opt.dataset.mi = s.max_images;
+                        
                         if (String(s.id) === String(curSize)) opt.selected = true;
                         sizeSel.appendChild(opt);
                     });

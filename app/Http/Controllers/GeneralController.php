@@ -304,7 +304,7 @@ class GeneralController extends Controller
 
     /**
      * AJAX: Return advertisement sizes for a given advertisement type.
-     * Returns localized label, word count and max images as JSON.
+     * Returns localized label as JSON.
      *
      * @param \Illuminate\Http\Request $request
      * @param int $typeId
@@ -325,10 +325,8 @@ class GeneralController extends Controller
                     : ($s->advertisement_size_en ?: $s->advertisement_size_si);
 
                 return [
-                    'id'            => $s->id,
-                    'label'         => $label,
-                    'ad_word_count' => (int) ($s->ad_word_count ?? 0),
-                    'max_images'    => (int) ($s->max_images ?? 0),
+                    'id'    => $s->id,
+                    'label' => $label,
                 ];
             });
 
@@ -398,8 +396,6 @@ class GeneralController extends Controller
         $request->validate([
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
-            'ad_word_count' => 'required|integer|min:1',
-            'max_images' => 'required|integer|min:0',
             'category_id' => 'required|integer|exists:categories,id',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
@@ -421,8 +417,6 @@ class GeneralController extends Controller
         $adSizeId = DB::table('advertisement_sizes')->insertGetId([
             'advertisement_size_en' => $request->advertisement_size_en ?: null,
             'advertisement_size_si' => $request->advertisement_size_si ?: null,
-            'ad_word_count' => $request->ad_word_count,
-            'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             // if storage isn't configured or migration not run yet, store empty string instead of null
@@ -453,8 +447,6 @@ class GeneralController extends Controller
         $request->validate([
             'advertisement_size_en' => 'nullable|string|max:255|required_without:advertisement_size_si',
             'advertisement_size_si' => 'nullable|string|max:255|required_without:advertisement_size_en',
-            'ad_word_count' => 'required|integer|min:1',
-            'max_images' => 'required|integer|min:0',
             'category_id' => 'required|integer|exists:categories,id',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'price' => 'required|numeric',
@@ -465,8 +457,6 @@ class GeneralController extends Controller
         $data = [
             'advertisement_size_en' => $request->advertisement_size_en ?: null,
             'advertisement_size_si' => $request->advertisement_size_si ?: null,
-            'ad_word_count' => $request->ad_word_count,
-            'max_images' => $request->max_images,
             'advertisement_type_id' => $request->advertisement_type_id,
             'price' => $request->price,
             'is_active' => $request->is_active,
@@ -1087,8 +1077,6 @@ class GeneralController extends Controller
             $adId = DB::table('advertisements')->insertGetId([
                 'customer_id' => $customerId,
                 'category_id' => $request->category_id,
-                'advertisement_type_id' => $request->advertisement_type_id,
-                'advertisement_size_id' => $request->advertisement_size_id,
                 'district_id' => $request->district_id,
                 'city_id' => $request->city_id,
                 'advertisement_description' => $request->advertisement_description,
@@ -1138,10 +1126,16 @@ class GeneralController extends Controller
             }
 
             if ($request->filled('payment_method_id') || $request->filled('payment_amount')) {
+                $priceBreakdown = $this->buildAdvertisementPriceBreakdown($request);
+                $paymentAmount = $request->filled('payment_amount')
+                    ? $request->payment_amount
+                    : collect($priceBreakdown)->sum('amount');
+
                 DB::table('payments')->insert([
                     'advertisement_id'  => $adId,
                     'payment_method_id' => $request->payment_method_id ?: 1,
-                    'amount'            => $request->payment_amount ?: 0,
+                    'price_breakdown'   => !empty($priceBreakdown) ? json_encode($priceBreakdown, JSON_UNESCAPED_UNICODE) : null,
+                    'amount'            => $paymentAmount ?: 0,
                     'payment_status'    => $request->payment_status ?: 'pending',
                     'payment_date'      => $request->filled('payment_date') ? $request->payment_date : now()->toDateTimeString(),
                     'is_success'        => ($request->payment_status === 'completed') ? 'true' : 'false',
@@ -1155,6 +1149,73 @@ class GeneralController extends Controller
         });
 
         return redirect('/advertisements')->with('success', 'Advertisement added successfully!');
+    }
+
+    /**
+     * Build a payment breakdown for an advertisement using the selected type and size.
+     * Labels follow the publication language when possible, and amounts come from the DB prices.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return array<int, array{label:string, amount:int|float}>
+     */
+    private function buildAdvertisementPriceBreakdown(Request $request): array
+    {
+        $publication = (string) $request->input('publication', 'hitad_print');
+        $items = [];
+
+        $typeId = $request->input('advertisement_type_id');
+        if (!empty($typeId)) {
+            $type = DB::table('advertisement_types')->where('id', $typeId)->first();
+
+            if ($type) {
+                $items[] = [
+                    'label' => $this->resolveLocalizedAdvertisementLabel(
+                        $type->advertisement_type_en ?? null,
+                        $type->advertisement_type_si ?? null,
+                        $publication
+                    ),
+                    'amount' => (float) ($type->price ?? 0),
+                ];
+            }
+        }
+
+        $sizeId = $request->input('advertisement_size_id');
+        if (!empty($sizeId)) {
+            $size = DB::table('advertisement_sizes')->where('id', $sizeId)->first();
+
+            if ($size) {
+                $items[] = [
+                    'label' => $this->resolveLocalizedAdvertisementLabel(
+                        $size->advertisement_size_en ?? null,
+                        $size->advertisement_size_si ?? null,
+                        $publication
+                    ),
+                    'amount' => (float) ($size->price ?? 0),
+                ];
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * Choose an English or Sinhala label based on publication, falling back to whichever value exists.
+     *
+     * @param string|null $english
+     * @param string|null $sinhala
+     * @param string $publication
+     * @return string
+     */
+    private function resolveLocalizedAdvertisementLabel(?string $english, ?string $sinhala, string $publication): string
+    {
+        $english = trim((string) $english);
+        $sinhala = trim((string) $sinhala);
+
+        if (trim($publication) === 'lahipita') {
+            return $sinhala !== '' ? $sinhala : ($english !== '' ? $english : 'Advertisement item');
+        }
+
+        return $english !== '' ? $english : ($sinhala !== '' ? $sinhala : 'Advertisement item');
     }
 
     /**
