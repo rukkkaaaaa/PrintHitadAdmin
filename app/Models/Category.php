@@ -26,4 +26,14 @@ class Category extends Model
     {
         return $this->hasMany(AdvertisementType::class);
     }
+
+    public function advertisementTints()
+    {
+        return $this->belongsToMany(
+            AdvertisementTint::class,
+            'category_has_advertisement_tints',
+            'category_id',
+            'advertisement_tint_id'
+        );
+    }
 }

@@ -166,8 +166,47 @@ class GeneralController extends Controller
     // GET: Show all advertisement tints
     public function getTints()
     {
-        $tints = DB::table('advertisement_tints')->get();
-        return view('tints.index', compact('tints'));
+        $categories = DB::table('categories')
+            ->where('is_active', 1)
+            ->orderBy('category_name_en')
+            ->orderBy('category_name_si')
+            ->get();
+
+        $categoriesEn = $categories
+            ->filter(fn ($category) => filled($category->category_name_en))
+            ->values();
+
+        $categoriesSi = $categories
+            ->filter(fn ($category) => filled($category->category_name_si))
+            ->values();
+
+        $tints = DB::table('advertisement_tints')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $tintCategories = DB::table('category_has_advertisement_tints')
+            ->join('categories', 'category_has_advertisement_tints.category_id', '=', 'categories.id')
+            ->select(
+                'category_has_advertisement_tints.advertisement_tint_id',
+                'categories.id',
+                'categories.category_name_en',
+                'categories.category_name_si'
+            )
+            ->orderBy('categories.category_name_en')
+            ->orderBy('categories.category_name_si')
+            ->get()
+            ->groupBy('advertisement_tint_id');
+
+        $tints = $tints->map(function ($tint) use ($tintCategories) {
+            $categories = ($tintCategories[$tint->id] ?? collect())->values();
+
+            $tint->categories = $categories;
+            $tint->category_ids = $categories->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+            return $tint;
+        });
+
+        return view('tints.index', compact('tints', 'categories', 'categoriesEn', 'categoriesSi'));
     }
 
     // POST: Add new tint
@@ -177,17 +216,34 @@ class GeneralController extends Controller
             'advertisement_tint_en' => 'nullable|string|max:255|required_without:advertisement_tint_si',
             'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
             'price' => 'nullable|numeric',
+            'category_ids' => 'required|array|min:1',
+            'category_ids.*' => 'integer|exists:categories,id',
         ]);
 
-        DB::table('advertisement_tints')->insert([
-            'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
-            'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
-            'color' => $request->color ?: '',
-            'price' => $request->price ?: 0,
-            'is_active' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $categoryIds = collect($request->input('category_ids', []))
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($request, $categoryIds) {
+            $tintId = DB::table('advertisement_tints')->insertGetId([
+                'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+                'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+                'color' => $request->color ?: '',
+                'price' => $request->price ?: 0,
+                'is_active' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            DB::table('category_has_advertisement_tints')->insert(
+                $categoryIds->map(fn ($categoryId) => [
+                    'category_id' => $categoryId,
+                    'advertisement_tint_id' => $tintId,
+                ])->all()
+            );
+        });
 
         return redirect()->back()->with('success', 'Tint added successfully!');
     }
@@ -200,16 +256,37 @@ class GeneralController extends Controller
             'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
             'is_active' => 'required|boolean',
             'price' => 'nullable|numeric',
+            'category_ids' => 'required|array|min:1',
+            'category_ids.*' => 'integer|exists:categories,id',
         ]);
 
-        DB::table('advertisement_tints')->where('id', $id)->update([
-            'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
-            'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
-            'color' => $request->color ?: '',
-            'is_active' => $request->is_active,
-            'price' => $request->price ?: 0,
-            'updated_at' => now(),
-        ]);
+        $categoryIds = collect($request->input('category_ids', []))
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($request, $id, $categoryIds) {
+            DB::table('advertisement_tints')->where('id', $id)->update([
+                'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+                'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+                'color' => $request->color ?: '',
+                'is_active' => $request->is_active,
+                'price' => $request->price ?: 0,
+                'updated_at' => now(),
+            ]);
+
+            DB::table('category_has_advertisement_tints')
+                ->where('advertisement_tint_id', $id)
+                ->delete();
+
+            DB::table('category_has_advertisement_tints')->insert(
+                $categoryIds->map(fn ($categoryId) => [
+                    'category_id' => $categoryId,
+                    'advertisement_tint_id' => $id,
+                ])->all()
+            );
+        });
 
         return redirect()->back()->with('success', 'Tint updated successfully!');
     }

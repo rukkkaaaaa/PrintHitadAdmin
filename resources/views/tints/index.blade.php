@@ -1,5 +1,38 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    .tint-category-dropdown .dropdown-menu {
+        width: 100%;
+        max-height: 260px;
+        overflow-y: auto;
+    }
+
+    .tint-category-dropdown .dropdown-toggle {
+        text-align: left;
+    }
+
+    .tint-category-dropdown .dropdown-toggle::after {
+        float: right;
+        margin-top: 0.6rem;
+    }
+
+    .tint-category-dropdown .dropdown-item {
+        white-space: normal;
+    }
+
+    .tint-category-dropdown .form-check {
+        margin: 0;
+    }
+
+    .tint-category-dropdown .dropdown-item.active,
+    .tint-category-dropdown .dropdown-item:active {
+        background-color: transparent;
+        color: inherit;
+    }
+ </style>
+@endpush
+
 @section('content')
 <div class="container mt-4">
 
@@ -41,6 +74,36 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label">Categories</label>
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-selected-text="Select categories"
+                                        aria-expanded="false">
+                                    Select categories
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    @foreach ($categoriesEn as $category)
+                                        <label class="dropdown-item">
+                                            <div class="form-check">
+                                                <input class="form-check-input tint-category-checkbox"
+                                                       type="checkbox"
+                                                       name="category_ids[]"
+                                                       value="{{ $category->id }}"
+                                                       data-label="{{ $category->category_name_en }}"
+                                                       {{ in_array($category->id, old('category_ids', [])) ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $category->category_name_en }}</span>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label">Color (hex)</label>
                             <input type="color" name="color" class="form-control form-control-color" value="#ffffff">
                         </div>
@@ -70,6 +133,36 @@
                         <div class="mb-3">
                             <label class="form-label">Tint Name (Si)</label>
                             <input type="text" name="advertisement_tint_si" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Categories</label>
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                                <button class="btn btn-outline-secondary dropdown-toggle w-100"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-selected-text="Select categories"
+                                        aria-expanded="false">
+                                    Select categories
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    @foreach ($categoriesSi as $category)
+                                        <label class="dropdown-item">
+                                            <div class="form-check">
+                                                <input class="form-check-input tint-category-checkbox"
+                                                       type="checkbox"
+                                                       name="category_ids[]"
+                                                       value="{{ $category->id }}"
+                                                       data-label="{{ $category->category_name_si }}"
+                                                       {{ in_array($category->id, old('category_ids', [])) ? 'checked' : '' }}>
+                                                <span class="form-check-label">{{ $category->category_name_si }}</span>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
                         </div>
 
                         <div class="mb-3">
@@ -107,6 +200,7 @@
                         <th width="60">ID</th>
                         <th>Tint (EN)</th>
                         <th>Tint (SI)</th>
+                        <th>Categories</th>
                         <th>Color</th>
                         <th>Price</th>
                         <th width="120">Status</th>
@@ -126,6 +220,16 @@
                             <td>{{ $tint->advertisement_tint_en }}</td>
 
                             <td>{{ $tint->advertisement_tint_si }}</td>
+
+                            <td>
+                                @forelse ($tint->categories as $category)
+                                    <span class="badge bg-info text-dark me-1 mb-1">
+                                        {{ $category->category_name_en ?: $category->category_name_si }}
+                                    </span>
+                                @empty
+                                    <span class="text-muted">No categories</span>
+                                @endforelse
+                            </td>
 
                             <td>
                                 <span style="display:inline-block;width:20px;height:20px;background:{{ $tint->color ?: '#ffffff' }};border:1px solid #ccc;vertical-align:middle;margin-right:8px"></span>
@@ -157,7 +261,7 @@
                     @empty
 
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="9" class="text-center">
                                 No tints found.
                             </td>
                         </tr>
@@ -174,6 +278,11 @@
 
     {{-- Edit Modals --}}
     @foreach ($tints as $tint)
+
+        @php
+            $isSinhalaTint = filled($tint->advertisement_tint_si) && !filled($tint->advertisement_tint_en);
+            $editCategories = $isSinhalaTint ? $categoriesSi : $categoriesEn;
+        @endphp
 
         <div class="modal fade" id="editTint{{ $tint->id }}" tabindex="-1">
 
@@ -207,6 +316,36 @@
                                        name="advertisement_tint_si"
                                        class="form-control"
                                     value="{{ $tint->advertisement_tint_si }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Categories</label>
+                                <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            data-selected-text="Select categories"
+                                            aria-expanded="false">
+                                        Select categories
+                                    </button>
+                                    <div class="dropdown-menu p-2">
+                                        @foreach ($editCategories as $category)
+                                            <label class="dropdown-item">
+                                                <div class="form-check">
+                                                    <input class="form-check-input tint-category-checkbox"
+                                                           type="checkbox"
+                                                           name="category_ids[]"
+                                                           value="{{ $category->id }}"
+                                                           data-label="{{ $isSinhalaTint ? $category->category_name_si : $category->category_name_en }}"
+                                                           {{ in_array($category->id, $tint->category_ids ?? []) ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ $isSinhalaTint ? $category->category_name_si : $category->category_name_en }}</span>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <small class="text-muted">Choose one or more categories from the dropdown.</small>
+                                <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
                             </div>
 
                             <div class="mb-3">
@@ -264,3 +403,64 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdowns = document.querySelectorAll('.tint-category-dropdown');
+
+        const updateDropdownLabel = (dropdown) => {
+            const button = dropdown.querySelector('.dropdown-toggle');
+            const checkboxes = dropdown.querySelectorAll('.tint-category-checkbox');
+            const checkedBoxes = Array.from(checkboxes).filter((checkbox) => checkbox.checked);
+            const labels = checkedBoxes.map((checkbox) => checkbox.dataset.label).filter(Boolean);
+            const placeholder = dropdown.dataset.placeholder || 'Select categories';
+
+            if (labels.length === 0) {
+                button.textContent = placeholder;
+            } else if (labels.length <= 2) {
+                button.textContent = labels.join(', ');
+            } else {
+                button.textContent = labels.length + ' categories selected';
+            }
+        };
+
+        const updateValidation = (form, showError = false) => {
+            const categoryCheckboxes = form.querySelectorAll('.tint-category-checkbox');
+            const hasSelection = Array.from(categoryCheckboxes).some((checkbox) => checkbox.checked);
+            const error = form.querySelector('.tint-category-error');
+
+            if (error) {
+                error.style.display = !hasSelection && showError ? 'block' : 'none';
+            }
+
+            return hasSelection;
+        };
+
+        dropdowns.forEach((dropdown) => {
+            updateDropdownLabel(dropdown);
+
+            dropdown.querySelectorAll('.tint-category-checkbox').forEach((checkbox) => {
+                checkbox.addEventListener('change', function () {
+                    updateDropdownLabel(dropdown);
+                    const form = dropdown.closest('form');
+
+                    if (form) {
+                        updateValidation(form, true);
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('form[action$="/add-tint"], form[action*="/update-tint/"]').forEach((form) => {
+            updateValidation(form, false);
+
+            form.addEventListener('submit', function (event) {
+                if (!updateValidation(form, true)) {
+                    event.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+@endpush
