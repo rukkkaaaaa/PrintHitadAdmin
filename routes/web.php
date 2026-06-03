@@ -105,6 +105,8 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     // AJAX: get ad types for a category
     Route::get('/adtypes/by-category/{id}', [GeneralController::class, 'getAdTypesByCategory']);
+    // AJAX: get tints for a category
+    Route::get('/tints/by-category/{id}', [GeneralController::class, 'getTintsByCategory']);
     // AJAX: get ad sizes for a type
     Route::get('/adsizes/by-type/{id}', [GeneralController::class, 'getAdSizesByType']);
     // AJAX: get criterias for a category

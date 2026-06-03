@@ -18,6 +18,8 @@
 
         <p><strong>Publication:</strong> {{ $ad->publication }}</p>
         <p><strong>Publish Date:</strong> {{ $ad->publish_date }}</p>
+        <p><strong>Tint:</strong> {{ $ad->advertisement_tint_name ?: 'No Tint' }}</p>
+        <p><strong>Web Combined Ad:</strong> {{ (int)($ad->web_combined_ad ?? 0) === 1 ? 'Yes' : 'No' }}</p>
 
         <hr>
 

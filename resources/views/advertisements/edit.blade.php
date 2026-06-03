@@ -132,6 +132,34 @@
 
 
                     <div class="col-md-6">
+                        <label class="form-label">Tint</label>
+                        <select name="advertisement_tint_id" class="form-select">
+                            <option value="">No Tint</option>
+                            @foreach(($tints ?? collect()) as $tint)
+                                @php
+                                    $tintLabel = trim((trim($ad->publication ?? '') === 'lahipita')
+                                        ? ($tint->advertisement_tint_si ?? '')
+                                        : ($tint->advertisement_tint_en ?? ''));
+
+                                    if ($tintLabel === '') {
+                                        $tintLabel = trim((trim($ad->publication ?? '') === 'lahipita')
+                                            ? ($tint->advertisement_tint_en ?? '')
+                                            : ($tint->advertisement_tint_si ?? ''));
+                                    }
+                                @endphp
+                                @if($tintLabel !== '')
+                                    <option value="{{ $tint->id }}" {{ old('advertisement_tint_id', $ad->advertisement_tint_id) == $tint->id ? 'selected' : '' }}>
+                                        {{ $tintLabel }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                        @error('advertisement_tint_id')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label">Web Combined Ad</label>
                         <select name="web_combined_ad" class="form-select">
                             <option value="0" {{ old('web_combined_ad', $ad->web_combined_ad) == 0 ? 'selected' : '' }}>No</option>

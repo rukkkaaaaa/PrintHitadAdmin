@@ -374,6 +374,44 @@ class GeneralController extends Controller
     }
 
     /**
+     * AJAX: Return advertisement tints for a given category.
+     * Responds with JSON containing id and localized label.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $categoryId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getTintsByCategory(Request $request, $categoryId)
+    {
+        $lang = $request->query('lang', 'en');
+
+        $tints = DB::table('advertisement_tints')
+            ->join('category_has_advertisement_tints', 'advertisement_tints.id', '=', 'category_has_advertisement_tints.advertisement_tint_id')
+            ->where('advertisement_tints.is_active', 1)
+            ->where('category_has_advertisement_tints.category_id', $categoryId)
+            ->select(
+                'advertisement_tints.id',
+                'advertisement_tints.advertisement_tint_en',
+                'advertisement_tints.advertisement_tint_si'
+            )
+            ->orderBy('advertisement_tints.advertisement_tint_en')
+            ->orderBy('advertisement_tints.advertisement_tint_si')
+            ->get()
+            ->map(function ($tint) use ($lang) {
+                $label = $lang === 'si'
+                    ? ($tint->advertisement_tint_si ?: $tint->advertisement_tint_en)
+                    : ($tint->advertisement_tint_en ?: $tint->advertisement_tint_si);
+
+                return [
+                    'id' => $tint->id,
+                    'label' => $label,
+                ];
+            });
+
+        return response()->json($tints);
+    }
+
+    /**
      * AJAX: Return advertisement sizes for a given advertisement type.
      * Returns localized label as JSON.
      *
@@ -1026,11 +1064,25 @@ class GeneralController extends Controller
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
+            'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'payment_method_id' => 'nullable|exists:payment_methods,id',
             'payment_amount'    => 'nullable|numeric|min:0',
             'payment_status'    => 'nullable|in:pending,completed,failed',
             'payment_date'      => 'nullable|date',
         ]);
+
+        if ($request->filled('advertisement_tint_id')) {
+            $isTintInCategory = DB::table('category_has_advertisement_tints')
+                ->where('category_id', $request->category_id)
+                ->where('advertisement_tint_id', $request->advertisement_tint_id)
+                ->exists();
+
+            if (!$isTintInCategory) {
+                return redirect()->back()
+                    ->withErrors(['advertisement_tint_id' => 'The selected tint is not valid for the selected category.'])
+                    ->withInput();
+            }
+        }
 
         DB::transaction(function () use ($request) {
             $customer = DB::table('customers')->where('nic_passport', $request->nic_passport)->first();
@@ -1059,6 +1111,7 @@ class GeneralController extends Controller
             $adId = DB::table('advertisements')->insertGetId([
                 'customer_id' => $customerId,
                 'category_id' => $request->category_id,
+                'advertisement_tint_id' => $request->advertisement_tint_id,
                 'district_id' => $request->district_id,
                 'city_id' => $request->city_id,
                 'advertisement_description' => $request->advertisement_description,
@@ -1362,6 +1415,7 @@ class GeneralController extends Controller
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
 
             // ✅ LEFT JOIN payments (important)
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
@@ -1381,6 +1435,7 @@ class GeneralController extends Controller
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
                 DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw("COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name"),
 
                 // ✅ Payment fields
                 'payments.amount',
@@ -2205,6 +2260,18 @@ class GeneralController extends Controller
         $categories = DB::table('categories')->where('is_active', 1)->get();
         $districts = DB::table('districts')->where('is_active', 1)->get();
         $cities = DB::table('cities')->where('is_active', 1)->get();
+        $tints = DB::table('advertisement_tints')
+            ->join('category_has_advertisement_tints', 'advertisement_tints.id', '=', 'category_has_advertisement_tints.advertisement_tint_id')
+            ->where('advertisement_tints.is_active', 1)
+            ->where('category_has_advertisement_tints.category_id', $ad->category_id)
+            ->select(
+                'advertisement_tints.id',
+                'advertisement_tints.advertisement_tint_en',
+                'advertisement_tints.advertisement_tint_si'
+            )
+            ->orderBy('advertisement_tints.advertisement_tint_en')
+            ->orderBy('advertisement_tints.advertisement_tint_si')
+            ->get();
 
         // If this advertisement is for Lahipita, load Sinhala names into the fields
         // the view expects (which currently use *_en properties). This keeps the
@@ -2250,7 +2317,7 @@ class GeneralController extends Controller
             abort(404);
         }
 
-        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues'));
+        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints'));
     }
 
     /**
@@ -2288,6 +2355,7 @@ class GeneralController extends Controller
                     }
                 },
             ],
+            'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'web_combined_ad' => 'required|boolean',
             'payment_status' => $canEditPaymentFields
                 ? ['nullable', 'in:pending,completed,failed']
@@ -2296,6 +2364,19 @@ class GeneralController extends Controller
                 ? ['nullable', 'date_format:Y-m-d\TH:i']
                 : ['prohibited'],
         ]);
+
+        if ($request->filled('advertisement_tint_id')) {
+            $isTintInCategory = DB::table('category_has_advertisement_tints')
+                ->where('category_id', $request->category_id)
+                ->where('advertisement_tint_id', $request->advertisement_tint_id)
+                ->exists();
+
+            if (!$isTintInCategory) {
+                return redirect()->back()
+                    ->withErrors(['advertisement_tint_id' => 'The selected tint is not valid for the selected category.'])
+                    ->withInput();
+            }
+        }
 
         DB::transaction(function () use ($request, $id) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
@@ -2319,6 +2400,7 @@ class GeneralController extends Controller
             DB::table('advertisements')->where('id', $id)->update([
                 'advertisement_description' => $request->advertisement_description,
                 'category_id' => $request->category_id,
+                'advertisement_tint_id' => $request->advertisement_tint_id,
                 'district_id' => $request->district_id,
                 'city_id' => $request->city_id,
                 'publish_date' => $request->publish_date,

@@ -182,6 +182,12 @@
                         <option value="1" {{ old('web_combined_ad') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Tint</label>
+                    <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
+                        <option value="">No Tint</option>
+                    </select>
+                </div>
                 {{-- Status removed: advertisement status is no longer stored on advertisements table --}}
             </div>
         </div>
@@ -354,6 +360,7 @@
     const catSel         = form.querySelector('#catSel');
     const typeSel        = form.querySelector('#typeSel');
     const sizeSel        = form.querySelector('#sizeSel');
+    const tintSel        = form.querySelector('#tintSel');
     const distSel        = form.querySelector('#districtSelect');
     const citySel        = form.querySelector('#citySelect');
     const typeCard       = form.querySelector('#typeCard');
@@ -385,6 +392,7 @@
     function hide(el) { if (el) el.style.display = 'none'; }
 
     function resetSelect(sel, placeholder) {
+        if (!sel) return;
         sel.innerHTML = '<option value="">' + placeholder + '</option>';
         sel.value = '';
     }
@@ -548,6 +556,7 @@
         hide(typeCard);
         resetSelect(sizeSel, 'Select Size');
         hide(sizeCard);
+        resetSelect(tintSel, 'No Tint');
         hide(sizeHints);
         revealFromSize(false);
             pendingCriterias = [];
@@ -571,6 +580,8 @@
             })
             .catch(function () { show(typeCard); });
 
+        loadTints(categoryId);
+
         // Pre-fetch criterias for this category
         fetch(@json(url('/adcriterias/by-category')) + '/' + categoryId + '?lang=' + l, {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -578,6 +589,37 @@
             .then(function (r) { return r.json(); })
             .then(function (data) { pendingCriterias = data; })
             .catch(function () { pendingCriterias = []; });
+    }
+
+    /* ── AJAX: load tints for a category ────────────────────────────── */
+    function loadTints(categoryId) {
+        resetSelect(tintSel, 'No Tint');
+        if (!categoryId || !tintSel) return;
+
+        var l = lang();
+        var oldTintId = (tintSel.dataset.old || '').toString();
+
+        fetch(@json(url('/tints/by-category')) + '/' + categoryId + '?lang=' + l, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (tints) {
+                tints.forEach(function (t) {
+                    var opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.label;
+
+                    if (oldTintId && String(t.id) === String(oldTintId)) {
+                        opt.selected = true;
+                    }
+
+                    tintSel.appendChild(opt);
+                });
+
+                // clear one-time old value once consumed
+                tintSel.dataset.old = '';
+            })
+            .catch(function () {});
     }
 
     /* ── AJAX: load sizes for a type ─────────────────────────────────── */
@@ -633,6 +675,7 @@
 
         if (catId) {
             var curType = typeSel.value;
+            var curTint = tintSel ? tintSel.value : '';
             fetch(@json(url('/adtypes/by-category')) + '/' + catId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -647,6 +690,11 @@
                         typeSel.appendChild(opt);
                     });
                 });
+
+            if (tintSel) {
+                tintSel.dataset.old = curTint;
+                loadTints(catId);
+            }
 
             fetch(@json(url('/adcriterias/by-category')) + '/' + catId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
