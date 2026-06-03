@@ -237,23 +237,15 @@ class GeneralController extends Controller
 
         $adTypesEn = DB::table('advertisement_types')
             ->where('is_active', 1)
-            ->whereNotNull('advertisement_type_en')
-            ->where('advertisement_type_en', '!=', '')
             ->orderBy('advertisement_type_en')
-            ->get()
-            // remove duplicates by English label (keep first)
-            ->unique('advertisement_type_en')
-            ->values();
+            ->orderBy('advertisement_type_si')
+            ->get();
 
         $adTypesSi = DB::table('advertisement_types')
             ->where('is_active', 1)
-            ->whereNotNull('advertisement_type_si')
-            ->where('advertisement_type_si', '!=', '')
             ->orderBy('advertisement_type_si')
-            ->get()
-            // remove duplicates by Sinhala label (keep first)
-            ->unique('advertisement_type_si')
-            ->values();
+            ->orderBy('advertisement_type_en')
+            ->get();
 
         $categoriesEn = DB::table('categories')
             ->where('is_active', 1)

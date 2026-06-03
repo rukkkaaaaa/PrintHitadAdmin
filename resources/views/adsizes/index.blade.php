@@ -66,7 +66,7 @@
                                     <option value="">Select</option>
                                     @foreach ($adTypesEn as $type)
                                         <option value="{{ $type->id }}" data-category="{{ $type->category_id }}">
-                                            {{ $type->advertisement_type_en }}
+                                            {{ $type->advertisement_type_en ?: $type->advertisement_type_si }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -130,7 +130,7 @@
                                     <option value="">Select</option>
                                     @foreach ($adTypesSi as $type)
                                         <option value="{{ $type->id }}" data-category="{{ $type->category_id }}">
-                                            {{ $type->advertisement_type_si }}
+                                            {{ $type->advertisement_type_si ?: $type->advertisement_type_en }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -311,13 +311,13 @@
                                                 @if($showSiOnly)
                                                     @foreach ($adTypesSi as $type)
                                                         <option value="{{ $type->id }}" data-category="{{ $type->category_id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
-                                                            {{ $type->advertisement_type_si }}
+                                                            {{ $type->advertisement_type_si ?: $type->advertisement_type_en }}
                                                         </option>
                                                     @endforeach
                                                 @else
                                                     @foreach ($adTypesEn as $type)
                                                         <option value="{{ $type->id }}" data-category="{{ $type->category_id }}" {{ $type->id == $size->advertisement_type_id ? 'selected' : '' }}>
-                                                            {{ $type->advertisement_type_en }}
+                                                            {{ $type->advertisement_type_en ?: $type->advertisement_type_si }}
                                                         </option>
                                                     @endforeach
                                                 @endif
@@ -457,28 +457,27 @@
         // Load ad types for a category from server and populate the ad type select
         function loadAdTypesForSelect(adtypeSelect, categoryId, lang, selectedId) {
             if (!adtypeSelect) return;
+
+            if (!adtypeSelect._allAdTypeOptions) {
+                adtypeSelect._allAdTypeOptions = Array.prototype.slice.call(
+                    adtypeSelect.querySelectorAll('option')
+                ).filter(function(opt){ return opt.value !== ''; });
+            }
+
             // default option
             adtypeSelect.innerHTML = '<option value="">Select</option>';
 
             if (!categoryId) return;
 
-            fetch('/adtypes/by-category/' + encodeURIComponent(categoryId) + '?lang=' + encodeURIComponent(lang || 'en'))
-                .then(function(res){ return res.json(); })
-                .then(function(items){
-                    items.forEach(function(it){
-                        var opt = document.createElement('option');
-                        opt.value = it.id;
-                        opt.textContent = it.label;
-                        adtypeSelect.appendChild(opt);
-                    });
+            adtypeSelect._allAdTypeOptions.forEach(function(opt){
+                if ((opt.getAttribute('data-category') || '') === String(categoryId)) {
+                    adtypeSelect.appendChild(opt.cloneNode(true));
+                }
+            });
 
-                    if (selectedId) {
-                        adtypeSelect.value = selectedId;
-                    }
-                })
-                .catch(function(err){
-                    console.error('failed to load ad types for category', err);
-                });
+            if (selectedId) {
+                adtypeSelect.value = String(selectedId);
+            }
         }
 
         document.querySelectorAll('.category-select').forEach(function(catSel){

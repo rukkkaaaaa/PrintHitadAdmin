@@ -85,9 +85,15 @@
     </div>
 </div>
 
-<a href="{{ url('/advertisements') }}" class="btn btn-secondary mt-3">
-    Back to All Ads
-</a>
+<div class="mt-3 d-flex gap-2">
+    <a href="{{ url('/advertisements/' . $ad->id . '/download') }}" class="btn btn-success">
+        <i class="bx bx-download"></i> Download Advertisement
+    </a>
+
+    <a href="{{ url('/advertisements') }}" class="btn btn-secondary">
+        Back to All Ads
+    </a>
+</div>
 
 
 </div>

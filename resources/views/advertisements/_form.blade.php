@@ -556,7 +556,9 @@
 
         var l = lang();
 
-        fetch('/adtypes/by-category/' + categoryId + '?lang=' + l)
+        fetch(@json(url('/adtypes/by-category')) + '/' + categoryId + '?lang=' + l, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
             .then(function (r) { return r.json(); })
             .then(function (types) {
                 types.forEach(function (t) {
@@ -570,7 +572,9 @@
             .catch(function () { show(typeCard); });
 
         // Pre-fetch criterias for this category
-        fetch('/adcriterias/by-category/' + categoryId + '?lang=' + l)
+        fetch(@json(url('/adcriterias/by-category')) + '/' + categoryId + '?lang=' + l, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
             .then(function (r) { return r.json(); })
             .then(function (data) { pendingCriterias = data; })
             .catch(function () { pendingCriterias = []; });
@@ -587,7 +591,9 @@
         if (!typeId) return;
 
         var l = lang();
-        fetch('/adsizes/by-type/' + typeId + '?lang=' + l)
+        fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
             .then(function (r) { return r.json(); })
             .then(function (sizes) {
                 sizes.forEach(function (s) {
@@ -627,7 +633,9 @@
 
         if (catId) {
             var curType = typeSel.value;
-            fetch('/adtypes/by-category/' + catId + '?lang=' + l)
+            fetch(@json(url('/adtypes/by-category')) + '/' + catId + '?lang=' + l, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
                 .then(function (r) { return r.json(); })
                 .then(function (types) {
                     resetSelect(typeSel, 'Select Type');
@@ -640,7 +648,9 @@
                     });
                 });
 
-            fetch('/adcriterias/by-category/' + catId + '?lang=' + l)
+            fetch(@json(url('/adcriterias/by-category')) + '/' + catId + '?lang=' + l, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     pendingCriterias = data;
@@ -653,7 +663,9 @@
 
         if (typeId) {
             var curSize = sizeSel.value;
-            fetch('/adsizes/by-type/' + typeId + '?lang=' + l)
+            fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
                 .then(function (r) { return r.json(); })
                 .then(function (sizes) {
                     resetSelect(sizeSel, 'Select Size');
