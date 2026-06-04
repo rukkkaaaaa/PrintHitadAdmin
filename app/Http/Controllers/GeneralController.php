@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 use ZipStream\ZipStream;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AdvertisementEmail;
@@ -1024,7 +1025,172 @@ class GeneralController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods'));
+        $publicationDeadlines = $this->fetchPublicationDeadlines();
+
+        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines'));
+    }
+
+    /**
+     * Show publication cutoff settings page for admins.
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function getPublicationDeadlines()
+    {
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+            abort(403);
+        }
+
+        $schemaMissing = !Schema::hasTable('publication_deadlines');
+        $deadlines = $this->fetchPublicationDeadlines();
+        $weekDays = [
+            0 => 'Sunday',
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+        ];
+
+        return view('publication_deadlines.index', compact('deadlines', 'weekDays', 'schemaMissing'));
+    }
+
+    /**
+     * Update publication cutoff settings.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updatePublicationDeadlines(Request $request)
+    {
+        if (!Schema::hasTable('publication_deadlines')) {
+            return redirect()->back()->with('error', 'Publication deadlines table is missing. Please run migrations first.');
+        }
+
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'hitad_cutoff_day_of_week' => 'required|integer|min:0|max:6',
+            'hitad_cutoff_time' => 'required|date_format:H:i',
+            'lahipita_cutoff_day_of_week' => 'required|integer|min:0|max:6',
+            'lahipita_cutoff_time' => 'required|date_format:H:i',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            DB::table('publication_deadlines')->updateOrInsert(
+                ['publication' => 'hitad_print'],
+                [
+                    'cutoff_day_of_week' => (int) $request->input('hitad_cutoff_day_of_week'),
+                    'cutoff_time' => $request->input('hitad_cutoff_time') . ':00',
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            DB::table('publication_deadlines')->updateOrInsert(
+                ['publication' => 'lahipita'],
+                [
+                    'cutoff_day_of_week' => (int) $request->input('lahipita_cutoff_day_of_week'),
+                    'cutoff_time' => $request->input('lahipita_cutoff_time') . ':00',
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+        });
+
+        return redirect()->back()->with('success', 'Publication cutoffs updated successfully.');
+    }
+
+    /**
+     * Fetch publication cutoff rules from DB, with defaults.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function fetchPublicationDeadlines(): array
+    {
+        $defaults = [
+            'hitad_print' => [
+                'publication' => 'hitad_print',
+                'label' => 'HitAd',
+                'cutoff_day_of_week' => 5,
+                'cutoff_time' => '18:00:00',
+            ],
+            'lahipita' => [
+                'publication' => 'lahipita',
+                'label' => 'Lahipita',
+                'cutoff_day_of_week' => 2,
+                'cutoff_time' => '18:00:00',
+            ],
+        ];
+
+        if (!Schema::hasTable('publication_deadlines')) {
+            return $defaults;
+        }
+
+        $rows = DB::table('publication_deadlines')
+            ->whereIn('publication', array_keys($defaults))
+            ->get();
+
+        foreach ($rows as $row) {
+            $publication = (string) ($row->publication ?? '');
+            if (!isset($defaults[$publication])) {
+                continue;
+            }
+
+            $defaults[$publication]['cutoff_day_of_week'] = max(0, min(6, (int) ($row->cutoff_day_of_week ?? $defaults[$publication]['cutoff_day_of_week'])));
+            $defaults[$publication]['cutoff_time'] = trim((string) ($row->cutoff_time ?? $defaults[$publication]['cutoff_time'])) !== ''
+                ? (string) $row->cutoff_time
+                : $defaults[$publication]['cutoff_time'];
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * Validate that publish date is Sunday and before the configured publication cutoff.
+     *
+     * @param string $publication
+     * @param string $value
+     * @param callable $fail
+     * @return void
+     */
+    private function validatePublicationPublishDate(string $publication, string $value, callable $fail): void
+    {
+        $publication = trim($publication);
+        if (!in_array($publication, ['lahipita', 'hitad_print', 'hitad'], true)) {
+            return;
+        }
+
+        $businessTimezone = 'Asia/Colombo';
+
+        $publishDate = Carbon::parse($value, $businessTimezone)->startOfDay();
+        if ($publishDate->dayOfWeek !== Carbon::SUNDAY) {
+            $fail('The publish date must be a Sunday.');
+            return;
+        }
+
+        $deadlines = $this->fetchPublicationDeadlines();
+        $rule = $deadlines[$publication === 'hitad' ? 'hitad_print' : $publication] ?? null;
+        if (!$rule) {
+            return;
+        }
+
+        $cutoffDay = (int) ($rule['cutoff_day_of_week'] ?? 5);
+        $daysBack = (Carbon::SUNDAY - $cutoffDay + 7) % 7;
+
+        $cutoffDateTime = $publishDate
+            ->copy()
+            ->subDays($daysBack)
+            ->setTimeFromTimeString((string) ($rule['cutoff_time'] ?? '18:00:00'));
+
+        if (Carbon::now($businessTimezone)->greaterThanOrEqualTo($cutoffDateTime)) {
+            $fail('The selected publish date is past the cutoff for ' . ($rule['label'] ?? $publication) . '.');
+        }
     }
 
     /**
@@ -1055,9 +1221,7 @@ class GeneralController extends Controller
                 'required',
                 'date',
                 function ($attribute, $value, $fail) {
-                    if (in_array(request('publication'), ['lahipita', 'hitad_print', 'hitad']) && \Illuminate\Support\Carbon::parse($value)->dayOfWeek !== \Illuminate\Support\Carbon::SUNDAY) {
-                        $fail('The publish date must be a Sunday.');
-                    }
+                    $this->validatePublicationPublishDate((string) request('publication'), (string) $value, $fail);
                 },
             ],
             'web_combined_ad' => 'nullable|boolean',
@@ -2362,11 +2526,21 @@ class GeneralController extends Controller
                 'date',
                 function ($attribute, $value, $fail) use ($id) {
                     $ad = DB::table('advertisements')->where('id', $id)->first();
-                    if ($ad && in_array($ad->publication ?? '', ['lahipita', 'hitad_print', 'hitad'])) {
-                        if (\Illuminate\Support\Carbon::parse($value)->dayOfWeek !== \Illuminate\Support\Carbon::SUNDAY) {
-                            $fail('The publish date must be a Sunday.');
-                        }
+
+                    if (!$ad) {
+                        return;
                     }
+
+                    $existingDate = !empty($ad->publish_date)
+                        ? Carbon::parse($ad->publish_date)->toDateString()
+                        : null;
+
+                    $incomingDate = Carbon::parse($value)->toDateString();
+                    if ($existingDate && $incomingDate === $existingDate) {
+                        return;
+                    }
+
+                    $this->validatePublicationPublishDate((string) ($ad->publication ?? ''), (string) $value, $fail);
                 },
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',

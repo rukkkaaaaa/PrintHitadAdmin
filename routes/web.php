@@ -162,6 +162,9 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     */
     Route::get('/all-print-ads', [GeneralController::class, 'getAllPrintAdvertisements']);
 
+    Route::get('/publication-deadlines', [GeneralController::class, 'getPublicationDeadlines']);
+    Route::post('/publication-deadlines', [GeneralController::class, 'updatePublicationDeadlines']);
+
     Route::get('/advertisements/create', [GeneralController::class, 'createAdvertisement']);
     Route::post('/advertisements/store', [GeneralController::class, 'storeAdvertisement']);
 
@@ -184,3 +187,4 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/advertisements/lahipita/paid', [GeneralController::class, 'getLahipitaPaidAdvertisements']);
     Route::get('/advertisements/lahipita/unpaid', [GeneralController::class, 'getLahipitaUnpaidAdvertisements']);
 });
+

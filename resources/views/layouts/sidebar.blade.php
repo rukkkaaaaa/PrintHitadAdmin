@@ -209,6 +209,13 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('publication-deadlines') ? 'active' : '' }}">
+      <a href="{{ url('/publication-deadlines') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-time-five"></i>
+        <div>Publication Cutoffs</div>
+      </a>
+    </li>
+
     @else
     <!-- Other roles (super admin, advertise admin, etc): Full menu -->
     <!-- Dashboard -->
@@ -367,6 +374,13 @@
       <a href="{{ url('/cities') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-buildings"></i>
         <div>Cities</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('publication-deadlines') ? 'active' : '' }}">
+      <a href="{{ url('/publication-deadlines') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-time-five"></i>
+        <div>Publication Cutoffs</div>
       </a>
     </li>
 

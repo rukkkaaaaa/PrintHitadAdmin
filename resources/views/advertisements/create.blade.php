@@ -24,6 +24,7 @@
                 'cities' => $cities ?? collect(),
                 'criterias' => $criterias ?? collect(),
                 'criteriaOptions' => $criteriaOptions ?? collect(),
+                'publicationDeadlines' => $publicationDeadlines ?? [],
             ])
         </div>
     </div>

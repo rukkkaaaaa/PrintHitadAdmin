@@ -9,6 +9,7 @@
     $districts = $districts ?? collect();
     $cities = $cities ?? collect();
     $paymentMethods = $paymentMethods ?? collect();
+    $publicationDeadlines = $publicationDeadlines ?? [];
 @endphp
 
 @push('styles')
@@ -173,7 +174,8 @@
                 <div class="col-md-6">
                     <label class="form-label">Publish Date</label>
                     <input type="text" name="publish_date" id="publishDateInput" class="form-control" value="{{ old('publish_date') }}" placeholder="Select a Sunday" autocomplete="off" required>
-                    <small class="help-note">Only Sundays are selectable.</small>
+                    <small class="help-note" id="publishDateHelp">Only Sundays are selectable.</small>
+                    <div id="publishDateCutoffWarning" class="text-danger mt-1" style="font-size:.82rem; display:none;"></div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label d-block">Web Combined Ad</label>
@@ -334,17 +336,186 @@
     const form = document.getElementById(@json($formId));
     if (!form) return;
 
-    /* ── Flatpickr: Sundays only ─────────────────────────────────────── */
+    const publicationDeadlines = @json($publicationDeadlines);
+
+    /* ── Flatpickr: Sundays only + publication cutoffs ───────────────── */
     var publishInput = form.querySelector('#publishDateInput');
+    var publishHelp = form.querySelector('#publishDateHelp');
+    var publishPicker = null;
+
+    function twoDigit(num) {
+        return String(num).padStart(2, '0');
+    }
+
+    function getPublicationRule(publication) {
+        if (publicationDeadlines && publicationDeadlines[publication]) {
+            return publicationDeadlines[publication];
+        }
+
+        return publication === 'lahipita'
+            ? { label: 'Lahipita', cutoff_day_of_week: 2, cutoff_time: '18:00:00' }
+            : { label: 'HitAd', cutoff_day_of_week: 5, cutoff_time: '18:00:00' };
+    }
+
+    function parseTimeParts(timeString) {
+        var parts = String(timeString || '18:00:00').split(':');
+        return {
+            hour: parseInt(parts[0] || '18', 10),
+            minute: parseInt(parts[1] || '00', 10)
+        };
+    }
+
+    function getNextOrSameSunday(dateObj) {
+        var start = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        var day = start.getDay();
+        var diff = (7 - day) % 7;
+        start.setDate(start.getDate() + diff);
+        return start;
+    }
+
+    function getCutoffDateTimeForSunday(sundayDate, rule) {
+        var cutoffDay = Number(rule.cutoff_day_of_week);
+        var daysBack = (7 - cutoffDay) % 7;
+        var cutoff = new Date(sundayDate.getFullYear(), sundayDate.getMonth(), sundayDate.getDate());
+        cutoff.setDate(cutoff.getDate() - daysBack);
+
+        var time = parseTimeParts(rule.cutoff_time);
+        cutoff.setHours(time.hour, time.minute, 0, 0);
+
+        return cutoff;
+    }
+
+    function getFirstAllowedSunday(publication) {
+        var now = new Date();
+        var rule = getPublicationRule(publication);
+        var candidate = getNextOrSameSunday(now);
+        var cutoffDate = getCutoffDateTimeForSunday(candidate, rule);
+
+        if (now > cutoffDate) {
+            candidate.setDate(candidate.getDate() + 7);
+        }
+
+        return candidate;
+    }
+
+    function parseYmdAsLocalDate(value) {
+        var str = String(value || '').trim();
+        var parts = str.split('-');
+        if (parts.length !== 3) return null;
+
+        var year = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10);
+        var day = parseInt(parts[2], 10);
+
+        if (!year || !month || !day) return null;
+
+        return new Date(year, month - 1, day);
+    }
+
+    function formatCutoffHelp(rule) {
+        var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var time = parseTimeParts(rule.cutoff_time);
+        return 'Only Sundays are selectable. ' + (rule.label || 'Publication')
+            + ' cutoff: ' + dayNames[Number(rule.cutoff_day_of_week) || 0]
+            + ' ' + twoDigit(time.hour) + ':' + twoDigit(time.minute) + '.';
+    }
+
+    function formatCutoffBlockedMessage(publication, sundayDate) {
+        var rule = getPublicationRule(publication);
+        var time = parseTimeParts(rule.cutoff_time);
+        var cutoff = getCutoffDateTimeForSunday(sundayDate, rule);
+        var cutoffDate = cutoff.getFullYear() + '-' + twoDigit(cutoff.getMonth() + 1) + '-' + twoDigit(cutoff.getDate());
+
+        return 'Cutoff passed. You cannot add this ad now. ('
+            + (rule.label || 'Publication') + ' cutoff: ' + cutoffDate + ' ' + twoDigit(time.hour) + ':' + twoDigit(time.minute) + ')';
+    }
+
+    function getSelectedPublishDate() {
+        if (publishPicker && publishPicker.selectedDates && publishPicker.selectedDates.length > 0) {
+            var selected = publishPicker.selectedDates[0];
+            return new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
+        }
+
+        return parseYmdAsLocalDate(publishInput ? publishInput.value : '');
+    }
+
+    function validatePublishDateCutoff(showNativeValidity) {
+        var warningEl = form.querySelector('#publishDateCutoffWarning');
+        var publicationSelect = form.querySelector('#pubSel');
+        if (!publishInput || !publicationSelect) return true;
+
+        var selectedSunday = getSelectedPublishDate();
+        if (!selectedSunday) {
+            if (warningEl) {
+                warningEl.style.display = 'none';
+                warningEl.textContent = '';
+            }
+            publishInput.setCustomValidity('');
+            return true;
+        }
+
+        var rule = getPublicationRule(publicationSelect.value);
+        var cutoffDateTime = getCutoffDateTimeForSunday(selectedSunday, rule);
+        var now = new Date();
+        var blocked = now >= cutoffDateTime;
+
+        if (blocked) {
+            var msg = formatCutoffBlockedMessage(publicationSelect.value, selectedSunday);
+            if (warningEl) {
+                warningEl.style.display = '';
+                warningEl.textContent = msg;
+            }
+            publishInput.setCustomValidity(msg);
+            if (showNativeValidity) {
+                publishInput.reportValidity();
+            }
+            return false;
+        }
+
+        if (warningEl) {
+            warningEl.style.display = 'none';
+            warningEl.textContent = '';
+        }
+        publishInput.setCustomValidity('');
+        return true;
+    }
+
+    function refreshPublishDateConstraints() {
+        var publicationSelect = form.querySelector('#pubSel');
+        if (!publishInput || !publicationSelect) return;
+
+        var rule = getPublicationRule(publicationSelect.value);
+        var minSunday = getFirstAllowedSunday(publicationSelect.value);
+
+        if (publishPicker) {
+            publishPicker.set('minDate', minSunday);
+
+            if (publishPicker.selectedDates.length > 0 && publishPicker.selectedDates[0] < minSunday) {
+                publishPicker.clear();
+            }
+        }
+
+        if (publishHelp) {
+            publishHelp.textContent = formatCutoffHelp(rule);
+        }
+
+        validatePublishDateCutoff(false);
+    }
+
     if (publishInput) {
-        flatpickr(publishInput, {
+        publishPicker = flatpickr(publishInput, {
             dateFormat: 'Y-m-d',
             disableMobile: true,
-            minDate: 'today',
+            minDate: getFirstAllowedSunday((form.querySelector('#pubSel') || {}).value || 'hitad_print'),
             disable: [
                 function (date) { return date.getDay() !== 0; }
-            ]
+            ],
+            onChange: function () {
+                validatePublishDateCutoff(false);
+            }
         });
+
+        refreshPublishDateConstraints();
     }
 
     var paymentDateInput = form.querySelector('#paymentDateInput');
@@ -666,6 +837,7 @@
 
     /* ── Publication change: re-label everything, re-fetch with new lang ─ */
     function onPublicationChange() {
+        refreshPublishDateConstraints();
         updateCategoryLabels();
         updateLocationLabels();
 
@@ -736,6 +908,13 @@
     sizeSel && sizeSel.addEventListener('change', applySize);
     distSel && distSel.addEventListener('change', filterCities);
     descTA  && descTA.addEventListener('input',   updateWordCount);
+    publishInput && publishInput.addEventListener('change', function () { validatePublishDateCutoff(false); });
+
+    form.addEventListener('submit', function (e) {
+        if (!validatePublishDateCutoff(true)) {
+            e.preventDefault();
+        }
+    });
 
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
