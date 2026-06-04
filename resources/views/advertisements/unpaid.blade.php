@@ -93,7 +93,7 @@
                                 <button type="submit" 
                                         class="btn btn-sm btn-outline-primary"
                                         title="Send ad link via email"
-                                        onclick="return confirm('Send this advertisement link to customer?');">
+                                        onclick="return confirm('Send payment link to customer?');">
                                     <i class="bx bx-send"></i>
                                 </button>
                             </form>

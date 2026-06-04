@@ -2189,19 +2189,33 @@ class GeneralController extends Controller
         try {
             $adViewUrl = url('/advertisements/' . $ad->id . '/view');
             $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
+            $adTitle = trim((string) ($ad->advertisement_description ?? ''));
+            $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
+            $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
+            $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
+            $paymentStatusLabel = $isPaid ? 'Paid' : 'Pending';
+            $paymentMessage = $isPaid
+                ? "<p style='color: #2e7d32; font-weight: bold; font-size: 16px;'>Your payment status: <span style='font-size: 20px;'>Paid</span></p>"
+                : "<p style='color: #d32f2f; font-weight: bold; font-size: 16px;'>Your payment status: <span style='font-size: 20px;'>Pending</span></p>";
+            $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
+            $amountLabel = $isPaid ? 'Amount Paid' : 'Amount Due';
+            $footerMessage = $isPaid
+                ? 'Thank you for using Print Hitad. Your payment has been received successfully.'
+                : 'Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.';
 
-            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount) {
+            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount, $paymentMessage, $actionText, $amountLabel, $paymentStatusLabel, $footerMessage, $adTitle) {
                 $message->to($ad->email)
                     ->from(config('mail.from.address'), config('mail.from.name'))
                     ->subject('Your Advertisement Link - Print Hitad')
                     ->html(
                         "<p>Dear {$ad->customer_name},</p>" .
                         "<p>Your advertisement is ready for review.</p>" .
-                        "<p style='color: #d32f2f; font-weight: bold; font-size: 16px;'>You have a pending payment due: <span style='font-size: 20px;'>{$amount}</span></p>" .
+                        "<p style='margin-top: 8px; font-size: 14px; color: #333;'><strong>Advertisement ID:</strong> #{$ad->id}<br><strong>Advertisement Title:</strong> {$adTitle}</p>" .
+                        $paymentMessage .
                         "<p>Please click the button below to view your advertisement and proceed with payment:</p>" .
-                        "<p><a href='{$adViewUrl}' style='display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>View Advertisement & Pay Now</a></p>" .
-                        "<p style='margin-top: 20px; font-size: 14px; color: #666;'><strong>Payment Details:</strong><br>Amount Due: {$amount}</p>" .
-                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.</p>"
+                        "<p><a href='{$adViewUrl}' style='display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>{$actionText}</a></p>" .
+                        "<p style='margin-top: 20px; font-size: 14px; color: #666;'><strong>Payment Details:</strong><br>Status: {$paymentStatusLabel}<br>{$amountLabel}: {$amount}</p>" .
+                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>{$footerMessage}</p>"
                     );
             });
 

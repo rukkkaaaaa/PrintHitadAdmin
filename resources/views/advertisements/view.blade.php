@@ -92,6 +92,15 @@
         <i class="bx bx-download"></i> Download Advertisement
     </a>
 
+    @if($ad->email)
+        <form method="POST" action="{{ url('/advertisements/' . $ad->id . '/send-link-email') }}" style="display:inline;">
+            @csrf
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Send payment invoice to customer?');">
+                <i class="bx bx-send"></i> Send Email to Customer
+            </button>
+        </form>
+    @endif
+
     <a href="{{ url('/advertisements') }}" class="btn btn-secondary">
         Back to All Ads
     </a>
