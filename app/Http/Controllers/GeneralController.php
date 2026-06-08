@@ -1031,6 +1031,117 @@ class GeneralController extends Controller
     }
 
     /**
+     * Show general advertisement settings page for admins.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function getGeneralSettings()
+    {
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+            abort(403);
+        }
+
+        $schemaMissing = !Schema::hasTable('general_settings');
+        $settings = $this->fetchGeneralSettings();
+
+        return view('general_settings.index', compact('settings', 'schemaMissing'));
+    }
+
+    /**
+     * Update general advertisement settings.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateGeneralSettings(Request $request)
+    {
+        if (!Schema::hasTable('general_settings')) {
+            return redirect()->back()->with('error', 'General settings table is missing. Please run migrations first.');
+        }
+
+        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'max_words_en' => 'required|integer|min:0|max:100000',
+            'max_words_si' => 'required|integer|min:0|max:100000',
+            'additional_word_rate_en' => 'required|numeric|min:0|max:999999.99',
+            'additional_word_rate_si' => 'required|numeric|min:0|max:999999.99',
+            'free_word_limit_en' => 'required|integer|min:0|max:100000',
+            'free_word_limit_si' => 'required|integer|min:0|max:100000',
+            'top_ad_rate_en' => 'required|numeric|min:0|max:999999.99',
+            'top_ad_rate_si' => 'required|numeric|min:0|max:999999.99',
+        ]);
+
+        $allValues = [
+            'max_words_en' => (int) $request->input('max_words_en'),
+            'max_words_si' => (int) $request->input('max_words_si'),
+            'additional_word_rate_en' => (float) $request->input('additional_word_rate_en'),
+            'additional_word_rate_si' => (float) $request->input('additional_word_rate_si'),
+            'free_word_limit_en' => (int) $request->input('free_word_limit_en'),
+            'free_word_limit_si' => (int) $request->input('free_word_limit_si'),
+            'top_ad_rate_en' => (float) $request->input('top_ad_rate_en'),
+            'top_ad_rate_si' => (float) $request->input('top_ad_rate_si'),
+        ];
+
+        $columnsToUpdate = collect(array_keys($allValues))
+            ->filter(fn ($column) => Schema::hasColumn('general_settings', $column))
+            ->values();
+
+        if ($columnsToUpdate->isEmpty()) {
+            return redirect()->back()->with('error', 'No configurable columns were found in general_settings table.');
+        }
+
+        $data = $columnsToUpdate
+            ->mapWithKeys(fn ($column) => [$column => $allValues[$column]])
+            ->all();
+
+        $hasIdColumn = Schema::hasColumn('general_settings', 'id');
+        $hasCreatedAtColumn = Schema::hasColumn('general_settings', 'created_at');
+        $hasUpdatedAtColumn = Schema::hasColumn('general_settings', 'updated_at');
+
+        DB::transaction(function () use ($data, $hasIdColumn, $hasCreatedAtColumn, $hasUpdatedAtColumn) {
+            $query = DB::table('general_settings');
+            if ($hasIdColumn) {
+                $query->orderBy('id');
+            }
+
+            $existingRow = $query->first();
+
+            if ($existingRow) {
+                if ($hasUpdatedAtColumn) {
+                    $data['updated_at'] = now();
+                }
+
+                if ($hasIdColumn && isset($existingRow->id)) {
+                    DB::table('general_settings')
+                        ->where('id', $existingRow->id)
+                        ->update($data);
+                    return;
+                }
+
+                DB::table('general_settings')->update($data);
+                return;
+            }
+
+            if ($hasCreatedAtColumn) {
+                $data['created_at'] = now();
+            }
+
+            if ($hasUpdatedAtColumn) {
+                $data['updated_at'] = now();
+            }
+
+            DB::table('general_settings')->insert($data);
+        });
+
+        return redirect()->back()->with('success', 'General settings updated successfully.');
+    }
+
+    /**
      * Show publication cutoff settings page for admins.
      *
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
@@ -1146,6 +1257,57 @@ class GeneralController extends Controller
             $defaults[$publication]['cutoff_time'] = trim((string) ($row->cutoff_time ?? $defaults[$publication]['cutoff_time'])) !== ''
                 ? (string) $row->cutoff_time
                 : $defaults[$publication]['cutoff_time'];
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * Fetch general settings from DB, with defaults.
+     *
+     * @return array<string, int|float>
+     */
+    private function fetchGeneralSettings(): array
+    {
+        $defaults = [
+            'max_words_en' => 65,
+            'max_words_si' => 65,
+            'additional_word_rate_en' => 20.00,
+            'additional_word_rate_si' => 20.00,
+            'free_word_limit_en' => 15,
+            'free_word_limit_si' => 15,
+            'top_ad_rate_en' => 100.00,
+            'top_ad_rate_si' => 100.00,
+        ];
+
+        if (!Schema::hasTable('general_settings')) {
+            return $defaults;
+        }
+
+        $query = DB::table('general_settings');
+        if (Schema::hasColumn('general_settings', 'id')) {
+            $query->orderBy('id');
+        }
+
+        $row = $query->first();
+        if (!$row) {
+            return $defaults;
+        }
+
+        foreach (array_keys($defaults) as $column) {
+            if (!Schema::hasColumn('general_settings', $column)) {
+                continue;
+            }
+
+            $value = data_get($row, $column);
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $defaults[$column] = in_array($column, ['max_words_en', 'max_words_si', 'free_word_limit_en', 'free_word_limit_si'], true)
+                ? (int) $value
+                : (float) $value;
         }
 
         return $defaults;

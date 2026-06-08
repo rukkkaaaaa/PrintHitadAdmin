@@ -216,6 +216,13 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('general-settings') ? 'active' : '' }}">
+      <a href="{{ url('/general-settings') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-cog"></i>
+        <div>General Settings</div>
+      </a>
+    </li>
+
     @else
     <!-- Other roles (super admin, advertise admin, etc): Full menu -->
     <!-- Dashboard -->
@@ -381,6 +388,13 @@
       <a href="{{ url('/publication-deadlines') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-time-five"></i>
         <div>Publication Cutoffs</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('general-settings') ? 'active' : '' }}">
+      <a href="{{ url('/general-settings') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-cog"></i>
+        <div>General Settings</div>
       </a>
     </li>
 

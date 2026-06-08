@@ -164,6 +164,8 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     Route::get('/publication-deadlines', [GeneralController::class, 'getPublicationDeadlines']);
     Route::post('/publication-deadlines', [GeneralController::class, 'updatePublicationDeadlines']);
+    Route::get('/general-settings', [GeneralController::class, 'getGeneralSettings']);
+    Route::post('/general-settings', [GeneralController::class, 'updateGeneralSettings']);
 
     Route::get('/advertisements/create', [GeneralController::class, 'createAdvertisement']);
     Route::post('/advertisements/store', [GeneralController::class, 'storeAdvertisement']);
