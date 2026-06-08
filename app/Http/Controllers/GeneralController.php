@@ -2431,6 +2431,8 @@ class GeneralController extends Controller
                 'payments.amount',
                 'payments.payment_status',
                 'payments.payment_date',
+                'payments.receipt_number',
+                'payments.payment_slip_file_path'
             )
             ->where('advertisements.id', $id)
             ->first();
@@ -2551,6 +2553,12 @@ class GeneralController extends Controller
             'payment_date' => $canEditPaymentFields
                 ? ['nullable', 'date_format:Y-m-d\TH:i']
                 : ['prohibited'],
+            'receipt_number' => $canEditPaymentFields
+                ? ['nullable', 'string', 'max:255']
+                : ['prohibited'],
+            'payment_slip' => $canEditPaymentFields
+                ? ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']
+                : ['prohibited'],
         ]);
 
         if ($request->filled('advertisement_tint_id')) {
@@ -2609,10 +2617,20 @@ class GeneralController extends Controller
                     $paymentDate = $payment ? $payment->payment_date : null;
                 }
 
+                // Handle payment slip file upload
+                $paymentSlipPath = null;
+                if ($request->hasFile('payment_slip')) {
+                    $file = $request->file('payment_slip');
+                    // Store the file in storage/app/public/payment_slips
+                    $paymentSlipPath = $file->store('payment_slips', 'public');
+                }
+
                 $data = array_filter([
                     'payment_status' => $paymentStatus,
                     'is_success' => $isSuccess,
                     'payment_date' => $paymentDate,
+                    'receipt_number' => $request->receipt_number,
+                    'payment_slip_file_path' => $paymentSlipPath,
                     'updated_at' => now(),
                 ], static fn ($value) => $value !== null);
 
@@ -2625,11 +2643,35 @@ class GeneralController extends Controller
                         'payment_status' => $paymentStatus,
                         'is_success' => $isSuccess,
                         'payment_date' => $paymentDate,
+                        'receipt_number' => $request->receipt_number,
+                        'payment_slip_file_path' => $paymentSlipPath,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
 
                     DB::table('payments')->insert($insert);
+                }
+            } elseif ($canEditPaymentFields && ($request->filled('receipt_number') || $request->hasFile('payment_slip'))) {
+                // Handle receipt_number and payment_slip updates even if payment_status is not being changed
+                if ($payment) {
+                    $paymentSlipPath = null;
+                    if ($request->hasFile('payment_slip')) {
+                        $file = $request->file('payment_slip');
+                        $paymentSlipPath = $file->store('payment_slips', 'public');
+                    }
+
+                    $updateData = [];
+                    if ($request->filled('receipt_number')) {
+                        $updateData['receipt_number'] = $request->receipt_number;
+                    }
+                    if ($paymentSlipPath) {
+                        $updateData['payment_slip_file_path'] = $paymentSlipPath;
+                    }
+                    $updateData['updated_at'] = now();
+
+                    if (!empty($updateData)) {
+                        DB::table('payments')->where('id', $payment->id)->update($updateData);
+                    }
                 }
             }
 

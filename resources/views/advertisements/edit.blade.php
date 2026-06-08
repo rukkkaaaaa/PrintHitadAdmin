@@ -15,7 +15,7 @@
         .form-label { font-weight: 600; }
     </style>
 
-    <form action="{{ url('/advertisements/' . $ad->id . '/update') }}" method="POST">
+    <form action="{{ url('/advertisements/' . $ad->id . '/update') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="card edit-card">
@@ -201,6 +201,33 @@
                             <small class="text-muted">No payment record found for this advertisement.</small>
                         @elseif(!$canEditPaymentFields)
                             <small class="text-muted">Only super admin can edit payment date.</small>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Receipt No.</label>
+                        <input type="text" name="receipt_number" class="form-control"
+                               value="{{ old('receipt_number', $ad->receipt_number ?? '') }}"
+                               {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}
+                               placeholder="Enter receipt number">
+                        @if(empty($ad->payment_id))
+                            <small class="text-muted">No payment record found for this advertisement.</small>
+                        @elseif(!$canEditPaymentFields)
+                            <small class="text-muted">Only super admin can edit receipt number.</small>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Slip</label>
+                        <input type="file" name="payment_slip" class="form-control" accept=".pdf,.jpg,.jpeg,.png"
+                               {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}>
+                        <small class="text-muted">Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)</small>
+                        @if(!empty($ad->payment_slip_file_path))
+                            <div class="mt-2">
+                                <a href="{{ asset('storage/' . $ad->payment_slip_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    View Current Slip
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </div>

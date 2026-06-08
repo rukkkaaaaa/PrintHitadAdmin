@@ -18,7 +18,9 @@ class Payment extends Model
         'success_indicator',
         'result',
         'payment_date',
-        'is_success'
+        'is_success',
+        'receipt_number',
+        'payment_slip_file_path'
     ];
 
 
