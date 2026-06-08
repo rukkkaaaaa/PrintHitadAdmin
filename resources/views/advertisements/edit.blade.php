@@ -4,6 +4,13 @@
 <div class="container mt-4">
     <h2 class="mb-3">Edit Advertisement</h2>
 
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     @php
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
         $canEditPaymentFields = $currentRole === 'super admin';
@@ -223,11 +230,19 @@
                                {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}>
                         <small class="text-muted">Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)</small>
                         @if(!empty($ad->payment_slip_file_path))
-                            <div class="mt-2">
-                                <a href="{{ asset('storage/' . $ad->payment_slip_file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    View Current Slip
-                                </a>
+                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                                <small class="text-muted d-block mb-1">
+                                    <strong>📄 File uploaded:</strong> {{ basename($ad->payment_slip_file_path) }}
+                                </small>
+                                <small class="text-muted d-block">Stored path:</small>
+                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                    {{ $ad->payment_slip_file_path }}
+                                </div>
                             </div>
+                        @else
+                            @if(!empty($ad->payment_id))
+                                <small class="text-muted d-block mt-2">No payment slip uploaded yet.</small>
+                            @endif
                         @endif
                     </div>
                 </div>

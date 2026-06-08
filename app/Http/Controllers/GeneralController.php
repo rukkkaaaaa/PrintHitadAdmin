@@ -2366,20 +2366,37 @@ class GeneralController extends Controller
             $footerMessage = $isPaid
                 ? 'Thank you for using Print Hitad. Your payment has been received successfully.'
                 : 'Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.';
+            $paymentInstructions = $isPaid
+                ? "<p>Kindly click the designated button/link in your account to view your advertisement.</p>" .
+                    "<p>If you require any further assistance or have any questions, please feel free to contact us.</p>" .
+                    "<p>Thank you for your continued support.</p>"
+                : "<p>Kindly click the button provided in your account to view your advertisement and proceed with the payment.</p>" .
+                    "<p>Alternatively, you may complete the payment via bank deposit using the details below:</p>" .
+                    "<p><strong>Bank Name:</strong> Commercial Bank of Ceylon</p>" .
+                    "<p><strong>Account Number:</strong> 0123456789</p>" .
+                    "<p>Once the payment is completed, please forward the payment slip for our verification.</p>" .
+                    "<p>Should you require any further assistance, please do not hesitate to contact us.</p>" .
+                    "<p>Thank you for your cooperation.</p>";
+            $supportContactBlock =
+                "<p>If you require further assistance, please contact our support team:<br>" .
+                "+94 74 364 3560 (Technical Support)<br>" .
+                "+94 112 479 520 (Online Support)</p>";
 
-            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount, $paymentMessage, $actionText, $amountLabel, $paymentStatusLabel, $footerMessage, $adTitle) {
+            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount, $paymentMessage, $actionText, $amountLabel, $paymentStatusLabel, $footerMessage, $adTitle, $paymentInstructions, $supportContactBlock) {
                 $message->to($ad->email)
                     ->from(config('mail.from.address'), config('mail.from.name'))
                     ->subject('Your Advertisement Link - Print Hitad')
                     ->html(
                         "<p>Dear {$ad->customer_name},</p>" .
                         "<p>Your advertisement is ready for review.</p>" .
-                        "<p style='margin-top: 8px; font-size: 14px; color: #333;'><strong>Advertisement ID:</strong> #{$ad->id}<br><strong>Advertisement Title:</strong> {$adTitle}</p>" .
+                        "<p style='margin-top: 8px; font-size: 14px; color: #333;'><strong>Advertisement ID:</strong> #{$ad->id}<br><strong>Advertisement Description:</strong> {$adTitle}</p>" .
                         $paymentMessage .
-                        "<p>Please click the button below to view your advertisement and proceed with payment:</p>" .
+                        $paymentInstructions .
                         "<p><a href='{$adViewUrl}' style='display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>{$actionText}</a></p>" .
                         "<p style='margin-top: 20px; font-size: 14px; color: #666;'><strong>Payment Details:</strong><br>Status: {$paymentStatusLabel}<br>{$amountLabel}: {$amount}</p>" .
-                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>{$footerMessage}</p>"
+                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>{$footerMessage}</p>" .
+                        $supportContactBlock .
+                        "<p style='margin-top: 20px;'>Kind regards,<br>HitAd Team</p>"
                     );
             });
 
@@ -2621,8 +2638,8 @@ class GeneralController extends Controller
                 $paymentSlipPath = null;
                 if ($request->hasFile('payment_slip')) {
                     $file = $request->file('payment_slip');
-                    // Store the file in storage/app/public/payment_slips
-                    $paymentSlipPath = $file->store('payment_slips', 'public');
+                    // Store the file in OCI bucket
+                    $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
                 }
 
                 $data = array_filter([
@@ -2657,7 +2674,7 @@ class GeneralController extends Controller
                     $paymentSlipPath = null;
                     if ($request->hasFile('payment_slip')) {
                         $file = $request->file('payment_slip');
-                        $paymentSlipPath = $file->store('payment_slips', 'public');
+                        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
                     }
 
                     $updateData = [];
@@ -2726,6 +2743,6 @@ class GeneralController extends Controller
             }
         });
 
-        return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
+        return redirect('/advertisements/' . $id . '/edit')->with('success', 'Advertisement updated successfully!');
     }
 }
