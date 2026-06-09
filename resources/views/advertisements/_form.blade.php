@@ -10,6 +10,14 @@
     $cities = $cities ?? collect();
     $paymentMethods = $paymentMethods ?? collect();
     $publicationDeadlines = $publicationDeadlines ?? [];
+    $generalSettings = $generalSettings ?? [
+        'max_words_en' => 65,
+        'max_words_si' => 65,
+        'additional_word_rate_en' => 20,
+        'additional_word_rate_si' => 20,
+        'free_word_limit_en' => 15,
+        'free_word_limit_si' => 15,
+    ];
 @endphp
 
 @push('styles')
@@ -337,6 +345,7 @@
     if (!form) return;
 
     const publicationDeadlines = @json($publicationDeadlines);
+    const generalSettings = @json($generalSettings);
 
     /* ── Flatpickr: Sundays only + publication cutoffs ───────────────── */
     var publishInput = form.querySelector('#publishDateInput');
@@ -551,7 +560,6 @@
     const imagesHint     = form.querySelector('#imagesHint');
 
     /* ── State ───────────────────────────────────────────────────────── */
-    // word count / max images feature removed
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
 
     /* ── Helpers ─────────────────────────────────────────────────────── */
@@ -570,6 +578,16 @@
 
     function wordCount(text) {
         return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    }
+
+    function trimToWordLimit(text, maxWords) {
+        const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+        if (!normalized || maxWords <= 0) return normalized;
+
+        const words = normalized.split(' ');
+        if (words.length <= maxWords) return normalized;
+
+        return words.slice(0, maxWords).join(' ');
     }
 
     function escHtml(str) {
@@ -626,10 +644,68 @@
         filterCities();
     }
 
+    function currentDescriptionRules() {
+        const suffix = lang() === 'si' ? 'si' : 'en';
+
+        return {
+            maxWords: Number(generalSettings['max_words_' + suffix] || 0),
+            freeWordLimit: Number(generalSettings['free_word_limit_' + suffix] || 0),
+            additionalWordRate: Number(generalSettings['additional_word_rate_' + suffix] || 0),
+        };
+    }
+
     /* ── Live word counter ────────────────────────────────────────────── */
     function updateWordCount() {
-        // word count display removed
-        return;
+        if (!descTA) return;
+
+        const rules = currentDescriptionRules();
+        const maxWords = Math.max(0, rules.maxWords);
+
+        if (maxWords > 0) {
+            const trimmed = trimToWordLimit(descTA.value || '', maxWords);
+            if (trimmed !== (descTA.value || '')) {
+                descTA.value = trimmed;
+            }
+        }
+
+        const words = wordCount(descTA.value || '');
+        const freeWords = Math.max(0, rules.freeWordLimit);
+        const rate = Math.max(0, rules.additionalWordRate);
+        const extraWords = Math.max(0, words - freeWords);
+        const extraCost = extraWords * rate;
+        const overLimit = maxWords > 0 && words > maxWords;
+
+        if (wcDisplay) {
+            wcDisplay.textContent = maxWords > 0
+                ? (words + ' / ' + maxWords + ' words')
+                : (words + ' words');
+            wcDisplay.classList.toggle('wc-badge', true);
+            wcDisplay.classList.toggle('over', overLimit);
+        }
+
+        const lines = [
+            'Free words: ' + freeWords,
+            'Extra words: ' + extraWords,
+            'Extra cost: LKR ' + extraCost.toFixed(2),
+        ];
+
+        if (descTA.value.trim() === '') {
+            lines.unshift('Start typing the description to calculate words and extra cost.');
+        }
+
+        if (overLimit) {
+            lines.push('Maximum allowed words exceeded. Please shorten the description.');
+            descTA.setCustomValidity('Description cannot exceed ' + maxWords + ' words for the selected publication.');
+        } else {
+            descTA.setCustomValidity('');
+        }
+
+        const descHint = form.querySelector('#descHint');
+        if (descHint) {
+            descHint.textContent = lines.join(' · ');
+            descHint.style.display = '';
+            descHint.classList.toggle('text-danger', overLimit);
+        }
     }
 
     /* ── City filter by district + language ───────────────────────────── */
@@ -840,6 +916,7 @@
         refreshPublishDateConstraints();
         updateCategoryLabels();
         updateLocationLabels();
+        updateWordCount();
 
         var catId  = catSel.value;
         var typeId = typeSel.value;
@@ -908,6 +985,27 @@
     sizeSel && sizeSel.addEventListener('change', applySize);
     distSel && distSel.addEventListener('change', filterCities);
     descTA  && descTA.addEventListener('input',   updateWordCount);
+    descTA  && descTA.addEventListener('paste', function (e) {
+        if (!descTA) return;
+
+        const rules = currentDescriptionRules();
+        const maxWords = Math.max(0, Number(rules.maxWords || 0));
+        if (maxWords <= 0) return;
+
+        const clipboardText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+        const currentValue = descTA.value || '';
+        const selectionStart = descTA.selectionStart ?? currentValue.length;
+        const selectionEnd = descTA.selectionEnd ?? currentValue.length;
+        const nextValue = currentValue.slice(0, selectionStart) + clipboardText + currentValue.slice(selectionEnd);
+
+        const trimmed = trimToWordLimit(nextValue, maxWords);
+        if (trimmed !== nextValue) {
+            e.preventDefault();
+            descTA.value = trimmed;
+            descTA.setSelectionRange(descTA.value.length, descTA.value.length);
+            updateWordCount();
+        }
+    });
     publishInput && publishInput.addEventListener('change', function () { validatePublishDateCutoff(false); });
 
     form.addEventListener('submit', function (e) {
@@ -918,6 +1016,7 @@
 
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
+    updateWordCount();
 
     @if($autoOpen)
     const offcanvasEl = form.closest('.offcanvas');

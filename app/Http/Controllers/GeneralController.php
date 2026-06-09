@@ -1026,8 +1026,9 @@ class GeneralController extends Controller
             ->get();
 
         $publicationDeadlines = $this->fetchPublicationDeadlines();
+        $generalSettings = $this->fetchGeneralSettings();
 
-        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines'));
+        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings'));
     }
 
     /**
@@ -1375,7 +1376,17 @@ class GeneralController extends Controller
             'confirm_email' => 'nullable|email|max:255|same:email',
             'advertisement_type_id' => 'required|exists:advertisement_types,id',
             'advertisement_size_id' => 'required|exists:advertisement_sizes,id',
-            'advertisement_description' => 'required|string',
+            'advertisement_description' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) use ($request) {
+                    $this->validateDescriptionWordLimit(
+                        (string) $request->input('publication', 'hitad_print'),
+                        (string) $value,
+                        $fail
+                    );
+                },
+            ],
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'required|exists:cities,id',
@@ -1556,6 +1567,20 @@ class GeneralController extends Controller
             }
         }
 
+        $description = (string) $request->input('advertisement_description', '');
+        $pricingRules = $this->resolveDescriptionPricingSettings($publication);
+        $wordCount = $this->countWords($description);
+        $freeWords = max(0, (int) ($pricingRules['free_word_limit'] ?? 0));
+        $additionalRate = max(0, (float) ($pricingRules['additional_word_rate'] ?? 0));
+        $extraWords = max(0, $wordCount - $freeWords);
+
+        if ($extraWords > 0 && $additionalRate > 0) {
+            $items[] = [
+                'label' => 'Additional words (' . $extraWords . ' × ' . number_format($additionalRate, 2, '.', '') . ')',
+                'amount' => round($extraWords * $additionalRate, 2),
+            ];
+        }
+
         return $items;
     }
 
@@ -1577,6 +1602,66 @@ class GeneralController extends Controller
         }
 
         return $english !== '' ? $english : ($sinhala !== '' ? $sinhala : 'Advertisement item');
+    }
+
+    /**
+     * Resolve general description pricing settings for a publication.
+     *
+     * @param string $publication
+     * @return array{max_words:int, free_word_limit:int, additional_word_rate:float}
+     */
+    private function resolveDescriptionPricingSettings(string $publication): array
+    {
+        $settings = $this->fetchGeneralSettings();
+        $isLahipita = trim($publication) === 'lahipita';
+        $suffix = $isLahipita ? 'si' : 'en';
+
+        return [
+            'max_words' => (int) ($settings['max_words_' . $suffix] ?? 0),
+            'free_word_limit' => (int) ($settings['free_word_limit_' . $suffix] ?? 0),
+            'additional_word_rate' => (float) ($settings['additional_word_rate_' . $suffix] ?? 0),
+        ];
+    }
+
+    /**
+     * Count words from free-form description text.
+     *
+     * @param string $text
+     * @return int
+     */
+    private function countWords(string $text): int
+    {
+        $normalized = trim(preg_replace('/\s+/u', ' ', $text));
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $parts = preg_split('/\s+/u', $normalized) ?: [];
+
+        return count(array_filter($parts, static fn ($part) => trim((string) $part) !== ''));
+    }
+
+    /**
+     * Validate advertisement description word limit based on publication settings.
+     *
+     * @param string $publication
+     * @param string $description
+     * @param callable $fail
+     * @return void
+     */
+    private function validateDescriptionWordLimit(string $publication, string $description, callable $fail): void
+    {
+        $rules = $this->resolveDescriptionPricingSettings($publication);
+        $maxWords = (int) ($rules['max_words'] ?? 0);
+
+        if ($maxWords <= 0) {
+            return;
+        }
+
+        $wordCount = $this->countWords($description);
+        if ($wordCount > $maxWords) {
+            $fail('Description cannot exceed ' . $maxWords . ' words for the selected publication.');
+        }
     }
 
     /**
@@ -2698,7 +2783,22 @@ class GeneralController extends Controller
             'telephone' => 'required|string|max:255',
             'nic_passport' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
-            'advertisement_description' => 'required|string',
+            'advertisement_description' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) use ($id) {
+                    $ad = DB::table('advertisements')->where('id', $id)->first();
+                    if (!$ad) {
+                        return;
+                    }
+
+                    $this->validateDescriptionWordLimit(
+                        (string) ($ad->publication ?? 'hitad_print'),
+                        (string) $value,
+                        $fail
+                    );
+                },
+            ],
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'required|exists:cities,id',

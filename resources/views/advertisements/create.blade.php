@@ -25,6 +25,7 @@
                 'criterias' => $criterias ?? collect(),
                 'criteriaOptions' => $criteriaOptions ?? collect(),
                 'publicationDeadlines' => $publicationDeadlines ?? [],
+                'generalSettings' => $generalSettings ?? [],
             ])
         </div>
     </div>
