@@ -7,31 +7,82 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+    private const USER_ROLES = [
+        'super admin',
+        'report admin',
+        'site admin',
+        'advertising admin',
+    ];
+
+    private function getPriorityLevelForRole(string $role): int
+    {
+        $r = strtolower(trim($role));
+
+        return match ($r) {
+            'super admin' => 1,
+            'site admin' => 2,
+            'advertising admin' => 3,
+            'report admin' => 4,
+            default => 4,
+        };
+    }
+
+    private function normalizeRoleName(?string $role): string
+    {
+        $r = strtolower(trim((string) $role));
+
+        return match ($r) {
+            'super admin' => 'super admin',
+            'reporter', 'reporting', 'reportingrole', 'report admin' => 'report admin',
+            'site admin' => 'site admin',
+            'advertice admin', 'advertising', 'advertising role', 'advertising admin' => 'advertising admin',
+            default => 'report admin',
+        };
+    }
+
+    /**
+     * Show the login page.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showLogin()
     {
         return view('login');
     }
 
+    /**
+     * Show the registration page.
+     *
+     * @return \Illuminate\View\View
+     */
     public function showRegister()
     {
         return view('register');
     }
 
+    /**
+    * Handle admin registration. Validates passwords, checks for existing email and creates a new admin.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function register(Request $request)
     {
         $name = $request->input('name');
         $email = $request->input('email');
         $password = $request->input('password');
         $password_confirmation = $request->input('password_confirmation');
+        $role = $this->normalizeRoleName('report admin');
 
         if ($password !== $password_confirmation) {
             return redirect('/register')->with('error', 'Passwords do not match.');
         }
 
-        $existing = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+        $existing = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
         if ($existing) {
             return redirect('/register')->with('error', 'Email already exists.');
         }
@@ -39,22 +90,31 @@ class AuthController extends Controller
         $hashedPassword = Hash::make($password);
         $timestamp = Carbon::now();
 
-        DB::insert("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)", [
+        DB::insert("INSERT INTO admins (admin_name, priority_level, email, role, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [
             $name,
+            $this->getPriorityLevelForRole($role),
             $email,
+            $role,
             $hashedPassword,
+            1,
             $timestamp
         ]);
 
         return redirect('/login')->with('error', 'Registered successfully. Please login.');
     }
 
+    /**
+     * Authenticate user by email and password and store user info in session.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function login(Request $request)
     {
         $email = $request->input('email');
         $password = $request->input('password');
 
-        $user = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+        $user = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
 
         if (!$user || !Hash::check($password, $user[0]->password)) {
             return redirect('/login')->with('error', 'Invalid credentials.');
@@ -63,13 +123,21 @@ class AuthController extends Controller
         // Store user in session
         Session::put('user', [
             'id' => $user[0]->id,
-            'name' => $user[0]->name,
-            'email' => $user[0]->email
+            'name' => $user[0]->admin_name,
+            'email' => $user[0]->email,
+            'role' => $this->normalizeRoleName($user[0]->role ?? null),
         ]);
 
+        // send users to dashboard (reporting users are allowed to view dashboard too)
         return redirect('/dashboard');
     }
 
+    /**
+     * Logout the current user by clearing and invalidating the session.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function logout(Request $request)
     {
         session()->flush(); // clear all session
@@ -79,11 +147,18 @@ class AuthController extends Controller
         return redirect('/login');
     }
 
+    /**
+    * Manage admins page and handler. On GET shows admins and optional edit; on POST creates a new admin after validation.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
     public function manageUsers(Request $request)
     {
         if ($request->isMethod('post')) {
             $name = $request->input('name');
             $email = $request->input('email');
+            $role = $this->normalizeRoleName($request->input('role'));
             $password = $request->input('password');
             $password_confirmation = $request->input('password_confirmation');
 
@@ -91,22 +166,108 @@ class AuthController extends Controller
                 return back()->with('error', 'Passwords do not match.');
             }
 
-            $existing = DB::select("SELECT * FROM users WHERE email = ?", [$email]);
+            $existing = DB::select("SELECT * FROM admins WHERE email = ?", [$email]);
             if ($existing) {
                 return back()->with('error', 'Email already exists.');
             }
 
-            DB::insert("INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, ?)", [
+            if (!in_array($role, self::USER_ROLES, true)) {
+                return back()->with('error', 'Please select a valid user role.');
+            }
+
+            DB::insert("INSERT INTO admins (admin_name, priority_level, email, role, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [
                 $name,
+                $this->getPriorityLevelForRole($role),
                 $email,
+                $role,
                 Hash::make($password),
+                1,
                 Carbon::now()
             ]);
 
             return redirect('/users')->with('success', 'User created successfully.');
         }
 
-        $users = DB::select("SELECT * FROM users ORDER BY created_at DESC");
-        return view('user', ['users' => $users]);
+        $users = DB::select("SELECT id, admin_name as name, email, role, created_at FROM admins ORDER BY created_at DESC");
+        $roles = self::USER_ROLES;
+
+        $editUser = null;
+        if ($request->filled('edit')) {
+            $editUser = DB::table('admins')
+                ->select('id', 'admin_name as name', 'email', 'role', 'created_at', 'updated_at')
+                ->where('id', $request->query('edit'))
+                ->first();
+        }
+
+        return view('user', compact('users', 'editUser', 'roles'));
+    }
+
+    /**
+     * Update an existing user by id. Validates input and optionally updates the password.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', Rule::unique('admins', 'email')->ignore($id)],
+            'role' => ['required', Rule::in(self::USER_ROLES)],
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        $user = DB::table('admins')->where('id', $id)->first();
+
+        if (!$user) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        $data = [
+            'admin_name' => $request->name,
+            'email' => $request->email,
+            'role' => $this->normalizeRoleName($request->role),
+            'priority_level' => $this->getPriorityLevelForRole($this->normalizeRoleName($request->role)),
+            'updated_at' => Carbon::now(),
+        ];
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        DB::table('admins')->where('id', $id)->update($data);
+
+        if (session('user.id') == $id) {
+            Session::put('user', [
+                'id' => $id,
+                'name' => $request->name,
+                'email' => $request->email,
+                'role' => $this->normalizeRoleName($request->role),
+            ]);
+        }
+
+        return redirect('/users')->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Delete a user by id (cannot delete the currently logged-in user).
+     *
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function deleteUser($id)
+    {
+        if (session('user.id') == $id) {
+            return redirect('/users')->with('error', 'You cannot delete the currently logged-in user.');
+        }
+
+        $deleted = DB::table('admins')->where('id', $id)->delete();
+
+        if (!$deleted) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        return redirect('/users')->with('success', 'User deleted successfully.');
     }
 }

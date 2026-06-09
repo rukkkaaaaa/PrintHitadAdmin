@@ -4,7 +4,7 @@
 
 <div class="container mt-4">
 
-```
+
 <h2 class="mb-4">Advertisement Criterias</h2>
 
 {{-- Success --}}
@@ -24,61 +24,109 @@
 @endif
 
 
-{{-- Add Form --}}
-<div class="card mb-4">
-    <div class="card-header">
-        <strong>Add Criteria</strong>
-    </div>
+{{-- Add Forms --}}
+<div class="row mb-4 g-4">
 
-    <div class="card-body">
-
-        <form action="{{ url('/add-adcriteria') }}" method="POST">
-            @csrf
-
-            <div class="row">
-
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Criteria Name (EN)</label>
-                    <input type="text" name="advertisement_criteria_name_en" class="form-control" required>
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Criteria Name (SI)</label>
-                    <input type="text" name="advertisement_criteria_name_si" class="form-control" required>
-                </div>
-
-                <div class="col-md-2 mb-3">
-                    <label class="form-label">Field Type</label>
-                    <select name="field_type" class="form-control" required>
-                        <option value="text">Text</option>
-                        <option value="number">Number</option>
-                        <option value="dropdown">Dropdown</option>
-                    </select>
-                </div>
-
-                <div class="col-md-3 mb-3">
-                    <label class="form-label">Category</label>
-                    <select name="category_id" class="form-control" required>
-                        <option value="">Select</option>
-                        @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}">
-                                {{ $cat->category_name_en }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-1 mt-4">
-                    <button type="submit" class="btn btn-primary mt-2">
-                        Add
-                    </button>
-                </div>
-
+    {{-- Add English Criteria Form --}}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <strong>Add Criteria (English)</strong>
             </div>
 
-        </form>
+            <div class="card-body">
 
+                <form action="{{ url('/add-adcriteria') }}" method="POST">
+                    @csrf
+
+                    <div class="row">
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Criteria Name (EN)</label>
+                            <input type="text" name="advertisement_criteria_name_en" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Field Type</label>
+                            <select name="field_type" class="form-control" required>
+                                <option value="text">Text</option>
+                                <option value="number">Number</option>
+                                <option value="dropdown">Dropdown</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categoriesEn as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Add Criteria (English)</button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
     </div>
+
+    {{-- Add Sinhala Criteria Form --}}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <strong>Add Criteria (Sinhala)</strong>
+            </div>
+
+            <div class="card-body">
+
+                <form action="{{ url('/add-adcriteria') }}" method="POST">
+                    @csrf
+
+                    <div class="row">
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Criteria Name (SI)</label>
+                            <input type="text" name="advertisement_criteria_name_si" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Field Type</label>
+                            <select name="field_type" class="form-control" required>
+                                <option value="text">Text</option>
+                                <option value="number">Number</option>
+                                <option value="dropdown">Dropdown</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categoriesSi as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->category_name_si }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Add Criteria (Sinhala)</button>
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
 
@@ -119,12 +167,7 @@
 
                         <td>{{ ucfirst($crit->field_type) }}</td>
 
-                        <td>
-                            {{
-                                optional($categories->where('id', $crit->category_id)->first())->category_name_en
-                                ?? 'N/A'
-                            }}
-                        </td>
+                        <td>{{ $crit->category_name ?? 'N/A' }}</td>
 
                         <td>
                             @if($crit->is_active)
@@ -169,8 +212,8 @@
                                             <input type="text"
                                                    name="advertisement_criteria_name_en"
                                                    class="form-control"
-                                                   value="{{ $crit->advertisement_criteria_name_en }}"
-                                                   required>
+                                                   value="{{ $crit->advertisement_criteria_name_en }}">
+                                            <small class="text-muted">Either EN or SI required</small>
                                         </div>
 
                                         <div class="mb-3">
@@ -178,8 +221,7 @@
                                             <input type="text"
                                                    name="advertisement_criteria_name_si"
                                                    class="form-control"
-                                                   value="{{ $crit->advertisement_criteria_name_si }}"
-                                                   required>
+                                                   value="{{ $crit->advertisement_criteria_name_si }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -194,12 +236,35 @@
                                         <div class="mb-3">
                                             <label>Category</label>
                                             <select name="category_id" class="form-control">
-                                                @foreach ($categories as $cat)
-                                                    <option value="{{ $cat->id }}"
-                                                        {{ $crit->category_id == $cat->id ? 'selected' : '' }}>
-                                                        {{ $cat->category_name_en }}
-                                                    </option>
-                                                @endforeach
+                                                @php
+                                                    $showEnOnly = filled($crit->advertisement_criteria_name_en) && !filled($crit->advertisement_criteria_name_si);
+                                                    $showSiOnly = filled($crit->advertisement_criteria_name_si) && !filled($crit->advertisement_criteria_name_en);
+                                                @endphp
+
+                                                @if($showSiOnly)
+                                                    @foreach($categoriesSi as $cat)
+                                                        <option value="{{ $cat->id }}" {{ $crit->category_id == $cat->id ? 'selected' : '' }}>
+                                                            {{ $cat->category_name_si }}
+                                                        </option>
+                                                    @endforeach
+                                                @elseif($showEnOnly)
+                                                    @foreach($categoriesEn as $cat)
+                                                        <option value="{{ $cat->id }}" {{ $crit->category_id == $cat->id ? 'selected' : '' }}>
+                                                            {{ $cat->category_name_en }}
+                                                        </option>
+                                                    @endforeach
+                                                @else
+                                                    @foreach ($categories as $cat)
+                                                        @php
+                                                            $catLabel = $cat->category_name_en ?: $cat->category_name_si;
+                                                        @endphp
+                                                        @if($catLabel)
+                                                            <option value="{{ $cat->id }}" {{ $crit->category_id == $cat->id ? 'selected' : '' }}>
+                                                                {{ $catLabel }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
                                             </select>
                                         </div>
 
@@ -252,7 +317,79 @@
 
     </div>
 </div>
-```
+
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[id^="editCrit"]').forEach(function(modalEl){
+        modalEl.addEventListener('shown.bs.modal', function(){
+            try {
+                var en = modalEl.querySelector('input[name="advertisement_criteria_name_en"]');
+                var si = modalEl.querySelector('input[name="advertisement_criteria_name_si"]');
+
+                if (en && si) {
+                    var enVal = (en.value || '').toString().trim();
+                    var siVal = (si.value || '').toString().trim();
+
+                    if (enVal && !siVal) {
+                        si.readOnly = true;
+                        si.classList.add('bg-light');
+                    } else if (siVal && !enVal) {
+                        en.readOnly = true;
+                        en.classList.add('bg-light');
+                    } else {
+                        if (en) en.readOnly = false;
+                        if (si) si.readOnly = false;
+                        en && en.classList.remove('bg-light');
+                        si && si.classList.remove('bg-light');
+                    }
+                }
+            } catch (e) {
+                console.error('error applying readonly rule for criteria modal', e);
+            }
+
+            // Optional diagnostics
+            var inputs = modalEl.querySelectorAll('input, textarea, select');
+            console.group('Edit criteria diagnostics for ' + modalEl.id);
+            inputs.forEach(function(inp, idx){
+                try {
+                    var cs = window.getComputedStyle(inp);
+                    console.log(idx, inp.name || inp.id || inp.tagName, {
+                        disabled: inp.disabled,
+                        readOnly: inp.readOnly,
+                        value: inp.value,
+                        tabIndex: inp.tabIndex,
+                        display: cs.display,
+                        visibility: cs.visibility,
+                        pointerEvents: cs.pointerEvents,
+                        opacity: cs.opacity
+                    });
+
+                    var rect = inp.getBoundingClientRect();
+                    var x = Math.round(rect.left + rect.width/2);
+                    var y = Math.round(rect.top + rect.height/2);
+                    var topEl = document.elementFromPoint(x, y);
+                    console.log(' elementFromPoint center ->', topEl, topEl && topEl.className, topEl && topEl.id);
+                } catch (e) {
+                    console.error('diagnostic error for input', inp, e);
+                }
+            });
+            console.groupEnd();
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function(){
+            try {
+                var en = modalEl.querySelector('input[name="advertisement_criteria_name_en"]');
+                var si = modalEl.querySelector('input[name="advertisement_criteria_name_si"]');
+                if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
+                if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
+            } catch (e) { /* ignore */ }
+        });
+    });
+});
+</script>
+@endpush

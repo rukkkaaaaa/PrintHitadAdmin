@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>Advertisement Details</h2>
 
-```
+
 <div class="card">
     <div class="card-body">
 
@@ -18,12 +18,8 @@
 
         <p><strong>Publication:</strong> {{ $ad->publication }}</p>
         <p><strong>Publish Date:</strong> {{ $ad->publish_date }}</p>
-
-        <p><strong>Status:</strong>
-            {!! $ad->status == 1
-                ? '<span class="badge bg-success">Active</span>'
-                : '<span class="badge bg-danger">Inactive</span>' !!}
-        </p>
+        <p><strong>Tint:</strong> {{ $ad->advertisement_tint_name ?: 'No Tint' }}</p>
+        <p><strong>Web Combined Ad:</strong> {{ (int)($ad->web_combined_ad ?? 0) === 1 ? 'Yes' : 'No' }}</p>
 
         <hr>
 
@@ -57,11 +53,7 @@
             <p><strong>Payment Date:</strong> {{ $ad->payment_date }}</p>
 
             <p><strong>Status:</strong>
-                @if($ad->is_success)
-                    <span class="badge bg-success">✔ Paid</span>
-                @else
-                    <span class="badge bg-warning">Pending</span>
-                @endif
+                @include('partials.payment-status-badge', ['status' => $ad->payment_status])
             </p>
 
         @else
@@ -70,13 +62,50 @@
 
         @endif
 
+        <hr>
+
+        <!-- Criteria -->
+        @if(isset($criterias) && $criterias->count() > 0)
+            <h5>Criteria</h5>
+            <div class="row">
+                @foreach($criterias as $crit)
+                    @php
+                        // Use Sinhala labels for Lahipita publication, otherwise English
+                        $critLabel = trim((($ad->publication ?? '') === 'lahipita') ? ($crit->advertisement_criteria_name_si ?? '') : ($crit->advertisement_criteria_name_en ?? ''));
+                        $value = $criteriaValues[$crit->id] ?? null;
+                    @endphp
+
+                    @if($critLabel !== '')
+                        <div class="col-md-6 mb-2">
+                            <p><strong>{{ $critLabel }}:</strong> {{ $value ?? '—' }}</p>
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        @endif
+
     </div>
 </div>
 
-<a href="{{ url('/advertisements') }}" class="btn btn-secondary mt-3">
-    Back to All Ads
-</a>
-```
+<div class="mt-3 d-flex gap-2">
+    <a href="{{ url('/advertisements/' . $ad->id . '/download') }}" class="btn btn-success">
+        <i class="bx bx-download"></i> Download Advertisement
+    </a>
+
+    @if($ad->email)
+        <form method="POST" action="{{ url('/advertisements/' . $ad->id . '/send-link-email') }}" style="display:inline;">
+            @csrf
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Send payment invoice to customer?');">
+                <i class="bx bx-send"></i> Send Email to Customer
+            </button>
+        </form>
+    @endif
+
+    <a href="{{ url('/advertisements') }}" class="btn btn-secondary">
+        Back to All Ads
+    </a>
+</div>
+
 
 </div>
 @endsection

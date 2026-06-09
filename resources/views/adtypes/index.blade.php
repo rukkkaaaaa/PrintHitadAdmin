@@ -23,52 +23,86 @@
 
 
     {{-- Add Form --}}
-    <div class="card mb-4">
-        <div class="card-header">
-            <strong>Add Advertisement Type</strong>
-        </div>
-
-        <div class="card-body">
-
-            <form action="{{ url('/add-adtype') }}" method="POST">
-                @csrf
-
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Type Name (English)</label>
-                        <input type="text" name="advertisement_type_en" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Type Name (Sinhala)</label>
-                        <input type="text" name="advertisement_type_si" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Price (LKR)</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">Category</label>
-                        <select name="category_id" class="form-control" required>
-                            <option value="">Select</option>
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
+    <div class="row mb-4">
+        
+        {{-- Add English Type Form --}}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Add Type (English)</strong>
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Add Ad Type
-                </button>
+                <div class="card-body">
+                    <form action="{{ url('/add-adtype') }}" method="POST">
+                        @csrf
 
-            </form>
+                        <div class="mb-3">
+                            <label class="form-label">Type Name (En)</label>
+                            <input type="text" name="advertisement_type_en" class="form-control" required>
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Price (LKR)</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categories as $cat)
+                                    @if($cat->category_name_en)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_en }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Type (English)</button>
+                    </form>
+                </div>
+            </div>
         </div>
+
+        {{-- Add Sinhala Type Form --}}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Add Type (Sinhala)</strong>
+                </div>
+
+                <div class="card-body">
+                    <form action="{{ url('/add-adtype') }}" method="POST">
+                        @csrf
+
+                        <div class="mb-3">
+                            <label class="form-label">Type Name (Si)</label>
+                            <input type="text" name="advertisement_type_si" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Price (LKR)</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category_id" class="form-control" required>
+                                <option value="">Select</option>
+                                @foreach ($categories as $cat)
+                                    @if($cat->category_name_si)
+                                        <option value="{{ $cat->id }}">{{ $cat->category_name_si }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Add Type (Sinhala)</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 
@@ -108,12 +142,7 @@
 
                             <td>{{ $type->advertisement_type_si }}</td>
 
-                            <td>
-                                {{
-                                    optional($categories->where('id', $type->category_id)->first())->category_name_en
-                                    ?? 'N/A'
-                                }}
-                            </td>
+                            <td>{{ $type->category_name ?? 'N/A' }}</td>
 
                             <td>Rs. {{ number_format($type->price, 2) }}</td>
 
@@ -176,21 +205,20 @@
                         <div class="modal-body">
 
                             <div class="mb-3">
-                                <label class="form-label">Type Name (English)</label>
+                                <label class="form-label">Type Name (En)</label>
                                 <input type="text"
                                        name="advertisement_type_en"
                                        class="form-control"
-                                       value="{{ $type->advertisement_type_en }}"
-                                       required>
+                                    value="{{ $type->advertisement_type_en }}">
+                                <small class="text-muted">Either EN or SI required</small>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Type Name (Sinhala)</label>
+                                <label class="form-label">Type Name (Si)</label>
                                 <input type="text"
                                        name="advertisement_type_si"
                                        class="form-control"
-                                       value="{{ $type->advertisement_type_si }}"
-                                       required>
+                                    value="{{ $type->advertisement_type_si }}">
                             </div>
 
                             <div class="mb-3">
@@ -206,11 +234,34 @@
                             <div class="mb-3">
                                 <label class="form-label">Category</label>
                                 <select name="category_id" class="form-control" required>
+                                    @php
+                                        // If this ad type has only an English name, show only English categories.
+                                        // If it has only a Sinhala name, show only Sinhala categories.
+                                        // Otherwise show all categories (fall back).
+                                        $showEnOnly = filled($type->advertisement_type_en) && !filled($type->advertisement_type_si);
+                                        $showSiOnly = filled($type->advertisement_type_si) && !filled($type->advertisement_type_en);
+                                    @endphp
+
                                     @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}"
-                                            {{ $type->category_id == $cat->id ? 'selected' : '' }}>
-                                            {{ $cat->category_name_en }}
-                                        </option>
+                                        @php
+                                            $labelEn = $cat->category_name_en;
+                                            $labelSi = $cat->category_name_si;
+                                            // Decide whether this category should be listed for this edit modal
+                                            $include = true;
+                                            if ($showEnOnly) {
+                                                $include = filled($labelEn);
+                                            } elseif ($showSiOnly) {
+                                                $include = filled($labelSi);
+                                            }
+                                            // Prefer the language label that makes sense for this modal
+                                            $catLabel = $showSiOnly ? $labelSi : ($showEnOnly ? $labelEn : ($labelEn ?: $labelSi));
+                                        @endphp
+
+                                        @if($include && $catLabel)
+                                            <option value="{{ $cat->id }}" {{ $type->category_id == $cat->id ? 'selected' : '' }}>
+                                                {{ $catLabel }}
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -253,3 +304,74 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('[id^="editAdType"]').forEach(function(modalEl){
+        modalEl.addEventListener('shown.bs.modal', function(){
+            var inputs = modalEl.querySelectorAll('input, textarea, select');
+            try {
+                var en = modalEl.querySelector('input[name="advertisement_type_en"]');
+                var si = modalEl.querySelector('input[name="advertisement_type_si"]');
+
+                if (en && si) {
+                    var enVal = (en.value || '').toString().trim();
+                    var siVal = (si.value || '').toString().trim();
+
+                    if (enVal && !siVal) {
+                        si.readOnly = true;
+                        si.classList.add('bg-light');
+                    } else if (siVal && !enVal) {
+                        en.readOnly = true;
+                        en.classList.add('bg-light');
+                    } else {
+                        if (en) en.readOnly = false;
+                        if (si) si.readOnly = false;
+                        en && en.classList.remove('bg-light');
+                        si && si.classList.remove('bg-light');
+                    }
+                }
+            } catch (e) {
+                console.error('error applying readonly rule', e);
+            }
+
+            console.group('Edit adtype diagnostics for ' + modalEl.id);
+            inputs.forEach(function(inp, idx){
+                try {
+                    var cs = window.getComputedStyle(inp);
+                    console.log(idx, inp.name || inp.id || inp.tagName, {
+                        disabled: inp.disabled,
+                        readOnly: inp.readOnly,
+                        value: inp.value,
+                        tabIndex: inp.tabIndex,
+                        display: cs.display,
+                        visibility: cs.visibility,
+                        pointerEvents: cs.pointerEvents,
+                        opacity: cs.opacity
+                    });
+
+                    var rect = inp.getBoundingClientRect();
+                    var x = Math.round(rect.left + rect.width/2);
+                    var y = Math.round(rect.top + rect.height/2);
+                    var topEl = document.elementFromPoint(x, y);
+                    console.log(' elementFromPoint center ->', topEl, topEl && topEl.className, topEl && topEl.id);
+                } catch (e) {
+                    console.error('diagnostic error for input', inp, e);
+                }
+            });
+            console.groupEnd();
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function(){
+            try {
+                var en = modalEl.querySelector('input[name="advertisement_type_en"]');
+                var si = modalEl.querySelector('input[name="advertisement_type_si"]');
+                if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
+                if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
+            } catch (e) { /* ignore */ }
+        });
+    });
+});
+</script>
+@endpush

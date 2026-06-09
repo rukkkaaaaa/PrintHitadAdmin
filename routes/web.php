@@ -16,7 +16,7 @@ Route::get('/', function () {
         $user = session('user');
 
         $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('users')->count();
+        $adminCount = DB::table('admins')->count();
         $adCount = DB::table('advertisements')->count();
 
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
@@ -42,6 +42,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 // Users management
 Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])
     ->middleware('auth.session.custom');
+Route::post('/users/{id}/update', [AuthController::class, 'updateUser'])
+    ->middleware('auth.session.custom');
+Route::post('/users/{id}/delete', [AuthController::class, 'deleteUser'])
+    ->middleware('auth.session.custom');
 
 /*
 |--------------------------------------------------------------------------
@@ -54,11 +58,14 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
         $user = session('user');
 
         $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('users')->count();
+        $adminCount = DB::table('admins')->count();
         $adCount = DB::table('advertisements')->count();
 
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
     });
+
+    Route::get('/reports', [GeneralController::class, 'reports']);
+    Route::get('/reports/{type}/pdf', [GeneralController::class, 'downloadMonthlyReport']);
 
     /*
     |--------------------------------------------------------------------------
@@ -80,12 +87,30 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Tints
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/tints', [GeneralController::class, 'getTints']);
+    Route::post('/add-tint', [GeneralController::class, 'addTint']);
+    Route::post('/update-tint/{id}', [GeneralController::class, 'updateTint']);
+
+    /*
+    |--------------------------------------------------------------------------
     | Ad Sizes
     |--------------------------------------------------------------------------
     */
     Route::get('/adsizes', [GeneralController::class, 'getAdSizes']);
     Route::post('/add-adsize', [GeneralController::class, 'addAdSize']);
     Route::post('/update-adsize/{id}', [GeneralController::class, 'updateAdSize']);
+
+    // AJAX: get ad types for a category
+    Route::get('/adtypes/by-category/{id}', [GeneralController::class, 'getAdTypesByCategory']);
+    // AJAX: get tints for a category
+    Route::get('/tints/by-category/{id}', [GeneralController::class, 'getTintsByCategory']);
+    // AJAX: get ad sizes for a type
+    Route::get('/adsizes/by-type/{id}', [GeneralController::class, 'getAdSizesByType']);
+    // AJAX: get criterias for a category
+    Route::get('/adcriterias/by-category/{id}', [GeneralController::class, 'getCriteriasByCategory']);
 
     /*
     |--------------------------------------------------------------------------
@@ -125,9 +150,26 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Members
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/members', [GeneralController::class, 'getMembers']);
+
+    /*
+    |--------------------------------------------------------------------------
     | Advertisements
     |--------------------------------------------------------------------------
     */
+    Route::get('/all-print-ads', [GeneralController::class, 'getAllPrintAdvertisements']);
+
+    Route::get('/publication-deadlines', [GeneralController::class, 'getPublicationDeadlines']);
+    Route::post('/publication-deadlines', [GeneralController::class, 'updatePublicationDeadlines']);
+    Route::get('/general-settings', [GeneralController::class, 'getGeneralSettings']);
+    Route::post('/general-settings', [GeneralController::class, 'updateGeneralSettings']);
+
+    Route::get('/advertisements/create', [GeneralController::class, 'createAdvertisement']);
+    Route::post('/advertisements/store', [GeneralController::class, 'storeAdvertisement']);
+
     Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
 
     Route::get('/advertisements/{id}/view', [GeneralController::class, 'viewAdvertisement']);
@@ -136,6 +178,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::post('/advertisements/{id}/update', [GeneralController::class, 'updateAdvertisement']);
 
     Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
+    Route::post('/advertisements/{id}/send-link-email', [GeneralController::class, 'sendLinkEmail']);
 
     // Paid / Unpaid
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
@@ -146,3 +189,4 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/advertisements/lahipita/paid', [GeneralController::class, 'getLahipitaPaidAdvertisements']);
     Route::get('/advertisements/lahipita/unpaid', [GeneralController::class, 'getLahipitaUnpaidAdvertisements']);
 });
+
