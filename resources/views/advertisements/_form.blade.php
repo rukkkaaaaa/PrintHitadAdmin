@@ -318,6 +318,16 @@
                     <input type="text" name="payment_date" id="paymentDateInput" class="form-control"
                            value="{{ old('payment_date') }}" placeholder="Select date" autocomplete="off">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Receipt Number</label>
+                    <input type="text" name="receipt_number" class="form-control"
+                           value="{{ old('receipt_number') }}" placeholder="Enter receipt number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Payment Slip</label>
+                    <input type="file" name="payment_slip" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <small class="help-note">Allowed: PDF, JPG, JPEG, PNG (max 5MB)</small>
+                </div>
             </div>
         </div>
 

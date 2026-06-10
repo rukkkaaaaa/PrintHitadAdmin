@@ -1408,6 +1408,8 @@ class GeneralController extends Controller
             'payment_amount'    => 'nullable|numeric|min:0',
             'payment_status'    => 'nullable|in:pending,completed,failed',
             'payment_date'      => 'nullable|date',
+            'receipt_number'    => 'nullable|string|max:255',
+            'payment_slip'      => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         if ($request->filled('advertisement_tint_id')) {
@@ -1447,10 +1449,9 @@ class GeneralController extends Controller
                 ]);
             }
 
-            $adId = DB::table('advertisements')->insertGetId([
+            $advertisementData = [
                 'customer_id' => $customerId,
                 'category_id' => $request->category_id,
-                'advertisement_tint_id' => $request->advertisement_tint_id,
                 'district_id' => $request->district_id,
                 'city_id' => $request->city_id,
                 'advertisement_description' => $request->advertisement_description,
@@ -1459,7 +1460,25 @@ class GeneralController extends Controller
                 'web_combined_ad' => $request->boolean('web_combined_ad'),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            if (Schema::hasColumn('advertisements', 'advertisement_type_id')) {
+                $advertisementData['advertisement_type_id'] = (int) $request->advertisement_type_id;
+            }
+
+            if (Schema::hasColumn('advertisements', 'advertisement_size_id')) {
+                $advertisementData['advertisement_size_id'] = (int) $request->advertisement_size_id;
+            }
+
+            if (Schema::hasColumn('advertisements', 'advertisement_tint_id')) {
+                $advertisementData['advertisement_tint_id'] = $request->advertisement_tint_id;
+            }
+
+            if (Schema::hasColumn('advertisements', 'top_ad')) {
+                $advertisementData['top_ad'] = $request->boolean('top_ad');
+            }
+
+            $adId = DB::table('advertisements')->insertGetId($advertisementData);
 
             foreach ((array) $request->input('criteria', []) as $criteriaId => $criteriaValue) {
                 if (is_array($criteriaValue)) {
@@ -1515,25 +1534,38 @@ class GeneralController extends Controller
                 }
             }
 
-            if ($request->filled('payment_method_id') || $request->filled('payment_amount')) {
+            if (
+                $request->filled('payment_method_id')
+                || $request->filled('payment_amount')
+                || $request->filled('receipt_number')
+                || $request->hasFile('payment_slip')
+                || $request->filled('payment_status')
+                || $request->filled('payment_date')
+            ) {
                 $priceBreakdown = $this->buildAdvertisementPriceBreakdown($request);
                 $paymentAmount = $request->filled('payment_amount')
-                    ? $request->payment_amount
-                    : collect($priceBreakdown)->sum('amount');
+                    ? (float) $request->payment_amount
+                    : (float) collect($priceBreakdown)->sum('amount');
+
+                $paymentSlipPath = null;
+                if ($request->hasFile('payment_slip')) {
+                    $paymentSlipPath = $request->file('payment_slip')->storePublicly('payment_slips', 'oracle');
+                }
 
                 DB::table('payments')->insert([
-                    'advertisement_id'  => $adId,
-                    'payment_method_id' => $request->payment_method_id ?: 1,
-                    'price_breakdown'   => !empty($priceBreakdown) ? json_encode($priceBreakdown, JSON_UNESCAPED_UNICODE) : null,
-                    'amount'            => $paymentAmount ?: 0,
-                    'payment_status'    => $request->payment_status ?: 'pending',
-                    'payment_date'      => $request->filled('payment_date') ? $request->payment_date : now()->toDateTimeString(),
-                    'is_success'        => ($request->payment_status === 'completed') ? 'true' : 'false',
-                    'session_id'        => '',
-                    'success_indicator' => '',
-                    'result'            => '',
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
+                    'advertisement_id'      => $adId,
+                    'payment_method_id'     => $request->payment_method_id ?: 1,
+                    'amount'                => $paymentAmount,
+                    'payment_status'        => $request->payment_status ?: 'pending',
+                    'payment_date'          => $request->filled('payment_date') ? $request->payment_date : now()->toDateTimeString(),
+                    'receipt_number'        => $request->receipt_number,
+                    'payment_slip_file_path'=> $paymentSlipPath,
+                    'is_success'            => ($request->payment_status === 'completed') ? 'true' : 'false',
+                    'session_id'            => '',
+                    'success_indicator'     => '',
+                    'result'                => '',
+                    'created_at'            => now(),
+                    'updated_at'            => now(),
                 ]);
             }
         });
@@ -2856,6 +2888,8 @@ class GeneralController extends Controller
             'payment_slip' => $canEditPaymentFields
                 ? ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']
                 : ['prohibited'],
+            'criteria_image' => 'nullable|array',
+            'criteria_image.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
         ]);
 
         if ($request->filled('advertisement_tint_id')) {
@@ -3015,6 +3049,40 @@ class GeneralController extends Controller
                             'advertisement_id' => $id,
                             'advertisement_criteria_id' => $criteriaId,
                             'advertisement_criteria_option_value' => $value,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
+
+            // Process image-based criteria updates (replace existing path when a new image is uploaded)
+            $criteriaImageInput = $request->file('criteria_image', []);
+            if (is_array($criteriaImageInput) && count($criteriaImageInput) > 0) {
+                foreach ($criteriaImageInput as $criteriaId => $criteriaImage) {
+                    if (!$criteriaImage) {
+                        continue;
+                    }
+
+                    $imagePath = $criteriaImage->storePublicly('advertisement-criteria-images', 'oracle');
+
+                    $existing = DB::table('advertisement_criteria_values')
+                        ->where('advertisement_id', $id)
+                        ->where('advertisement_criteria_id', $criteriaId)
+                        ->first();
+
+                    if ($existing) {
+                        DB::table('advertisement_criteria_values')
+                            ->where('id', $existing->id)
+                            ->update([
+                                'advertisement_criteria_option_value' => $imagePath,
+                                'updated_at' => now(),
+                            ]);
+                    } else {
+                        DB::table('advertisement_criteria_values')->insert([
+                            'advertisement_id' => $id,
+                            'advertisement_criteria_id' => $criteriaId,
+                            'advertisement_criteria_option_value' => $imagePath,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);

@@ -268,6 +268,20 @@
 
                                 @if($crit->field_type === 'textarea')
                                     <textarea name="criteria[{{ $crit->id }}]" class="form-control" rows="3">{{ old('criteria.' . $crit->id, $existing) }}</textarea>
+                                @elseif($crit->field_type === 'image')
+                                    <input type="file" name="criteria_image[{{ $crit->id }}]" class="form-control" accept="image/*">
+                                    <small class="text-muted d-block mt-1">Upload a new image to replace the current one.</small>
+
+                                    @if(!empty($existing))
+                                        <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                                            <small class="text-muted d-block mb-1">
+                                                <strong>📄 Current file:</strong> {{ basename((string) $existing) }}
+                                            </small>
+                                            <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                                {{ $existing }}
+                                            </div>
+                                        </div>
+                                    @endif
                                 @elseif($crit->field_type === 'dropdown')
                                     <select name="criteria[{{ $crit->id }}]" class="form-select">
                                         <option value="">-- Select --</option>
