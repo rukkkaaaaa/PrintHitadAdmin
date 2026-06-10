@@ -1401,6 +1401,8 @@ class GeneralController extends Controller
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
+            'criteria_image' => 'nullable|array',
+            'criteria_image.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'payment_method_id' => 'nullable|exists:payment_methods,id',
             'payment_amount'    => 'nullable|numeric|min:0',
@@ -1474,6 +1476,22 @@ class GeneralController extends Controller
                     'advertisement_id' => $adId,
                     'advertisement_criteria_id' => $criteriaId,
                     'advertisement_criteria_option_value' => $criteriaValue,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            foreach ((array) $request->file('criteria_image', []) as $criteriaId => $criteriaImage) {
+                if (!$criteriaImage) {
+                    continue;
+                }
+
+                $criteriaImagePath = $criteriaImage->storePublicly('advertisement-criteria-images', 'oracle');
+
+                DB::table('advertisement_criteria_values')->insert([
+                    'advertisement_id' => $adId,
+                    'advertisement_criteria_id' => $criteriaId,
+                    'advertisement_criteria_option_value' => $criteriaImagePath,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

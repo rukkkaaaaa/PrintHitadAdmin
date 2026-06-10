@@ -52,6 +52,7 @@
                                 <option value="text">Text</option>
                                 <option value="number">Number</option>
                                 <option value="dropdown">Dropdown</option>
+                                <option value="image">Image</option>
                             </select>
                         </div>
 
@@ -102,6 +103,7 @@
                                 <option value="text">Text</option>
                                 <option value="number">Number</option>
                                 <option value="dropdown">Dropdown</option>
+                                <option value="image">Image</option>
                             </select>
                         </div>
 
@@ -230,6 +232,7 @@
                                                 <option value="text" {{ $crit->field_type == 'text' ? 'selected' : '' }}>Text</option>
                                                 <option value="number" {{ $crit->field_type == 'number' ? 'selected' : '' }}>Number</option>
                                                 <option value="dropdown" {{ $crit->field_type == 'dropdown' ? 'selected' : '' }}>Dropdown</option>
+                                                <option value="image" {{ $crit->field_type == 'image' ? 'selected' : '' }}>Image</option>
                                             </select>
                                         </div>
 

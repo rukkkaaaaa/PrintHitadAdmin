@@ -748,7 +748,19 @@
         if (!criterias || criterias.length === 0) return '';
         return criterias.map(function (c) {
             var field = '';
-            if (c.field_type === 'textarea') {
+            if (c.field_type === 'text') {
+                field = '<input type="text" name="criteria[' + c.id + ']" class="form-control" />';
+            } else if (c.field_type === 'number') {
+                field = '<input type="number" name="criteria[' + c.id + ']" class="form-control" />';
+            } else if (c.field_type === 'image') {
+                field = '<input type="file" name="criteria_image[' + c.id + ']" class="form-control" accept="image/*" />';
+            } else if (c.field_type === 'dropdown') {
+                var opts = (c.options || []).map(function (o) {
+                    return '<option value="' + escHtml(o.label) + '">' + escHtml(o.label) + '</option>';
+                }).join('');
+                field = '<select name="criteria[' + c.id + ']" class="form-select">'
+                    + '<option value="">-- Select --</option>' + opts + '</select>';
+            } else if (c.field_type === 'textarea') {
                 field = '<textarea name="criteria[' + c.id + ']" class="form-control" rows="3"></textarea>';
             } else if (c.field_type === 'radio') {
                 var opts = (c.options || []).map(function (o) {
@@ -760,11 +772,7 @@
                 }).join('');
                 field = '<div class="d-flex flex-wrap gap-3">' + opts + '</div>';
             } else {
-                var opts = (c.options || []).map(function (o) {
-                    return '<option value="' + escHtml(o.label) + '">' + escHtml(o.label) + '</option>';
-                }).join('');
-                field = '<select name="criteria[' + c.id + ']" class="form-select">'
-                    + '<option value="">-- Select --</option>' + opts + '</select>';
+                field = '<input type="text" name="criteria[' + c.id + ']" class="form-control" />';
             }
             return '<div class="col-12"><div class="criteria-block">'
                 + '<label class="form-label">' + escHtml(c.label) + '</label>'
@@ -875,7 +883,6 @@
         hide(sizeCard);
         hide(sizeHints);
         revealFromSize(false);
-            pendingCriterias = [];
 
         if (!typeId) return;
 
