@@ -26,6 +26,7 @@
                 'criteriaOptions' => $criteriaOptions ?? collect(),
                 'publicationDeadlines' => $publicationDeadlines ?? [],
                 'generalSettings' => $generalSettings ?? [],
+                'topAdSupported' => $topAdSupported ?? false,
             ])
         </div>
     </div>

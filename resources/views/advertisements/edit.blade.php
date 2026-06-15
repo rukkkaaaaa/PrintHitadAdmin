@@ -14,6 +14,11 @@
     @php
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
         $canEditPaymentFields = $currentRole === 'super admin';
+        $topAdSupported = $topAdSupported ?? false;
+        $generalSettings = $generalSettings ?? [];
+        $topAdRate = trim($ad->publication ?? '') === 'lahipita'
+            ? (float) ($generalSettings['top_ad_rate_si'] ?? 0)
+            : (float) ($generalSettings['top_ad_rate_en'] ?? 0);
     @endphp
 
     <style>
@@ -173,6 +178,24 @@
                             <option value="1" {{ old('web_combined_ad', $ad->web_combined_ad) == 1 ? 'selected' : '' }}>Yes</option>
                         </select>
                     </div>
+
+                    @if($topAdSupported)
+                    <div class="col-md-6">
+                        <label class="form-label d-block" for="topAdToggle">Top Ad</label>
+                        <input type="hidden" name="top_ad" value="0">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="topAdToggle" name="top_ad" value="1" {{ old('top_ad', (int) ($ad->top_ad ?? 0)) == 1 ? 'checked' : '' }}>
+                            <label class="form-check-label" for="topAdToggle">Pin this advertisement in the top ad slot</label>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            @if($topAdRate > 0)
+                                Top ad placement adds LKR {{ number_format($topAdRate, 2) }} to the calculated amount.
+                            @else
+                                Enable this if the ad should run in the top placement.
+                            @endif
+                        </small>
+                    </div>
+                    @endif
 
                     <div class="col-md-6">
                         {{-- Status removed: advertisement-level status removed from model/table --}}

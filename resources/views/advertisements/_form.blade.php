@@ -10,6 +10,7 @@
     $cities = $cities ?? collect();
     $paymentMethods = $paymentMethods ?? collect();
     $publicationDeadlines = $publicationDeadlines ?? [];
+    $topAdSupported = $topAdSupported ?? false;
     $generalSettings = $generalSettings ?? [
         'max_words_en' => 65,
         'max_words_si' => 65,
@@ -17,6 +18,8 @@
         'additional_word_rate_si' => 20,
         'free_word_limit_en' => 15,
         'free_word_limit_si' => 15,
+        'top_ad_rate_en' => 100,
+        'top_ad_rate_si' => 100,
     ];
 @endphp
 
@@ -192,6 +195,17 @@
                         <option value="1" {{ old('web_combined_ad') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
                 </div>
+                @if($topAdSupported)
+                <div class="col-md-6">
+                    <label class="form-label d-block" for="topAdToggle">Top Ad</label>
+                    <input type="hidden" name="top_ad" value="0">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="topAdToggle" name="top_ad" value="1" {{ old('top_ad') == 1 ? 'checked' : '' }}>
+                        <label class="form-check-label" for="topAdToggle">Pin this advertisement in the top ad slot</label>
+                    </div>
+                    <small class="help-note d-block mt-1" id="topAdHint"></small>
+                </div>
+                @endif
                 <div class="col-md-6">
                     <label class="form-label">Tint</label>
                     <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
@@ -568,6 +582,8 @@
     const descTA         = form.querySelector('#descTA');
     const wcDisplay      = form.querySelector('#wcDisplay');
     const imagesHint     = form.querySelector('#imagesHint');
+    const topAdToggle    = form.querySelector('#topAdToggle');
+    const topAdHint      = form.querySelector('#topAdHint');
 
     /* ── State ───────────────────────────────────────────────────────── */
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
@@ -662,6 +678,27 @@
             freeWordLimit: Number(generalSettings['free_word_limit_' + suffix] || 0),
             additionalWordRate: Number(generalSettings['additional_word_rate_' + suffix] || 0),
         };
+    }
+
+    function currentTopAdRate() {
+        const suffix = lang() === 'si' ? 'si' : 'en';
+        return Number(generalSettings['top_ad_rate_' + suffix] || 0);
+    }
+
+    function updateTopAdHint() {
+        if (!topAdHint) return;
+
+        const rate = Math.max(0, currentTopAdRate());
+        const enabled = !!(topAdToggle && topAdToggle.checked);
+
+        if (!enabled) {
+            topAdHint.textContent = 'Enable this if the ad should run in the top placement.';
+            return;
+        }
+
+        topAdHint.textContent = rate > 0
+            ? ('Top ad placement adds LKR ' + rate.toFixed(2) + ' to the calculated amount.')
+            : 'Top ad placement is enabled.';
     }
 
     /* ── Live word counter ────────────────────────────────────────────── */
@@ -934,6 +971,7 @@
         updateCategoryLabels();
         updateLocationLabels();
         updateWordCount();
+        updateTopAdHint();
 
         var catId  = catSel.value;
         var typeId = typeSel.value;
@@ -1002,6 +1040,7 @@
     sizeSel && sizeSel.addEventListener('change', applySize);
     distSel && distSel.addEventListener('change', filterCities);
     descTA  && descTA.addEventListener('input',   updateWordCount);
+    topAdToggle && topAdToggle.addEventListener('change', updateTopAdHint);
     descTA  && descTA.addEventListener('paste', function (e) {
         if (!descTA) return;
 
@@ -1034,6 +1073,7 @@
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
     updateWordCount();
+    updateTopAdHint();
 
     @if($autoOpen)
     const offcanvasEl = form.closest('.offcanvas');

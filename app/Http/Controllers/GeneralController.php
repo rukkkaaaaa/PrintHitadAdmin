@@ -1099,8 +1099,9 @@ class GeneralController extends Controller
 
         $publicationDeadlines = $this->fetchPublicationDeadlines();
         $generalSettings = $this->fetchGeneralSettings();
+        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
 
-        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings'));
+        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings', 'topAdSupported'));
     }
 
     /**
@@ -1470,6 +1471,7 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad' => 'nullable|boolean',
+            'top_ad' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
@@ -1703,6 +1705,17 @@ class GeneralController extends Controller
             ];
         }
 
+        if ($request->boolean('top_ad')) {
+            $topAdRate = $this->resolveTopAdRate($publication);
+
+            if ($topAdRate > 0) {
+                $items[] = [
+                    'label' => 'Top ad placement',
+                    'amount' => $topAdRate,
+                ];
+            }
+        }
+
         return $items;
     }
 
@@ -1743,6 +1756,20 @@ class GeneralController extends Controller
             'free_word_limit' => (int) ($settings['free_word_limit_' . $suffix] ?? 0),
             'additional_word_rate' => (float) ($settings['additional_word_rate_' . $suffix] ?? 0),
         ];
+    }
+
+    /**
+     * Resolve top-ad surcharge for a publication.
+     *
+     * @param string $publication
+     * @return float
+     */
+    private function resolveTopAdRate(string $publication): float
+    {
+        $settings = $this->fetchGeneralSettings();
+        $suffix = trim($publication) === 'lahipita' ? 'si' : 'en';
+
+        return max(0, (float) ($settings['top_ad_rate_' . $suffix] ?? 0));
     }
 
     /**
@@ -2883,7 +2910,10 @@ class GeneralController extends Controller
             abort(404);
         }
 
-        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints'));
+        $generalSettings = $this->fetchGeneralSettings();
+        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
+
+        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
     }
 
     /**
@@ -2898,6 +2928,7 @@ class GeneralController extends Controller
     {
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
         $canEditPaymentFields = $currentRole === 'super admin';
+        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -2948,6 +2979,7 @@ class GeneralController extends Controller
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'web_combined_ad' => 'required|boolean',
+            'top_ad' => $topAdSupported ? ['nullable', 'boolean'] : ['prohibited'],
             'payment_status' => $canEditPaymentFields
                 ? ['nullable', 'in:pending,completed,failed']
                 : ['prohibited'],
@@ -2977,7 +3009,7 @@ class GeneralController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $id, $canEditPaymentFields) {
+        DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
             $payment = DB::table('payments')->where('advertisement_id', $id)->first();
 
@@ -2996,7 +3028,7 @@ class GeneralController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            DB::table('advertisements')->where('id', $id)->update([
+            $advertisementData = [
                 'advertisement_description' => $request->advertisement_description,
                 'category_id' => $request->category_id,
                 'advertisement_tint_id' => $request->advertisement_tint_id,
@@ -3005,7 +3037,13 @@ class GeneralController extends Controller
                 'publish_date' => $request->publish_date,
                 'web_combined_ad' => $request->web_combined_ad,
                 'updated_at' => now(),
-            ]);
+            ];
+
+            if ($topAdSupported) {
+                $advertisementData['top_ad'] = $request->boolean('top_ad');
+            }
+
+            DB::table('advertisements')->where('id', $id)->update($advertisementData);
 
             if ($canEditPaymentFields && $request->filled('payment_status')) {
                 $paymentStatus = $request->payment_status;
