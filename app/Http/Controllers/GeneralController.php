@@ -264,7 +264,7 @@ class GeneralController extends Controller
             ->unique()
             ->values();
 
-        if ($categoryIds->count() !== 1) {
+            if ($categoryIds->count() !== 1) {
             return redirect()->back()
                 ->withErrors(['category_ids' => 'Please select exactly one category.'])
                 ->withInput();
@@ -283,20 +283,22 @@ class GeneralController extends Controller
 
         DB::transaction(function () use ($request, $categoryIds) {
             $tintData = [
-                'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
-                'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
-                'color' => $request->color ?: '',
-                'price' => $request->price ?: 0,
-                'is_active' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+    'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+    'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+    'category_id' => $categoryIds->first(),
+    'color' => $request->color ?: '',
+    'price' => $request->price ?: 0,
+    'is_active' => 1,
+    'created_at' => now(),
+    'updated_at' => now(),
+];
 
             if (Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
                 $tintData['advertisement_type_id'] = (int) $request->advertisement_type_id;
             }
 
             $tintId = DB::table('advertisement_tints')->insertGetId($tintData);
+
 
             DB::table('category_has_advertisement_tints')->insert(
                 $categoryIds->map(fn ($categoryId) => [
@@ -328,13 +330,13 @@ class GeneralController extends Controller
             ->unique()
             ->values();
 
-        if ($categoryIds->count() !== 1) {
+            if ($categoryIds->count() !== 1) {
             return redirect()->back()
                 ->withErrors(['category_ids' => 'Please select exactly one category.'])
                 ->withInput();
         }
 
-        $isTypeInSelectedCategories = DB::table('advertisement_types')
+            $isTypeInSelectedCategories = DB::table('advertisement_types')
             ->where('id', (int) $request->advertisement_type_id)
             ->whereIn('category_id', $categoryIds->all())
             ->exists();
@@ -344,6 +346,7 @@ class GeneralController extends Controller
                 ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to the selected category.'])
                 ->withInput();
         }
+
 
         DB::transaction(function () use ($request, $id, $categoryIds) {
             $tintData = [
@@ -361,6 +364,7 @@ class GeneralController extends Controller
 
             DB::table('advertisement_tints')->where('id', $id)->update($tintData);
 
+
             DB::table('category_has_advertisement_tints')
                 ->where('advertisement_tint_id', $id)
                 ->delete();
@@ -375,6 +379,7 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'Tint updated successfully!');
     }
+
 
     // GET: Show all ad sizes
     public function getAdSizes()
@@ -408,6 +413,7 @@ class GeneralController extends Controller
             ->orderBy('advertisement_type_si')
             ->orderBy('advertisement_type_en')
             ->get();
+
 
         $categoriesEn = DB::table('categories')
             ->where('is_active', 1)
@@ -458,6 +464,7 @@ class GeneralController extends Controller
         return response()->json($types);
     }
 
+    
     /**
      * AJAX: Return advertisement tints for a given category.
      * Responds with JSON containing id and localized label.
@@ -495,6 +502,7 @@ class GeneralController extends Controller
 
         return response()->json($tints);
     }
+
 
     /**
      * AJAX: Return advertisement sizes for a given advertisement type.
@@ -679,6 +687,7 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'Advertisement size updated successfully!');
     }
+
 
     private function resolveAdSizeImageUrl(?string $imgUrl): ?string
     {
@@ -1109,9 +1118,11 @@ class GeneralController extends Controller
             ->orderBy('id')
             ->get();
 
-        $publicationDeadlines = $this->fetchPublicationDeadlines();
-        $generalSettings = $this->fetchGeneralSettings();
-        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
+                $publicationDeadlines = $this->fetchPublicationDeadlines();
+
+         $generalSettings = $this->fetchGeneralSettings();
+
+         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
 
         return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings', 'topAdSupported'));
     }
@@ -1226,6 +1237,7 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'General settings updated successfully.');
     }
+
 
     /**
      * Show publication cutoff settings page for admins.
@@ -1348,6 +1360,7 @@ class GeneralController extends Controller
         return $defaults;
     }
 
+    
     /**
      * Fetch general settings from DB, with defaults.
      *
@@ -1485,7 +1498,7 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad' => 'nullable|boolean',
-            'top_ad' => 'nullable|boolean',
+             'top_ad' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
@@ -1581,6 +1594,7 @@ class GeneralController extends Controller
             }
 
             $adId = DB::table('advertisements')->insertGetId($advertisementData);
+
 
             foreach ((array) $request->input('criteria', []) as $criteriaId => $criteriaValue) {
                 if (is_array($criteriaValue)) {
@@ -1718,7 +1732,7 @@ class GeneralController extends Controller
                 ];
             }
         }
-
+        
         $description = (string) $request->input('advertisement_description', '');
         $pricingRules = $this->resolveDescriptionPricingSettings($publication);
         $wordCount = $this->countWords($description);
@@ -1767,6 +1781,7 @@ class GeneralController extends Controller
         return $english !== '' ? $english : ($sinhala !== '' ? $sinhala : 'Advertisement item');
     }
 
+    
     /**
      * Resolve general description pricing settings for a publication.
      *
@@ -1927,7 +1942,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // ✅ PAYMENTS
+            // âœ… PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
@@ -1941,7 +1956,7 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ✅ 🔥 IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            // âœ… ðŸ”¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
         // free-text search
@@ -2005,10 +2020,10 @@ class GeneralController extends Controller
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
             ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
 
-            // ✅ LEFT JOIN payments (important)
+            // âœ… LEFT JOIN payments (important)
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
 
-            // ✅ LEFT JOIN payment methods
+            // âœ… LEFT JOIN payment methods
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
             ->select(
@@ -2025,7 +2040,7 @@ class GeneralController extends Controller
                 DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
                 DB::raw("COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name"),
 
-                // ✅ Payment fields
+                // âœ… Payment fields
                 'payments.amount',
                 'payments.payment_status',
                 'payments.payment_date',
@@ -2081,10 +2096,10 @@ class GeneralController extends Controller
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ ONLY HITAD PRINT ADS
+            // âœ… ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // ✅ ONLY PAID
+            // âœ… ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2156,10 +2171,10 @@ class GeneralController extends Controller
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ ONLY HITAD PRINT ADS
+            // âœ… ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // ✅ UNPAID LOGIC
+            // âœ… UNPAID LOGIC
             ->where(function ($q) {
                 $q->whereNull('payments.id') // no payment
                     ->orWhere('payments.payment_status', 'pending') // pending
@@ -2246,10 +2261,10 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ✅ MAIN FILTER
+            // âœ… MAIN FILTER
             ->where('advertisements.publication', 'lahipita');
 
-        // 🔍 search (same as your existing)
+        // ðŸ” search (same as your existing)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2282,10 +2297,10 @@ class GeneralController extends Controller
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ ONLY LAHIPITA ADS
+            // âœ… ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
 
-            // ✅ ONLY PAID
+            // âœ… ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2357,10 +2372,10 @@ class GeneralController extends Controller
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // ✅ ONLY LAHIPITA ADS
+            // âœ… ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
 
-            // ✅ UNPAID LOGIC (IMPORTANT)
+            // âœ… UNPAID LOGIC (IMPORTANT)
             ->where(function ($q) {
                 $q->whereNull('payments.id')
                     ->orWhere('payments.payment_status', 'pending')
@@ -2777,6 +2792,7 @@ class GeneralController extends Controller
         try {
             $adViewUrl = url('/advertisements/' . $ad->id . '/view');
             $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
+
             $adTitle = trim((string) ($ad->advertisement_description ?? ''));
             $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
             $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
@@ -2790,7 +2806,7 @@ class GeneralController extends Controller
             $footerMessage = $isPaid
                 ? 'Thank you for using Print Hitad. Your payment has been received successfully.'
                 : 'Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.';
-            $paymentInstructions = $isPaid
+                $paymentInstructions = $isPaid
                 ? "<p>Kindly click the designated button/link in your account to view your advertisement.</p>" .
                     "<p>If you require any further assistance or have any questions, please feel free to contact us.</p>" .
                     "<p>Thank you for your continued support.</p>"
@@ -2801,7 +2817,8 @@ class GeneralController extends Controller
                     "<p>Once the payment is completed, please forward the payment slip for our verification.</p>" .
                     "<p>Should you require any further assistance, please do not hesitate to contact us.</p>" .
                     "<p>Thank you for your cooperation.</p>";
-            $supportContactBlock =
+
+                    $supportContactBlock =
                 "<p>If you require further assistance, please contact our support team:<br>" .
                 "+94 74 364 3560 (Technical Support)<br>" .
                 "+94 112 479 520 (Online Support)</p>";
@@ -2824,7 +2841,7 @@ class GeneralController extends Controller
                     );
             });
 
-            // ✅ SAVE TO DATABASE
+            // âœ… SAVE TO DATABASE
             AdvertisementEmail::create([
                 'advertisement_id' => $ad->id,
                 'customer_email' => $ad->email,
@@ -2835,7 +2852,7 @@ class GeneralController extends Controller
 
             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
         } catch (\Exception $e) {
-            // ✅ SAVE FAILED EMAIL TO DATABASE
+            // âœ… SAVE FAILED EMAIL TO DATABASE
             AdvertisementEmail::create([
                 'advertisement_id' => $ad->id,
                 'customer_email' => $ad->email,
@@ -2850,7 +2867,7 @@ class GeneralController extends Controller
     }
 
     /**
-     * GET: Load advertisement for editing — join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * GET: Load advertisement for editing â€” join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
      *
      * @param int $id
@@ -2939,11 +2956,9 @@ class GeneralController extends Controller
         if (!$ad) {
             abort(404);
         }
-
         $generalSettings = $this->fetchGeneralSettings();
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
-
-        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
+         return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
     }
 
     /**
@@ -2990,7 +3005,7 @@ class GeneralController extends Controller
             'publish_date' => [
                 'required',
                 'date',
-                function ($attribute, $value, $fail) use ($id) {
+                                function ($attribute, $value, $fail) use ($id) {
                     $ad = DB::table('advertisements')->where('id', $id)->first();
 
                     if (!$ad) {
@@ -3007,6 +3022,7 @@ class GeneralController extends Controller
                     }
 
                     $this->validatePublicationPublishDate((string) ($ad->publication ?? ''), (string) $value, $fail);
+                
                 },
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
@@ -3018,7 +3034,7 @@ class GeneralController extends Controller
             'payment_date' => $canEditPaymentFields
                 ? ['nullable', 'date_format:Y-m-d\TH:i']
                 : ['prohibited'],
-            'receipt_number' => $canEditPaymentFields
+                'receipt_number' => $canEditPaymentFields
                 ? ['nullable', 'string', 'max:255']
                 : ['prohibited'],
             'payment_slip' => $canEditPaymentFields
@@ -3041,7 +3057,7 @@ class GeneralController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
+       DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
             $payment = DB::table('payments')->where('advertisement_id', $id)->first();
 
@@ -3084,13 +3100,14 @@ class GeneralController extends Controller
                 'publish_date' => $request->publish_date,
                 'web_combined_ad' => $request->web_combined_ad,
                 'updated_at' => now(),
-            ];
+           ];
 
             if ($topAdSupported) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
             }
 
             DB::table('advertisements')->where('id', $id)->update($advertisementData);
+
 
             if ($canEditPaymentFields && $request->filled('payment_status')) {
                 $paymentStatus = $request->payment_status;
@@ -3110,7 +3127,19 @@ class GeneralController extends Controller
                 if ($request->hasFile('payment_slip')) {
                     $file = $request->file('payment_slip');
                     // Store the file in OCI bucket
-                    $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+                    if ($request->hasFile('payment_slip')) {
+    $file = $request->file('payment_slip');
+    try {
+        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+        if (!$paymentSlipPath) {
+            throw new \Exception('Storage returned empty path');
+        }
+        $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
+    } catch (\Throwable $e) {
+        $paymentSlipPath = $file->store('payment_slips', 'public');
+        \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
+    }
+}
                 }
 
                 $data = array_filter([
@@ -3139,13 +3168,26 @@ class GeneralController extends Controller
 
                     DB::table('payments')->insert($insert);
                 }
-            } elseif ($canEditPaymentFields && ($request->filled('receipt_number') || $request->hasFile('payment_slip'))) {
+
+                 } elseif ($canEditPaymentFields && ($request->filled('receipt_number') || $request->hasFile('payment_slip'))) {
                 // Handle receipt_number and payment_slip updates even if payment_status is not being changed
                 if ($payment) {
                     $paymentSlipPath = null;
                     if ($request->hasFile('payment_slip')) {
                         $file = $request->file('payment_slip');
-                        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+                        if ($request->hasFile('payment_slip')) {
+    $file = $request->file('payment_slip');
+    try {
+        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+        if (!$paymentSlipPath) {
+            throw new \Exception('Storage returned empty path');
+        }
+        $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
+    } catch (\Throwable $e) {
+        $paymentSlipPath = $file->store('payment_slips', 'public');
+        \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
+    }
+}
                     }
 
                     $updateData = [];
@@ -3246,6 +3288,7 @@ class GeneralController extends Controller
                     }
                 }
             }
+            
         });
 
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
