@@ -55,6 +55,36 @@
                         <label class="form-label">Address</label>
                         <input type="text" name="address" class="form-control" value="{{ old('address', $ad->address) }}" required>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">NIC Front Photo</label>
+                        <input type="file" name="nic_front_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                        <small class="text-muted">Accepted formats: JPG, JPEG, PNG (Max 5MB)</small>
+                        @if(!empty($ad->nic_front_img_url))
+                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                                <small class="text-muted d-block mb-1">
+                                    <strong>📄 Current file:</strong> {{ basename($ad->nic_front_img_url) }}
+                                </small>
+                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                    {{ $ad->nic_front_img_url }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">NIC Back Photo</label>
+                        <input type="file" name="nic_back_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                        <small class="text-muted">Accepted formats: JPG, JPEG, PNG (Max 5MB)</small>
+                        @if(!empty($ad->nic_back_img_url))
+                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                                <small class="text-muted d-block mb-1">
+                                    <strong>📄 Current file:</strong> {{ basename($ad->nic_back_img_url) }}
+                                </small>
+                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                    {{ $ad->nic_back_img_url }}
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="section-title">Advertisement Details</div>

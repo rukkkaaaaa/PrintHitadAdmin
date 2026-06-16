@@ -296,6 +296,16 @@
                     <label class="form-label">Address</label>
                     <input type="text" name="address" class="form-control" value="{{ old('address') }}" required>
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">NIC Front Photo</label>
+                    <input type="file" name="nic_front_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">NIC Back Photo</label>
+                    <input type="file" name="nic_back_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
+                </div>
             </div>
         </div>
 

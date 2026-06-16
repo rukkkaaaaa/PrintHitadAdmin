@@ -1445,6 +1445,8 @@ class GeneralController extends Controller
             'address' => 'required|string|max:255',
             'telephone' => 'required|string|max:255',
             'nic_passport' => 'required|string|max:255',
+            'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
             'confirm_email' => 'nullable|email|max:255|same:email',
             'advertisement_type_id' => 'required|exists:advertisement_types,id',
@@ -1502,12 +1504,26 @@ class GeneralController extends Controller
         DB::transaction(function () use ($request) {
             $customer = DB::table('customers')->where('nic_passport', $request->nic_passport)->first();
 
+            $nicFrontImagePath = $customer->nic_front_img_url ?? null;
+            if ($request->hasFile('nic_front_image')) {
+                $storagePath = $request->file('nic_front_image')->storePublicly('customer-nic', 'oracle');
+                $nicFrontImagePath = Storage::disk('oracle')->url($storagePath);
+            }
+
+            $nicBackImagePath = $customer->nic_back_img_url ?? null;
+            if ($request->hasFile('nic_back_image')) {
+                $storagePath = $request->file('nic_back_image')->storePublicly('customer-nic', 'oracle');
+                $nicBackImagePath = Storage::disk('oracle')->url($storagePath);
+            }
+
             $customerData = [
                 'customer_name' => $request->customer_name,
                 'address' => $request->address,
                 'telephone' => $request->telephone,
                 'nic_passport' => $request->nic_passport,
                 'email' => $request->email,
+                'nic_front_img_url' => $nicFrontImagePath,
+                'nic_back_img_url' => $nicBackImagePath,
                 'updated_at' => now(),
             ];
 
@@ -2840,6 +2856,8 @@ class GeneralController extends Controller
                 'customers.telephone',
                 'customers.email',
                 'customers.nic_passport',
+                'customers.nic_front_img_url',
+                'customers.nic_back_img_url',
                 'payments.id as payment_id',
                 'payments.amount',
                 'payments.payment_status',
@@ -2935,6 +2953,8 @@ class GeneralController extends Controller
             'address' => 'required|string|max:255',
             'telephone' => 'required|string|max:255',
             'nic_passport' => 'required|string|max:255',
+            'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
             'advertisement_description' => [
                 'required',
@@ -3017,6 +3037,19 @@ class GeneralController extends Controller
                 abort(404);
             }
 
+            $customerRecord = DB::table('customers')->where('id', $ad->customer_id)->first();
+            $nicFrontImagePath = $customerRecord->nic_front_img_url ?? null;
+            if ($request->hasFile('nic_front_image')) {
+                $storagePath = $request->file('nic_front_image')->storePublicly('customer-nic', 'oracle');
+                $nicFrontImagePath = Storage::disk('oracle')->url($storagePath);
+            }
+
+            $nicBackImagePath = $customerRecord->nic_back_img_url ?? null;
+            if ($request->hasFile('nic_back_image')) {
+                $storagePath = $request->file('nic_back_image')->storePublicly('customer-nic', 'oracle');
+                $nicBackImagePath = Storage::disk('oracle')->url($storagePath);
+            }
+
             DB::table('customers')
                 ->where('id', $ad->customer_id)
                 ->update([
@@ -3025,6 +3058,8 @@ class GeneralController extends Controller
                     'telephone' => $request->telephone,
                     'nic_passport' => $request->nic_passport,
                     'email' => $request->email,
+                    'nic_front_img_url' => $nicFrontImagePath,
+                    'nic_back_img_url' => $nicBackImagePath,
                     'updated_at' => now(),
                 ]);
 
