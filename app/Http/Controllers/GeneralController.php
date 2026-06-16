@@ -254,7 +254,7 @@ class GeneralController extends Controller
             'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
             'price' => 'nullable|numeric',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
-            'category_ids' => 'required|array|min:1',
+            'category_ids' => 'required|array|size:1',
             'category_ids.*' => 'integer|exists:categories,id',
         ]);
 
@@ -264,6 +264,12 @@ class GeneralController extends Controller
             ->unique()
             ->values();
 
+        if ($categoryIds->count() !== 1) {
+            return redirect()->back()
+                ->withErrors(['category_ids' => 'Please select exactly one category.'])
+                ->withInput();
+        }
+
         $isTypeInSelectedCategories = DB::table('advertisement_types')
             ->where('id', (int) $request->advertisement_type_id)
             ->whereIn('category_id', $categoryIds->all())
@@ -271,7 +277,7 @@ class GeneralController extends Controller
 
         if (!$isTypeInSelectedCategories) {
             return redirect()->back()
-                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to one of the selected categories.'])
+                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to the selected category.'])
                 ->withInput();
         }
 
@@ -312,7 +318,7 @@ class GeneralController extends Controller
             'is_active' => 'required|boolean',
             'price' => 'nullable|numeric',
             'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
-            'category_ids' => 'required|array|min:1',
+            'category_ids' => 'required|array|size:1',
             'category_ids.*' => 'integer|exists:categories,id',
         ]);
 
@@ -322,6 +328,12 @@ class GeneralController extends Controller
             ->unique()
             ->values();
 
+        if ($categoryIds->count() !== 1) {
+            return redirect()->back()
+                ->withErrors(['category_ids' => 'Please select exactly one category.'])
+                ->withInput();
+        }
+
         $isTypeInSelectedCategories = DB::table('advertisement_types')
             ->where('id', (int) $request->advertisement_type_id)
             ->whereIn('category_id', $categoryIds->all())
@@ -329,7 +341,7 @@ class GeneralController extends Controller
 
         if (!$isTypeInSelectedCategories) {
             return redirect()->back()
-                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to one of the selected categories.'])
+                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to the selected category.'])
                 ->withInput();
         }
 

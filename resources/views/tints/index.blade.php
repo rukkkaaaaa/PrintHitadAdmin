@@ -75,13 +75,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Categories</label>
-                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                 <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                         type="button"
                                         data-bs-toggle="dropdown"
-                                        data-selected-text="Select categories"
+                                        data-selected-text="Select category"
                                         aria-expanded="false">
-                                    Select categories
+                                    Select category
                                 </button>
                                 <div class="dropdown-menu p-2">
                                     @foreach ($categoriesEn as $category)
@@ -99,8 +99,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                            <small class="text-muted">Choose one category from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                         </div>
 
                         <div class="mb-3">
@@ -150,13 +150,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Categories</label>
-                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                 <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                         type="button"
                                         data-bs-toggle="dropdown"
-                                        data-selected-text="Select categories"
+                                        data-selected-text="Select category"
                                         aria-expanded="false">
-                                    Select categories
+                                    Select category
                                 </button>
                                 <div class="dropdown-menu p-2">
                                     @foreach ($categoriesSi as $category)
@@ -174,8 +174,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                            <small class="text-muted">Choose one category from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                         </div>
 
                         <div class="mb-3">
@@ -349,13 +349,13 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Categories</label>
-                                <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                                <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                     <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                             type="button"
                                             data-bs-toggle="dropdown"
-                                            data-selected-text="Select categories"
+                                            data-selected-text="Select category"
                                             aria-expanded="false">
-                                        Select categories
+                                        Select category
                                     </button>
                                     <div class="dropdown-menu p-2">
                                         @foreach ($editCategories as $category)
@@ -373,8 +373,8 @@
                                         @endforeach
                                     </div>
                                 </div>
-                                <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                                <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                                <small class="text-muted">Choose one category from the dropdown.</small>
+                                <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                             </div>
 
                             <div class="mb-3">
@@ -464,15 +464,9 @@
             const checkboxes = dropdown.querySelectorAll('.tint-category-checkbox');
             const checkedBoxes = Array.from(checkboxes).filter((checkbox) => checkbox.checked);
             const labels = checkedBoxes.map((checkbox) => checkbox.dataset.label).filter(Boolean);
-            const placeholder = dropdown.dataset.placeholder || 'Select categories';
+            const placeholder = dropdown.dataset.placeholder || 'Select category';
 
-            if (labels.length === 0) {
-                button.textContent = placeholder;
-            } else if (labels.length <= 2) {
-                button.textContent = labels.join(', ');
-            } else {
-                button.textContent = labels.length + ' categories selected';
-            }
+            button.textContent = labels.length === 0 ? placeholder : labels[0];
         };
 
         const updateTypeOptions = (form, preserveSelection = true) => {
@@ -541,6 +535,14 @@
 
             dropdown.querySelectorAll('.tint-category-checkbox').forEach((checkbox) => {
                 checkbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        dropdown.querySelectorAll('.tint-category-checkbox').forEach((otherCheckbox) => {
+                            if (otherCheckbox !== this) {
+                                otherCheckbox.checked = false;
+                            }
+                        });
+                    }
+
                     updateDropdownLabel(dropdown);
                     const form = dropdown.closest('form');
 
