@@ -206,7 +206,7 @@
                     <small class="help-note d-block mt-1" id="topAdHint"></small>
                 </div>
                 @endif
-                <div class="col-md-6">
+                <div class="col-md-6" id="tintFieldWrap">
                     <label class="form-label">Tint</label>
                     <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
                         <option value="">No Tint</option>
@@ -296,12 +296,12 @@
                     <label class="form-label">Address</label>
                     <input type="text" name="address" class="form-control" value="{{ old('address') }}" required>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="nicFrontFieldWrap">
                     <label class="form-label">NIC Front Photo</label>
                     <input type="file" name="nic_front_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                     <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="nicBackFieldWrap">
                     <label class="form-label">NIC Back Photo</label>
                     <input type="file" name="nic_back_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                     <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
@@ -594,9 +594,18 @@
     const imagesHint     = form.querySelector('#imagesHint');
     const topAdToggle    = form.querySelector('#topAdToggle');
     const topAdHint      = form.querySelector('#topAdHint');
+    const tintFieldWrap  = form.querySelector('#tintFieldWrap');
+    const nicFrontWrap   = form.querySelector('#nicFrontFieldWrap');
+    const nicBackWrap    = form.querySelector('#nicBackFieldWrap');
+    const nicFrontInput  = form.querySelector('input[name="nic_front_image"]');
+    const nicBackInput   = form.querySelector('input[name="nic_back_image"]');
 
     /* ── State ───────────────────────────────────────────────────────── */
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
+    const METROMONIAL_KEYWORDS = {
+        en: ['matrimonial'],
+        si: ['මංගල යෝජනා']
+    };
 
     /* ── Helpers ─────────────────────────────────────────────────────── */
     function lang() {
@@ -632,6 +641,53 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function isMetromonialCategorySelected() {
+        if (!catSel || !catSel.value || !catSel.options[catSel.selectedIndex]) {
+            return false;
+        }
+
+        var selected = catSel.options[catSel.selectedIndex];
+        var haystack = [
+            selected.textContent || '',
+            selected.dataset.en || '',
+            selected.dataset.si || ''
+        ].join(' ').toLowerCase();
+
+        var activeKeywords = lang() === 'si'
+            ? METROMONIAL_KEYWORDS.si
+            : METROMONIAL_KEYWORDS.en;
+
+        return activeKeywords.some(function (keyword) {
+            return haystack.indexOf(keyword) !== -1;
+        });
+    }
+
+    function toggleMetromonialFields() {
+        var isMetromonial = isMetromonialCategorySelected();
+
+        if (tintFieldWrap) {
+            tintFieldWrap.style.display = isMetromonial ? '' : 'none';
+        }
+        if (nicFrontWrap) {
+            nicFrontWrap.style.display = isMetromonial ? '' : 'none';
+        }
+        if (nicBackWrap) {
+            nicBackWrap.style.display = isMetromonial ? '' : 'none';
+        }
+
+        if (!isMetromonial) {
+            if (tintSel) {
+                resetSelect(tintSel, 'No Tint');
+            }
+            if (nicFrontInput) {
+                nicFrontInput.value = '';
+            }
+            if (nicBackInput) {
+                nicBackInput.value = '';
+            }
+        }
     }
 
     /* ── Language: filter & label category options ───────────────────── */
@@ -873,6 +929,8 @@
         revealFromSize(false);
             pendingCriterias = [];
 
+        toggleMetromonialFields();
+
         if (!categoryId) return;
 
         var l = lang();
@@ -892,7 +950,9 @@
             })
             .catch(function () { show(typeCard); });
 
-        loadTints(categoryId);
+        if (isMetromonialCategorySelected()) {
+            loadTints(categoryId);
+        }
 
         // Pre-fetch criterias for this category
         fetch(@json(url('/adcriterias/by-category')) + '/' + categoryId + '?lang=' + l, {
@@ -979,6 +1039,7 @@
     function onPublicationChange() {
         refreshPublishDateConstraints();
         updateCategoryLabels();
+        toggleMetromonialFields();
         updateLocationLabels();
         updateWordCount();
         updateTopAdHint();
@@ -1005,7 +1066,7 @@
                     });
                 });
 
-            if (tintSel) {
+            if (tintSel && isMetromonialCategorySelected()) {
                 tintSel.dataset.old = curTint;
                 loadTints(catId);
             }
@@ -1045,7 +1106,10 @@
 
     /* ── Event listeners ─────────────────────────────────────────────── */
     pubSel  && pubSel.addEventListener('change',  onPublicationChange);
-    catSel  && catSel.addEventListener('change',  function () { loadTypes(catSel.value); });
+    catSel  && catSel.addEventListener('change',  function () {
+        toggleMetromonialFields();
+        loadTypes(catSel.value);
+    });
     typeSel && typeSel.addEventListener('change', function () { loadSizes(typeSel.value); });
     sizeSel && sizeSel.addEventListener('change', applySize);
     distSel && distSel.addEventListener('change', filterCities);
@@ -1082,6 +1146,7 @@
 
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
+    toggleMetromonialFields();
     updateWordCount();
     updateTopAdHint();
 
