@@ -95,6 +95,7 @@
       action="{{ $action }}"
       method="POST"
       enctype="multipart/form-data"
+    novalidate
       class="ad-form-shell">
     @csrf
 
@@ -286,11 +287,11 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                    <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Confirm Email</label>
-                    <input type="email" name="confirm_email" class="form-control" value="{{ old('confirm_email') }}">
+                    <input type="email" name="confirm_email" class="form-control" value="{{ old('confirm_email') }}" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Address</label>
@@ -326,7 +327,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Payment Status</label>
-                    <select name="payment_status" class="form-select">
+                    <select name="payment_status" class="form-select" required>
                         <option value="pending"   {{ old('payment_status', 'pending') === 'pending'   ? 'selected' : '' }}>Pending</option>
                         <option value="completed" {{ old('payment_status') === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="failed"    {{ old('payment_status') === 'failed'    ? 'selected' : '' }}>Failed</option>
@@ -335,7 +336,7 @@
                 <div class="col-md-6">
                     <label class="form-label">Amount (LKR)</label>
                     <input type="number" name="payment_amount" class="form-control" min="0" step="0.01"
-                           value="{{ old('payment_amount') }}" placeholder="0.00">
+                           value="{{ old('payment_amount') }}" placeholder="0.00" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Payment Date</label>
@@ -599,6 +600,7 @@
     const nicBackWrap    = form.querySelector('#nicBackFieldWrap');
     const nicFrontInput  = form.querySelector('input[name="nic_front_image"]');
     const nicBackInput   = form.querySelector('input[name="nic_back_image"]');
+    const paymentAmountInput = form.querySelector('input[name="payment_amount"]');
 
     /* ── State ───────────────────────────────────────────────────────── */
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
@@ -677,17 +679,152 @@
             nicBackWrap.style.display = isMetromonial ? '' : 'none';
         }
 
+        if (nicFrontInput) {
+            nicFrontInput.required = !!isMetromonial;
+        }
+        if (nicBackInput) {
+            nicBackInput.required = !!isMetromonial;
+        }
+
         if (!isMetromonial) {
             if (tintSel) {
                 resetSelect(tintSel, 'No Tint');
             }
             if (nicFrontInput) {
                 nicFrontInput.value = '';
+                nicFrontInput.classList.remove('is-invalid');
             }
             if (nicBackInput) {
                 nicBackInput.value = '';
+                nicBackInput.classList.remove('is-invalid');
             }
         }
+    }
+
+    function getValidationFeedbackElement(field) {
+        if (!field) return null;
+        var parent = field.closest('.col-md-6, .col-12');
+        if (!parent) return null;
+
+        var existing = parent.querySelector('.invalid-feedback[data-dynamic-validation="1"]');
+        if (existing) return existing;
+
+        var feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback d-block';
+        feedback.setAttribute('data-dynamic-validation', '1');
+        feedback.style.display = 'none';
+        parent.appendChild(feedback);
+        return feedback;
+    }
+
+    function setFieldInvalid(field, message) {
+        if (!field) return;
+        field.classList.add('is-invalid');
+        var feedback = getValidationFeedbackElement(field);
+        if (feedback) {
+            feedback.textContent = message || 'This field is required.';
+            feedback.style.display = '';
+        }
+    }
+
+    function clearFieldInvalid(field) {
+        if (!field) return;
+        field.classList.remove('is-invalid');
+        var feedback = getValidationFeedbackElement(field);
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.style.display = 'none';
+        }
+    }
+
+    function validateRequiredField(field, label) {
+        if (!field || field.disabled) return true;
+
+        var tagName = (field.tagName || '').toLowerCase();
+        var type = (field.type || '').toLowerCase();
+        var value = (field.value || '').trim();
+        var valid = true;
+
+        if (type === 'file') {
+            valid = !!(field.files && field.files.length > 0);
+        } else if (tagName === 'select') {
+            valid = value !== '';
+        } else {
+            valid = value !== '';
+        }
+
+        if (valid && tagName === 'input' && type === 'email') {
+            valid = field.checkValidity();
+        }
+
+        if (!valid) {
+            setFieldInvalid(field, (label || 'This field') + ' is required.');
+            return false;
+        }
+
+        clearFieldInvalid(field);
+        return true;
+    }
+
+    function validateCreateForm() {
+        var ok = true;
+        var firstInvalid = null;
+
+        var customerNameInput = form.querySelector('input[name="customer_name"]');
+        var nicPassportInput = form.querySelector('input[name="nic_passport"]');
+        var telephoneInput = form.querySelector('input[name="telephone"]');
+        var emailInput = form.querySelector('input[name="email"]');
+        var confirmEmailInput = form.querySelector('input[name="confirm_email"]');
+        var addressInput = form.querySelector('input[name="address"]');
+        var paymentStatusSelect = form.querySelector('select[name="payment_status"]');
+        var paymentAmountInput = form.querySelector('input[name="payment_amount"]');
+
+        var requiredFields = [
+            { field: descTA, label: 'Description' },
+            { field: publishInput, label: 'Publish Date' },
+            { field: distSel, label: 'District' },
+            { field: citySel, label: 'City' },
+            { field: customerNameInput, label: 'Name' },
+            { field: nicPassportInput, label: 'NIC / Passport' },
+            { field: telephoneInput, label: 'Phone' },
+            { field: emailInput, label: 'Email' },
+            { field: confirmEmailInput, label: 'Confirm Email' },
+            { field: addressInput, label: 'Address' },
+            { field: paymentStatusSelect, label: 'Payment Status' },
+            { field: paymentAmountInput, label: 'Amount (LKR)' }
+        ];
+
+        requiredFields.forEach(function (item) {
+            if (!validateRequiredField(item.field, item.label)) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = item.field;
+            }
+        });
+
+        if (emailInput && confirmEmailInput && emailInput.value.trim() !== '' && confirmEmailInput.value.trim() !== '') {
+            if (emailInput.value.trim().toLowerCase() !== confirmEmailInput.value.trim().toLowerCase()) {
+                setFieldInvalid(confirmEmailInput, 'Confirm Email must match Email.');
+                ok = false;
+                if (!firstInvalid) firstInvalid = confirmEmailInput;
+            }
+        }
+
+        if (isMetromonialCategorySelected()) {
+            if (!validateRequiredField(nicFrontInput, 'NIC Front Photo')) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = nicFrontInput;
+            }
+            if (!validateRequiredField(nicBackInput, 'NIC Back Photo')) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = nicBackInput;
+            }
+        }
+
+        if (firstInvalid && typeof firstInvalid.focus === 'function') {
+            firstInvalid.focus();
+        }
+
+        return ok;
     }
 
     /* ── Language: filter & label category options ───────────────────── */
@@ -908,6 +1045,7 @@
             show(customerCard);
             show(paymentCard);
             show(formActions);
+            calculateAndUpdatePrice();
         } else {
             hide(adDetailsCard);
             hide(locationCard);
@@ -916,6 +1054,32 @@
             hide(paymentCard);
             hide(formActions);
         }
+    }
+
+    /* ── AJAX: calculate and auto-fill advertisement price ──────────── */
+    function calculateAndUpdatePrice() {
+        if (!paymentAmountInput || !paymentAmountInput.form) return;
+
+        var formData = new FormData(paymentAmountInput.form);
+        
+        fetch(@json(url('/calculate-ad-price')), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && typeof data.total !== 'undefined') {
+                    paymentAmountInput.value = data.total.toFixed(2);
+                    clearFieldInvalid(paymentAmountInput);
+                }
+            })
+            .catch(function (err) {
+                console.error('Price calculation failed:', err);
+            });
     }
 
     /* ── AJAX: load types for a category ─────────────────────────────── */
@@ -1110,11 +1274,28 @@
         toggleMetromonialFields();
         loadTypes(catSel.value);
     });
-    typeSel && typeSel.addEventListener('change', function () { loadSizes(typeSel.value); });
-    sizeSel && sizeSel.addEventListener('change', applySize);
+    typeSel && typeSel.addEventListener('change', function () {
+        loadSizes(typeSel.value);
+        calculateAndUpdatePrice();
+    });
+    sizeSel && sizeSel.addEventListener('change', function () {
+        applySize();
+        calculateAndUpdatePrice();
+    });
+    tintSel && tintSel.addEventListener('change', calculateAndUpdatePrice);
     distSel && distSel.addEventListener('change', filterCities);
-    descTA  && descTA.addEventListener('input',   updateWordCount);
-    topAdToggle && topAdToggle.addEventListener('change', updateTopAdHint);
+    descTA  && descTA.addEventListener('input',   function () {
+        updateWordCount();
+        calculateAndUpdatePrice();
+    });
+    topAdToggle && topAdToggle.addEventListener('change', function () {
+        updateTopAdHint();
+        calculateAndUpdatePrice();
+    });
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+        el.addEventListener('input', function () { clearFieldInvalid(el); });
+        el.addEventListener('change', function () { clearFieldInvalid(el); });
+    });
     descTA  && descTA.addEventListener('paste', function (e) {
         if (!descTA) return;
 
@@ -1139,7 +1320,9 @@
     publishInput && publishInput.addEventListener('change', function () { validatePublishDateCutoff(false); });
 
     form.addEventListener('submit', function (e) {
-        if (!validatePublishDateCutoff(true)) {
+        var isPublishDateValid = validatePublishDateCutoff(true);
+        var isCreateFormValid = validateCreateForm();
+        if (!isPublishDateValid || !isCreateFormValid) {
             e.preventDefault();
         }
     });

@@ -111,6 +111,8 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/adsizes/by-type/{id}', [GeneralController::class, 'getAdSizesByType']);
     // AJAX: get criterias for a category
     Route::get('/adcriterias/by-category/{id}', [GeneralController::class, 'getCriteriasByCategory']);
+    // AJAX: calculate advertisement price
+    Route::post('/calculate-ad-price', [GeneralController::class, 'calculateAdvertisementPrice']);
 
     /*
     |--------------------------------------------------------------------------

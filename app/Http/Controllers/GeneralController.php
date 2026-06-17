@@ -1732,6 +1732,23 @@ class GeneralController extends Controller
                 ];
             }
         }
+
+        $tintId = $request->input('advertisement_tint_id');
+        if (!empty($tintId)) {
+            $tint = DB::table('advertisement_tints')->where('id', $tintId)->first();
+
+            if ($tint) {
+                $tintLabel = $this->resolveLocalizedAdvertisementLabel(
+                    $tint->advertisement_tint_en ?? null,
+                    $tint->advertisement_tint_si ?? null,
+                    $publication
+                );
+                $items[] = [
+                    'label' => $tintLabel,
+                    'amount' => (float) ($tint->price ?? 0),
+                ];
+            }
+        }
         
         $description = (string) $request->input('advertisement_description', '');
         $pricingRules = $this->resolveDescriptionPricingSettings($publication);
@@ -1854,6 +1871,24 @@ class GeneralController extends Controller
         if ($wordCount > $maxWords) {
             $fail('Description cannot exceed ' . $maxWords . ' words for the selected publication.');
         }
+    }
+
+    /**
+     * POST: Calculate advertisement price based on form selections.
+     * Returns breakdown items and total amount as JSON.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function calculateAdvertisementPrice(Request $request)
+    {
+        $breakdown = $this->buildAdvertisementPriceBreakdown($request);
+        $total = collect($breakdown)->sum('amount');
+
+        return response()->json([
+            'items' => $breakdown,
+            'total' => round($total, 2),
+        ]);
     }
 
     /**
