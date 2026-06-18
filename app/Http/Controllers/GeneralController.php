@@ -2808,6 +2808,7 @@ class GeneralController extends Controller
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->select(
                 'advertisements.id',
+                'advertisements.publication',
                 'advertisements.advertisement_description',
                 'customers.customer_name',
                 'customers.email',
@@ -2832,48 +2833,110 @@ class GeneralController extends Controller
             $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
             $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
             $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
-            $paymentStatusLabel = $isPaid ? 'Paid' : 'Pending';
-            $paymentMessage = $isPaid
-                ? "<p style='color: #2e7d32; font-weight: bold; font-size: 16px;'>Your payment status: <span style='font-size: 20px;'>Paid</span></p>"
-                : "<p style='color: #d32f2f; font-weight: bold; font-size: 16px;'>Your payment status: <span style='font-size: 20px;'>Pending</span></p>";
+            $paymentStatusLabel = $isPaid ? 'Completed' : 'Pending';
+            $paymentStatusColor = $isPaid ? '#2e7d32' : '#d32f2f';
             $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
-            $amountLabel = $isPaid ? 'Amount Paid' : 'Amount Due';
-            $footerMessage = $isPaid
-                ? 'Thank you for using Print Hitad. Your payment has been received successfully.'
-                : 'Thank you for using Print Hitad. Please make the payment as soon as possible to activate your advertisement.';
-                $paymentInstructions = $isPaid
-                ? "<p>Kindly click the designated button/link in your account to view your advertisement.</p>" .
-                    "<p>If you require any further assistance or have any questions, please feel free to contact us.</p>" .
-                    "<p>Thank you for your continued support.</p>"
-                : "<p>Kindly click the button provided in your account to view your advertisement and proceed with the payment.</p>" .
-                    "<p>Alternatively, you may complete the payment via bank deposit using the details below:</p>" .
-                    "<p><strong>Bank Name:</strong> Commercial Bank of Ceylon</p>" .
-                    "<p><strong>Account Number:</strong> 0123456789</p>" .
-                    "<p>Once the payment is completed, please forward the payment slip for our verification.</p>" .
-                    "<p>Should you require any further assistance, please do not hesitate to contact us.</p>" .
-                    "<p>Thank you for your cooperation.</p>";
+            $orderId = 'ORD' . $ad->id;
+            $formattedAmount = $ad->amount ? 'LKR ' . number_format($ad->amount, 2) : 'Not set';
+            $isLahipita = strtolower((string) ($ad->publication ?? '')) === 'lahipita';
+            $publicationLabel = $isLahipita ? 'Lahipita' : 'HitAd';
 
-                    $supportContactBlock =
-                "<p>If you require further assistance, please contact our support team:<br>" .
-                "+94 74 364 3560 (Technical Support)<br>" .
-                "+94 112 479 520 (Online Support)</p>";
+            $introText = $isPaid
+                ? "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. We confirm that your payment has been successfully received."
+                : "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. Please complete your payment to activate your advertisement.";
 
-            Mail::send([], [], function ($message) use ($ad, $adViewUrl, $amount, $paymentMessage, $actionText, $amountLabel, $paymentStatusLabel, $footerMessage, $adTitle, $paymentInstructions, $supportContactBlock) {
+            $extraInstructions = $isPaid
+                ? ""
+                : "<tr><td colspan='2' style='padding: 16px 0 0;'>" .
+                    "<p style='margin:0 0 8px; color:#333; font-size:14px;'>Please complete the payment via bank deposit using the details below:</p>" .
+                    "<p style='margin:0; color:#333; font-size:14px;'><strong>Bank Name:</strong> Commercial Bank of Ceylon<br><strong>Account Number:</strong> 0123456789</p>" .
+                    "<p style='margin:8px 0 0; color:#333; font-size:14px;'>Once the payment is completed, please forward the payment slip for verification.</p>" .
+                    "</td></tr>";
+
+            $bannerImagePath = $isLahipita
+                ? public_path('assets/img/illustrations/lahipita-mail.jpg.jpeg')
+                : public_path('assets/img/illustrations/hitad_logo.jpeg');
+
+            $htmlBody = "
+<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'></head>
+<body style='margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;'>
+  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f4f4; padding: 30px 0;'>
+    <tr>
+      <td align='center'>
+        <table width='100%' cellpadding='0' cellspacing='0' style='max-width:680px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+
+          <!-- Banner -->
+          <tr>
+            <td style='padding:0;'>
+              <img src='__BANNER_SRC__' alt='{$publicationLabel} Print Advertisement' style='width:100%; display:block;'>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style='padding: 32px 36px;'>
+
+              <p style='margin:0 0 8px; font-size:16px; color:#222;'>Dear <strong>{$ad->customer_name}</strong>,</p>
+              <p style='margin:0 0 24px; font-size:15px; color:#1565C0; line-height:1.6;'>{$introText}</p>
+
+              <!-- Info Table -->
+              <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse; margin-bottom:24px;'>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222; width:50%;'>Order ID</td>
+                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$orderId}</td>
+                </tr>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Payment Status</td>
+                  <td style='padding:14px 0; font-size:14px; color:{$paymentStatusColor}; text-align:right; font-weight:bold;'>{$paymentStatusLabel}</td>
+                </tr>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Total Amount</td>
+                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$formattedAmount}</td>
+                </tr>
+                {$extraInstructions}
+              </table>
+
+              <!-- Ad Description -->
+              <p style='margin:0 0 8px; font-size:15px; font-weight:bold; color:#222;'>Advertisement Description</p>
+              <p style='margin:0 0 24px; font-size:14px; color:#1565C0; line-height:1.6;'>{$adTitle}</p>
+
+              <!-- CTA Button -->
+              <p style='margin:0 0 24px;'>
+                <a href='{$adViewUrl}' style='display:inline-block; padding:13px 28px; background-color:#1565C0; color:#ffffff; text-decoration:none; border-radius:5px; font-size:15px; font-weight:bold;'>{$actionText}</a>
+              </p>
+
+              <!-- Support -->
+              <p style='margin:0 0 4px; font-size:14px; color:#555;'>If you require further assistance, please contact our support team:</p>
+              <p style='margin:0 0 24px; font-size:14px; color:#555;'>
+                +94 74 364 3560 (Technical Support)<br>
+                +94 112 479 520 (Online Support)
+              </p>
+
+                            <p style='margin:0; font-size:14px; color:#333;'>Kind regards,<br><strong>{$publicationLabel} Team</strong></p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+
+            Mail::send([], [], function ($message) use ($ad, $htmlBody, $bannerImagePath, $isLahipita) {
+                $bannerSrc = file_exists($bannerImagePath)
+                    ? $message->embed($bannerImagePath)
+                    : rtrim(config('app.url'), '/') . ($isLahipita
+                        ? '/assets/img/illustrations/lahipita-mail.jpg.jpeg'
+                        : '/assets/img/illustrations/hitad_logo.jpeg');
+                $resolvedHtmlBody = str_replace('__BANNER_SRC__', $bannerSrc, $htmlBody);
+
                 $message->to($ad->email)
                     ->from(config('mail.from.address'), config('mail.from.name'))
                     ->subject('Your Advertisement Link - Print Hitad')
-                    ->html(
-                        "<p>Dear {$ad->customer_name},</p>" .
-                        "<p>Your advertisement is ready for review.</p>" .
-                        "<p style='margin-top: 8px; font-size: 14px; color: #333;'><strong>Advertisement ID:</strong> #{$ad->id}<br><strong>Advertisement Description:</strong> {$adTitle}</p>" .
-                        $paymentMessage .
-                        $paymentInstructions .
-                        "<p><a href='{$adViewUrl}' style='display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>{$actionText}</a></p>" .
-                        "<p style='margin-top: 20px; font-size: 14px; color: #666;'><strong>Payment Details:</strong><br>Status: {$paymentStatusLabel}<br>{$amountLabel}: {$amount}</p>" .
-                        "<p style='margin-top: 20px; color: #999; font-size: 12px;'>{$footerMessage}</p>" .
-                        $supportContactBlock .
-                        "<p style='margin-top: 20px;'>Kind regards,<br>HitAd Team</p>"
-                    );
+                    ->html($resolvedHtmlBody);
             });
 
             // âœ… SAVE TO DATABASE
