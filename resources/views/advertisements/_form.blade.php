@@ -197,7 +197,7 @@
                     </select>
                 </div>
                 @if($topAdSupported)
-                <div class="col-md-6">
+                <div class="col-md-6" id="topAdFieldWrap" style="display:none">
                     <label class="form-label d-block" for="topAdToggle">Top Ad</label>
                     <input type="hidden" name="top_ad" value="0">
                     <div class="form-check form-switch mt-2">
@@ -207,7 +207,7 @@
                     <small class="help-note d-block mt-1" id="topAdHint"></small>
                 </div>
                 @endif
-                <div class="col-md-6" id="tintFieldWrap">
+                <div class="col-md-6" id="tintFieldWrap" style="display:none">
                     <label class="form-label">Tint</label>
                     <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
                         <option value="">No Tint</option>
@@ -593,6 +593,7 @@
     const descTA         = form.querySelector('#descTA');
     const wcDisplay      = form.querySelector('#wcDisplay');
     const imagesHint     = form.querySelector('#imagesHint');
+    const topAdFieldWrap = form.querySelector('#topAdFieldWrap');
     const topAdToggle    = form.querySelector('#topAdToggle');
     const topAdHint      = form.querySelector('#topAdHint');
     const tintFieldWrap  = form.querySelector('#tintFieldWrap');
@@ -604,6 +605,7 @@
 
     /* ── State ───────────────────────────────────────────────────────── */
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
+    const CLASSIFIED_KEYWORDS = ['classified'];
     const METROMONIAL_KEYWORDS = {
         en: ['matrimonial'],
         si: ['මංගල යෝජනා']
@@ -666,12 +668,48 @@
         });
     }
 
+    function isClassifiedTypeSelected() {
+        if (!typeSel || !typeSel.value || !typeSel.options[typeSel.selectedIndex]) {
+            return false;
+        }
+
+        var selected = typeSel.options[typeSel.selectedIndex];
+        var haystack = [
+            selected.textContent || '',
+            selected.dataset.en || '',
+            selected.dataset.si || ''
+        ].join(' ').toLowerCase();
+
+        return CLASSIFIED_KEYWORDS.some(function (keyword) {
+            return haystack.indexOf(keyword) !== -1;
+        });
+    }
+
+    function toggleClassifiedFields() {
+        var isClassified = isClassifiedTypeSelected();
+
+        if (topAdFieldWrap) {
+            topAdFieldWrap.style.display = isClassified ? '' : 'none';
+        }
+        if (tintFieldWrap) {
+            tintFieldWrap.style.display = isClassified ? '' : 'none';
+        }
+
+        if (!isClassified) {
+            if (topAdToggle) {
+                topAdToggle.checked = false;
+            }
+            if (tintSel) {
+                resetSelect(tintSel, 'No Tint');
+            }
+        }
+
+        updateTopAdHint();
+    }
+
     function toggleMetromonialFields() {
         var isMetromonial = isMetromonialCategorySelected();
 
-        if (tintFieldWrap) {
-            tintFieldWrap.style.display = isMetromonial ? '' : 'none';
-        }
         if (nicFrontWrap) {
             nicFrontWrap.style.display = isMetromonial ? '' : 'none';
         }
@@ -687,9 +725,6 @@
         }
 
         if (!isMetromonial) {
-            if (tintSel) {
-                resetSelect(tintSel, 'No Tint');
-            }
             if (nicFrontInput) {
                 nicFrontInput.value = '';
                 nicFrontInput.classList.remove('is-invalid');
@@ -1091,9 +1126,10 @@
         resetSelect(tintSel, 'No Tint');
         hide(sizeHints);
         revealFromSize(false);
-            pendingCriterias = [];
+        pendingCriterias = [];
 
         toggleMetromonialFields();
+        toggleClassifiedFields();
 
         if (!categoryId) return;
 
@@ -1108,15 +1144,13 @@
                     var opt = document.createElement('option');
                     opt.value = t.id;
                     opt.textContent = t.label;
+                    opt.dataset.en = t.label_en || '';
+                    opt.dataset.si = t.label_si || '';
                     typeSel.appendChild(opt);
                 });
                 show(typeCard);
             })
             .catch(function () { show(typeCard); });
-
-        if (isMetromonialCategorySelected()) {
-            loadTints(categoryId);
-        }
 
         // Pre-fetch criterias for this category
         fetch(@json(url('/adcriterias/by-category')) + '/' + categoryId + '?lang=' + l, {
@@ -1128,14 +1162,19 @@
     }
 
     /* ── AJAX: load tints for a category ────────────────────────────── */
-    function loadTints(categoryId) {
+    function loadTints(categoryId, typeId) {
         resetSelect(tintSel, 'No Tint');
         if (!categoryId || !tintSel) return;
 
         var l = lang();
         var oldTintId = (tintSel.dataset.old || '').toString();
+        var query = new URLSearchParams({ lang: l });
 
-        fetch(@json(url('/tints/by-category')) + '/' + categoryId + '?lang=' + l, {
+        if (typeId) {
+            query.set('type_id', typeId);
+        }
+
+        fetch(@json(url('/tints/by-category')) + '/' + categoryId + '?' + query.toString(), {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
             .then(function (r) { return r.json(); })
@@ -1225,15 +1264,19 @@
                         var opt = document.createElement('option');
                         opt.value = t.id;
                         opt.textContent = t.label;
+                        opt.dataset.en = t.label_en || '';
+                        opt.dataset.si = t.label_si || '';
                         if (String(t.id) === String(curType)) opt.selected = true;
                         typeSel.appendChild(opt);
                     });
-                });
 
-            if (tintSel && isMetromonialCategorySelected()) {
-                tintSel.dataset.old = curTint;
-                loadTints(catId);
-            }
+                    toggleClassifiedFields();
+
+                    if (tintSel && isClassifiedTypeSelected()) {
+                        tintSel.dataset.old = curTint;
+                        loadTints(catId, curType);
+                    }
+                });
 
             fetch(@json(url('/adcriterias/by-category')) + '/' + catId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -1275,6 +1318,10 @@
         loadTypes(catSel.value);
     });
     typeSel && typeSel.addEventListener('change', function () {
+        toggleClassifiedFields();
+        if (isClassifiedTypeSelected()) {
+            loadTints(catSel ? catSel.value : '', typeSel.value);
+        }
         loadSizes(typeSel.value);
         calculateAndUpdatePrice();
     });
@@ -1330,6 +1377,7 @@
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
     toggleMetromonialFields();
+    toggleClassifiedFields();
     updateWordCount();
     updateTopAdHint();
 

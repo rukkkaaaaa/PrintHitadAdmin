@@ -457,6 +457,8 @@ class GeneralController extends Controller
                 return [
                     'id' => $t->id,
                     'label' => $label,
+                    'label_en' => $t->advertisement_type_en,
+                    'label_si' => $t->advertisement_type_si,
                     'category_id' => $t->category_id,
                 ];
             });
@@ -476,8 +478,9 @@ class GeneralController extends Controller
     public function getTintsByCategory(Request $request, $categoryId)
     {
         $lang = $request->query('lang', 'en');
+        $typeId = (int) $request->query('type_id', 0);
 
-        $tints = DB::table('advertisement_tints')
+        $tintsQuery = DB::table('advertisement_tints')
             ->join('category_has_advertisement_tints', 'advertisement_tints.id', '=', 'category_has_advertisement_tints.advertisement_tint_id')
             ->where('advertisement_tints.is_active', 1)
             ->where('category_has_advertisement_tints.category_id', $categoryId)
@@ -487,7 +490,13 @@ class GeneralController extends Controller
                 'advertisement_tints.advertisement_tint_si'
             )
             ->orderBy('advertisement_tints.advertisement_tint_en')
-            ->orderBy('advertisement_tints.advertisement_tint_si')
+            ->orderBy('advertisement_tints.advertisement_tint_si');
+
+        if ($typeId > 0 && Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
+            $tintsQuery->where('advertisement_tints.advertisement_type_id', $typeId);
+        }
+
+        $tints = $tintsQuery
             ->get()
             ->map(function ($tint) use ($lang) {
                 $label = $lang === 'si'
@@ -1523,6 +1532,19 @@ class GeneralController extends Controller
                 return redirect()->back()
                     ->withErrors(['advertisement_tint_id' => 'The selected tint is not valid for the selected category.'])
                     ->withInput();
+            }
+
+            if (Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
+                $isTintInType = DB::table('advertisement_tints')
+                    ->where('id', $request->advertisement_tint_id)
+                    ->where('advertisement_type_id', $request->advertisement_type_id)
+                    ->exists();
+
+                if (!$isTintInType) {
+                    return redirect()->back()
+                        ->withErrors(['advertisement_tint_id' => 'The selected tint is not valid for the selected type.'])
+                        ->withInput();
+                }
             }
         }
 
