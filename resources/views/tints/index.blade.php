@@ -104,19 +104,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Advertisement Type</label>
-                            <select name="advertisement_type_id"
-                                    class="form-control tint-adtype-select"
-                                    data-lang="en"
-                                    data-placeholder="Select advertisement type"
-                                    data-old-value="{{ old('advertisement_type_id') }}"
-                                    required>
-                                <option value="">Select advertisement type</option>
-                            </select>
-                            <div class="invalid-feedback d-block tint-adtype-error" style="display:none !important;">Please select an advertisement type.</div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label">Color (hex)</label>
                             <input type="color" name="color" class="form-control form-control-color" value="#ffffff">
                         </div>
@@ -179,19 +166,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Advertisement Type</label>
-                            <select name="advertisement_type_id"
-                                    class="form-control tint-adtype-select"
-                                    data-lang="si"
-                                    data-placeholder="Select advertisement type"
-                                    data-old-value="{{ old('advertisement_type_id') }}"
-                                    required>
-                                <option value="">Select advertisement type</option>
-                            </select>
-                            <div class="invalid-feedback d-block tint-adtype-error" style="display:none !important;">Please select an advertisement type.</div>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label">Color (hex)</label>
                             <input type="color" name="color" class="form-control form-control-color" value="#ffffff">
                         </div>
@@ -227,7 +201,6 @@
                         <th>Tint (EN)</th>
                         <th>Tint (SI)</th>
                         <th>Categories</th>
-                        <th>Ad Type</th>
                         <th>Color</th>
                         <th>Price</th>
                         <th width="120">Status</th>
@@ -257,8 +230,6 @@
                                     <span class="text-muted">No categories</span>
                                 @endforelse
                             </td>
-
-                            <td>{{ $tint->advertisement_type_label ?: 'Not set' }}</td>
 
                             <td>
                                 <span style="display:inline-block;width:20px;height:20px;background:{{ $tint->color ?: '#ffffff' }};border:1px solid #ccc;vertical-align:middle;margin-right:8px"></span>
@@ -290,7 +261,7 @@
                     @empty
 
                         <tr>
-                            <td colspan="10" class="text-center">
+                            <td colspan="9" class="text-center">
                                 No tints found.
                             </td>
                         </tr>
@@ -336,7 +307,7 @@
                                        name="advertisement_tint_en"
                                        class="form-control"
                                     value="{{ $tint->advertisement_tint_en }}">
-                                <small class="text-muted">Either EN or SI required</small>
+                                <small class="text-muted">Use only one language name (EN or SI).</small>
                             </div>
 
                             <div class="mb-3">
@@ -345,6 +316,7 @@
                                        name="advertisement_tint_si"
                                        class="form-control"
                                     value="{{ $tint->advertisement_tint_si }}">
+                                <div class="invalid-feedback d-block tint-name-error" style="display:none !important;">Please fill only one field: English or Sinhala.</div>
                             </div>
 
                             <div class="mb-3">
@@ -375,19 +347,6 @@
                                 </div>
                                 <small class="text-muted">Choose one category from the dropdown.</small>
                                 <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Advertisement Type</label>
-                                <select name="advertisement_type_id"
-                                        class="form-control tint-adtype-select"
-                                        data-lang="{{ $isSinhalaTint ? 'si' : 'en' }}"
-                                        data-placeholder="Select advertisement type"
-                                        data-old-value="{{ $tint->advertisement_type_id }}"
-                                        required>
-                                    <option value="">Select advertisement type</option>
-                                </select>
-                                <div class="invalid-feedback d-block tint-adtype-error" style="display:none !important;">Please select an advertisement type.</div>
                             </div>
 
                             <div class="mb-3">
@@ -449,9 +408,8 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const tintAdTypes = @json($adTypesForJs ?? []);
-
         const dropdowns = document.querySelectorAll('.tint-category-dropdown');
+        const tintForms = document.querySelectorAll('form[action$="/add-tint"], form[action*="/update-tint/"]');
 
         const getSelectedCategoryIds = (form) => {
             return Array.from(form.querySelectorAll('.tint-category-checkbox:checked'))
@@ -469,65 +427,61 @@
             button.textContent = labels.length === 0 ? placeholder : labels[0];
         };
 
-        const updateTypeOptions = (form, preserveSelection = true) => {
-            const select = form.querySelector('.tint-adtype-select');
-
-            if (!select) {
-                return false;
-            }
-
-            const selectedCategoryIds = getSelectedCategoryIds(form);
-            const lang = (select.dataset.lang || 'en').toLowerCase();
-            const placeholder = select.dataset.placeholder || 'Select advertisement type';
-            const initialValue = preserveSelection
-                ? (select.value || select.dataset.oldValue || '')
-                : '';
-
-            const availableTypes = tintAdTypes.filter((type) => selectedCategoryIds.includes(type.category_id));
-
-            select.innerHTML = '';
-
-            const placeholderOption = document.createElement('option');
-            placeholderOption.value = '';
-            placeholderOption.textContent = placeholder;
-            select.appendChild(placeholderOption);
-
-            availableTypes.forEach((type) => {
-                const option = document.createElement('option');
-                option.value = String(type.id);
-                option.textContent = lang === 'si' ? type.label_si : type.label_en;
-                select.appendChild(option);
-            });
-
-            if (initialValue && availableTypes.some((type) => String(type.id) === String(initialValue))) {
-                select.value = String(initialValue);
-            } else {
-                select.value = '';
-            }
-
-            select.dataset.oldValue = '';
-            select.disabled = selectedCategoryIds.length === 0 || availableTypes.length === 0;
-
-            return select.value !== '';
-        };
-
         const updateValidation = (form, showError = false) => {
             const categoryCheckboxes = form.querySelectorAll('.tint-category-checkbox');
             const hasSelection = Array.from(categoryCheckboxes).some((checkbox) => checkbox.checked);
             const categoryError = form.querySelector('.tint-category-error');
-            const adTypeSelect = form.querySelector('.tint-adtype-select');
-            const hasAdTypeSelection = adTypeSelect ? adTypeSelect.value !== '' : false;
-            const adTypeError = form.querySelector('.tint-adtype-error');
 
             if (categoryError) {
                 categoryError.style.display = !hasSelection && showError ? 'block' : 'none';
             }
 
-            if (adTypeError) {
-                adTypeError.style.display = hasSelection && !hasAdTypeSelection && showError ? 'block' : 'none';
+            return hasSelection;
+        };
+
+        const getTrimmedValue = (input) => {
+            return input ? input.value.trim() : '';
+        };
+
+        const updateNameLock = (form) => {
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+
+            if (!enInput || !siInput) {
+                return;
             }
 
-            return hasSelection && hasAdTypeSelection;
+            const enValue = getTrimmedValue(enInput);
+            const siValue = getTrimmedValue(siInput);
+
+            const bothFilled = enValue !== '' && siValue !== '';
+
+            if (bothFilled) {
+                enInput.disabled = false;
+                siInput.disabled = false;
+                return;
+            }
+
+            siInput.disabled = enValue !== '';
+            enInput.disabled = siValue !== '';
+        };
+
+        const updateNameValidation = (form, showError = false) => {
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+            const nameError = form.querySelector('.tint-name-error');
+
+            if (!enInput || !siInput || !nameError) {
+                return true;
+            }
+
+            const enValue = getTrimmedValue(enInput);
+            const siValue = getTrimmedValue(siInput);
+            const bothFilled = enValue !== '' && siValue !== '';
+
+            nameError.style.display = bothFilled && showError ? 'block' : 'none';
+
+            return !bothFilled;
         };
 
         dropdowns.forEach((dropdown) => {
@@ -547,26 +501,37 @@
                     const form = dropdown.closest('form');
 
                     if (form) {
-                        updateTypeOptions(form, true);
                         updateValidation(form, true);
                     }
                 });
             });
         });
 
-        document.querySelectorAll('form[action$="/add-tint"], form[action*="/update-tint/"]').forEach((form) => {
-            updateTypeOptions(form, true);
+        tintForms.forEach((form) => {
+            updateNameLock(form);
+            updateNameValidation(form, false);
+
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+
+            [enInput, siInput].forEach((input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.addEventListener('input', function () {
+                    updateNameLock(form);
+                    updateNameValidation(form, true);
+                });
+            });
+
             updateValidation(form, false);
 
-            const adTypeSelect = form.querySelector('.tint-adtype-select');
-            if (adTypeSelect) {
-                adTypeSelect.addEventListener('change', function () {
-                    updateValidation(form, true);
-                });
-            }
-
             form.addEventListener('submit', function (event) {
-                if (!updateValidation(form, true)) {
+                const isCategoryValid = updateValidation(form, true);
+                const isNameValid = updateNameValidation(form, true);
+
+                if (!isCategoryValid || !isNameValid) {
                     event.preventDefault();
                 }
             });

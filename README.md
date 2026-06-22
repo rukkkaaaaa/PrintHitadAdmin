@@ -1,66 +1,137 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PrintHitadAdmin
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Admin panel for managing print advertisement workflows (HitAd / Lahipita), including categories, ad types, ad sizes, tints, criteria, members, payments, and reporting.
 
-## About Laravel
+Built with Laravel 10 + Vite.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP `^8.1`
+- Laravel `^10`
+- MySQL / MariaDB
+- Vite `^4`
+- DomPDF (`barryvdh/laravel-dompdf`) for PDF generation
+- S3-compatible object storage (configured as `oracle` disk) for file uploads
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Core Modules
 
-## Learning Laravel
+- Authentication & session-based admin access
+- User management (`super admin`, `site admin`, `advertising admin`, `report admin`)
+- Categories, ad types, ad sizes, tints
+- Criteria and criteria options
+- Districts, cities, members
+- Advertisement create/edit/view/download flows
+- Payment tracking (paid/unpaid)
+- Monthly reports + PDF exports
+- Publication cutoff settings and general pricing settings
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Local Setup
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 1) Install dependencies
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+npm install
+```
 
-## Laravel Sponsors
+### 2) Environment configuration
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+The repository contains both `.env` and `.env.example`.
 
-### Premium Partners
+Ensure `.env` includes correct values for:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+- `APP_URL`
+- `DB_*` (database connection)
+- Mail settings (`MAIL_*`) if email features are used
+- OCI/S3 storage settings (required for upload flows):
+	- `OCI_ACCESS_KEY_ID`
+	- `OCI_SECRET_ACCESS_KEY`
+	- `OCI_DEFAULT_REGION`
+	- `OCI_BUCKET`
+	- `OCI_URL`
 
-## Contributing
+Generate app key if not set:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan key:generate
+```
 
-## Code of Conduct
+### 3) Database setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Run migrations:
 
-## Security Vulnerabilities
+```bash
+php artisan migrate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+If you are connecting to an already-initialized legacy database, a full migrate may fail on existing base tables; in that case run only required new migration files using `--path`.
+
+### 4) Start the app
+
+In separate terminals:
+
+```bash
+php artisan serve
+npm run dev
+```
+
+Open the app at the URL configured in `APP_URL` (default: `http://127.0.0.1:8000`).
+
+## Authentication Notes
+
+- Login page: `/login`
+- Registration page: `/register`
+- Root route `/` redirects to `/login` when no session exists.
+- After login, users are redirected to `/dashboard`.
+
+## Important Routes (Quick Reference)
+
+- Dashboard: `/dashboard`
+- Advertisements: `/advertisements`, `/advertisements/create`, `/all-print-ads`
+- Categories: `/categories`
+- Ad Types: `/adtypes`
+- Ad Sizes: `/adsizes`
+- Tints: `/tints`
+- Criteria: `/adcriterias`, `/adcriteria-options`
+- Locations: `/districts`, `/cities`
+- Members: `/members`
+- Reports: `/reports`
+- Settings: `/publication-deadlines`, `/general-settings`
+
+## Development Commands
+
+```bash
+# Run automated tests
+php artisan test
+
+# Frontend build
+npm run build
+
+# Clear cached framework state
+php artisan optimize:clear
+```
+
+## File Upload / Storage
+
+This project uses an S3-compatible disk named `oracle` in `config/filesystems.php` for several upload flows (NIC images, ad images, payment slips, etc.).
+
+If OCI settings are missing, upload-related features can fail even when the app boots correctly.
+
+## Troubleshooting
+
+- **302 on `/` during tests**: root route redirects to `/login` when unauthenticated.
+- **Migration conflicts (`table already exists`)**: use targeted migration with `php artisan migrate --path=...`.
+- **Assets not updating**: restart `npm run dev` and clear browser cache.
+- **Upload URL issues**: verify `OCI_URL` + `OCI_BUCKET` and object visibility.
+
+## Project Structure (High-Level)
+
+- `app/Http/Controllers/` — application controllers (`AuthController`, `GeneralController`)
+- `resources/views/` — Blade templates
+- `routes/web.php` — main web routes
+- `database/migrations/` — schema history
+- `config/` — framework and service configuration
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is distributed under the MIT license (inherited from Laravel project template unless changed by project owners).

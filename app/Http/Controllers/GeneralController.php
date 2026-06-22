@@ -167,8 +167,6 @@ class GeneralController extends Controller
     // GET: Show all advertisement tints
     public function getTints()
     {
-        $hasTintAdTypeColumn = Schema::hasColumn('advertisement_tints', 'advertisement_type_id');
-
         $categories = DB::table('categories')
             ->where('is_active', 1)
             ->orderBy('category_name_en')
@@ -183,43 +181,14 @@ class GeneralController extends Controller
             ->filter(fn ($category) => filled($category->category_name_si))
             ->values();
 
-        $adTypes = DB::table('advertisement_types')
-            ->where('is_active', 1)
-            ->orderBy('advertisement_type_en')
-            ->orderBy('advertisement_type_si')
-            ->get();
+        $tints = DB::table('advertisement_tints')
+            ->orderBy('id', 'asc')
+            ->get()
+            ->map(function ($tint) {
+                $tint->advertisement_type_label = null;
 
-        $adTypesForJs = $adTypes->map(function ($type) {
-            return [
-                'id' => (int) $type->id,
-                'category_id' => (int) $type->category_id,
-                'label_en' => $type->advertisement_type_en ?: ($type->advertisement_type_si ?: 'N/A'),
-                'label_si' => $type->advertisement_type_si ?: ($type->advertisement_type_en ?: 'N/A'),
-            ];
-        })->values();
-
-        if ($hasTintAdTypeColumn) {
-            $tints = DB::table('advertisement_tints')
-                ->leftJoin('advertisement_types', 'advertisement_tints.advertisement_type_id', '=', 'advertisement_types.id')
-                ->select(
-                    'advertisement_tints.*',
-                    'advertisement_types.category_id as advertisement_type_category_id',
-                    DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as advertisement_type_label')
-                )
-                ->orderBy('advertisement_tints.id', 'asc')
-                ->get();
-        } else {
-            $tints = DB::table('advertisement_tints')
-                ->orderBy('id', 'asc')
-                ->get()
-                ->map(function ($tint) {
-                    $tint->advertisement_type_id = null;
-                    $tint->advertisement_type_category_id = null;
-                    $tint->advertisement_type_label = null;
-
-                    return $tint;
-                });
-        }
+                return $tint;
+            });
 
         $tintCategories = DB::table('category_has_advertisement_tints')
             ->join('categories', 'category_has_advertisement_tints.category_id', '=', 'categories.id')
@@ -243,7 +212,7 @@ class GeneralController extends Controller
             return $tint;
         });
 
-        return view('tints.index', compact('tints', 'categories', 'categoriesEn', 'categoriesSi', 'adTypes', 'adTypesForJs'));
+        return view('tints.index', compact('tints', 'categories', 'categoriesEn', 'categoriesSi'));
     }
 
     // POST: Add new tint
@@ -253,7 +222,6 @@ class GeneralController extends Controller
             'advertisement_tint_en' => 'nullable|string|max:255|required_without:advertisement_tint_si',
             'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
             'price' => 'nullable|numeric',
-            'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'category_ids' => 'required|array|size:1',
             'category_ids.*' => 'integer|exists:categories,id',
         ]);
@@ -270,17 +238,6 @@ class GeneralController extends Controller
                 ->withInput();
         }
 
-        $isTypeInSelectedCategories = DB::table('advertisement_types')
-            ->where('id', (int) $request->advertisement_type_id)
-            ->whereIn('category_id', $categoryIds->all())
-            ->exists();
-
-        if (!$isTypeInSelectedCategories) {
-            return redirect()->back()
-                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to the selected category.'])
-                ->withInput();
-        }
-
         DB::transaction(function () use ($request, $categoryIds) {
             $tintData = [
     'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
@@ -292,10 +249,6 @@ class GeneralController extends Controller
     'created_at' => now(),
     'updated_at' => now(),
 ];
-
-            if (Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
-                $tintData['advertisement_type_id'] = (int) $request->advertisement_type_id;
-            }
 
             $tintId = DB::table('advertisement_tints')->insertGetId($tintData);
 
@@ -319,7 +272,6 @@ class GeneralController extends Controller
             'advertisement_tint_si' => 'nullable|string|max:255|required_without:advertisement_tint_en',
             'is_active' => 'required|boolean',
             'price' => 'nullable|numeric',
-            'advertisement_type_id' => 'required|integer|exists:advertisement_types,id',
             'category_ids' => 'required|array|size:1',
             'category_ids.*' => 'integer|exists:categories,id',
         ]);
@@ -336,31 +288,16 @@ class GeneralController extends Controller
                 ->withInput();
         }
 
-            $isTypeInSelectedCategories = DB::table('advertisement_types')
-            ->where('id', (int) $request->advertisement_type_id)
-            ->whereIn('category_id', $categoryIds->all())
-            ->exists();
-
-        if (!$isTypeInSelectedCategories) {
-            return redirect()->back()
-                ->withErrors(['advertisement_type_id' => 'The selected advertisement type must belong to the selected category.'])
-                ->withInput();
-        }
-
-
         DB::transaction(function () use ($request, $id, $categoryIds) {
             $tintData = [
                 'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
                 'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+                'category_id' => $categoryIds->first(),
                 'color' => $request->color ?: '',
                 'is_active' => $request->is_active,
                 'price' => $request->price ?: 0,
                 'updated_at' => now(),
             ];
-
-            if (Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
-                $tintData['advertisement_type_id'] = (int) $request->advertisement_type_id;
-            }
 
             DB::table('advertisement_tints')->where('id', $id)->update($tintData);
 
@@ -478,7 +415,6 @@ class GeneralController extends Controller
     public function getTintsByCategory(Request $request, $categoryId)
     {
         $lang = $request->query('lang', 'en');
-        $typeId = (int) $request->query('type_id', 0);
 
         $tintsQuery = DB::table('advertisement_tints')
             ->join('category_has_advertisement_tints', 'advertisement_tints.id', '=', 'category_has_advertisement_tints.advertisement_tint_id')
@@ -491,10 +427,6 @@ class GeneralController extends Controller
             )
             ->orderBy('advertisement_tints.advertisement_tint_en')
             ->orderBy('advertisement_tints.advertisement_tint_si');
-
-        if ($typeId > 0 && Schema::hasColumn('advertisement_tints', 'advertisement_type_id')) {
-            $tintsQuery->where('advertisement_tints.advertisement_type_id', $typeId);
-        }
 
         $tints = $tintsQuery
             ->get()
