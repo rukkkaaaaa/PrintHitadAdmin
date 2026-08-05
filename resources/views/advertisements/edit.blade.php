@@ -89,7 +89,11 @@
 
                 <div class="section-title">Advertisement Details</div>
                 <div class="mb-3">
-                    <label class="form-label">Description</label>
+                    <label class="form-label">Current Description</label>
+                    <textarea class="form-control mb-2" rows="4" readonly>{{ $ad->advertisement_description }}</textarea>
+                    <small class="text-muted d-block mb-2">The saved description is shown above for reference only. Please retype the updated description below.</small>
+
+                    <label class="form-label">Retype Description</label>
                     <textarea name="advertisement_description" class="form-control" rows="4" required>{{ old('advertisement_description', $ad->advertisement_description) }}</textarea>
                 </div>
 

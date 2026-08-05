@@ -1862,6 +1862,9 @@ class GeneralController extends Controller
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
@@ -1934,6 +1937,9 @@ class GeneralController extends Controller
             // âœ… PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             ->select(
                 'advertisements.*',
@@ -2008,6 +2014,9 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
             ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             // âœ… LEFT JOIN payments (important)
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
@@ -2084,6 +2093,9 @@ class GeneralController extends Controller
 
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             // âœ… ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
@@ -2159,6 +2171,9 @@ class GeneralController extends Controller
 
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             // âœ… ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
@@ -2239,6 +2254,9 @@ class GeneralController extends Controller
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             ->select(
                 'advertisements.*',
@@ -2285,6 +2303,9 @@ class GeneralController extends Controller
 
             ->join('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->join('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             // âœ… ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
@@ -2360,6 +2381,9 @@ class GeneralController extends Controller
 
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
 
             // âœ… ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
@@ -2546,6 +2570,9 @@ class GeneralController extends Controller
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
             ->where('advertisements.publication', $publication)
             ->whereBetween('advertisements.publish_date', [
                 $month->copy()->startOfMonth()->toDateString(),
@@ -2594,6 +2621,9 @@ class GeneralController extends Controller
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where('cities.is_active', 1)
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
