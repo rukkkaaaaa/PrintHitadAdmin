@@ -37,6 +37,38 @@
 		<div class="col-md-3 col-sm-6">
 			<div class="card text-center">
 				<div class="card-body">
+					<div class="text-muted mb-1">Web Combined Hitad Paid</div>
+					<h3 class="mb-0 text-info">Rs. {{ number_format($webCombinedReportSections['hitad_paid']['total_amount'] ?? 0, 2) }}</h3>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 col-sm-6">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="text-muted mb-1">Web Combined Hitad Unpaid</div>
+					<h3 class="mb-0 text-info">Rs. {{ number_format($webCombinedReportSections['hitad_unpaid']['total_amount'] ?? 0, 2) }}</h3>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 col-sm-6">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="text-muted mb-1">Web Combined Lahipita Paid</div>
+					<h3 class="mb-0 text-info">Rs. {{ number_format($webCombinedReportSections['lahipita_paid']['total_amount'] ?? 0, 2) }}</h3>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 col-sm-6">
+			<div class="card text-center">
+				<div class="card-body">
+					<div class="text-muted mb-1">Web Combined Lahipita Unpaid</div>
+					<h3 class="mb-0 text-info">Rs. {{ number_format($webCombinedReportSections['lahipita_unpaid']['total_amount'] ?? 0, 2) }}</h3>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3 col-sm-6">
+			<div class="card text-center">
+				<div class="card-body">
 					<div class="text-muted mb-1">Hitad Paid</div>
 					<h3 class="mb-0 text-success">Rs. {{ number_format($reportSections['hitad_paid']['total_amount'] ?? 0, 2) }}</h3>
 				</div>
@@ -76,6 +108,68 @@
 			'lahipita_unpaid' => ['title' => 'Lahipita Unpaid', 'badge' => 'warning', 'empty' => 'No Lahipita unpaid ads found for this month.'],
 		];
 	@endphp
+
+	<div class="row g-4 mb-4">
+		@foreach(['hitad_paid' => ['title' => 'Web Combined Hitad Paid', 'badge' => 'info'], 'hitad_unpaid' => ['title' => 'Web Combined Hitad Unpaid', 'badge' => 'info'], 'lahipita_paid' => ['title' => 'Web Combined Lahipita Paid', 'badge' => 'info'], 'lahipita_unpaid' => ['title' => 'Web Combined Lahipita Unpaid', 'badge' => 'info']] as $webKey => $webSection)
+			@php($webReport = $webCombinedReportSections[$webKey])
+			<div class="col-12" id="web-combined-{{ str_replace('_', '-', $webKey) }}">
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<div>
+							<h5 class="mb-0">{{ $webSection['title'] }}</h5>
+							<small class="text-muted">{{ $monthLabel }}</small>
+						</div>
+						<div class="d-flex align-items-center gap-2">
+							<span class="badge bg-{{ $webSection['badge'] }}">Rs. {{ number_format($webReport['total_amount'] ?? 0, 2) }}</span>
+							<a href="{{ url('/reports/web-combined/' . str_replace('_', '-', $webKey) . '/pdf') . '?month=' . $monthInput }}" download class="btn btn-sm btn-outline-primary">
+								PDF Export
+							</a>
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-hover mb-0 align-middle">
+								<thead class="table-light">
+									<tr>
+										<th>ID</th>
+										<th>Publication</th>
+										<th>Customer</th>
+										<th>Category</th>
+										<th>District</th>
+										<th>City</th>
+										<th>Publish Date</th>
+										<th>Amount</th>
+										<th>Payment Status</th>
+										<th>Payment Date</th>
+									</tr>
+								</thead>
+								<tbody>
+									@forelse($webReport['ads'] as $ad)
+										<tr>
+											<td>{{ $ad->id }}</td>
+											<td>{{ ucfirst(str_replace('_', ' ', $ad->publication ?? '')) }}</td>
+											<td>{{ $ad->customer_name }}</td>
+											<td>{{ $ad->category_name }}</td>
+											<td>{{ $ad->district_name }}</td>
+											<td>{{ $ad->city_name }}</td>
+											<td>{{ $ad->publish_date ? \Illuminate\Support\Carbon::parse($ad->publish_date)->format('Y-m-d') : '-' }}</td>
+											<td>{{ is_null($ad->amount) ? '-' : 'Rs. ' . number_format($ad->amount, 2) }}</td>
+											<td>@include('partials.payment-status-badge', ['status' => $ad->payment_status])</td>
+											<td>{{ $ad->payment_date ? \Illuminate\Support\Carbon::parse($ad->payment_date)->format('Y-m-d') : '-' }}</td>
+										</tr>
+									@empty
+										<tr>
+											<td colspan="10" class="text-center text-muted py-4">No web combined ads found for this month.</td>
+										</tr>
+									@endforelse
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		@endforeach
+	</div>
 
 	<div class="row g-4">
 		@foreach($sections as $key => $section)

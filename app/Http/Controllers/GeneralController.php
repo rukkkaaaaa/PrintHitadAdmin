@@ -2474,10 +2474,16 @@ class GeneralController extends Controller
             'lahipita_paid' => $this->buildMonthlyAdvertisementReport('lahipita', 'paid', $month),
             'lahipita_unpaid' => $this->buildMonthlyAdvertisementReport('lahipita', 'unpaid', $month),
         ];
+        $webCombinedReportSections = [
+            'hitad_paid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'paid', $month),
+            'hitad_unpaid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'unpaid', $month),
+            'lahipita_paid' => $this->buildWebCombinedAdvertisementReport('lahipita', 'paid', $month),
+            'lahipita_unpaid' => $this->buildWebCombinedAdvertisementReport('lahipita', 'unpaid', $month),
+        ];
 
         $monthLabel = $month->format('F Y');
 
-        return view('reports', compact('monthInput', 'monthLabel', 'reportSections'));
+        return view('reports', compact('monthInput', 'monthLabel', 'reportSections', 'webCombinedReportSections'));
     }
 
     /**
@@ -2503,6 +2509,31 @@ class GeneralController extends Controller
 
         $report = $this->buildMonthlyAdvertisementReport($config['publication'], $config['group'], $month);
         $filename = sprintf('%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
+
+        return Pdf::loadView('reports.pdf', [
+            'title' => $config['title'],
+            'monthLabel' => $month->format('F Y'),
+            'monthInput' => $monthInput,
+            'report' => $report,
+        ])->download($filename);
+    }
+
+    public function downloadWebCombinedReport(Request $request, string $type)
+    {
+        $config = $this->getWebCombinedReportConfig($type);
+        abort_unless($config, 404);
+
+        $monthInput = $request->input('month', now()->format('Y-m'));
+
+        try {
+            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
+        } catch (\Throwable $e) {
+            $month = now()->startOfMonth();
+            $monthInput = $month->format('Y-m');
+        }
+
+        $report = $this->buildWebCombinedAdvertisementReport($config['publication'], $config['group'], $month);
+        $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
 
         return Pdf::loadView('reports.pdf', [
             'title' => $config['title'],
@@ -2545,6 +2576,40 @@ class GeneralController extends Controller
             'lahipita-unpaid' => [
                 'slug' => 'lahipita_unpaid',
                 'title' => 'Lahipita Unpaid Report',
+                'publication' => 'lahipita',
+                'group' => 'unpaid',
+            ],
+        ];
+
+        return $configs[$type] ?? null;
+    }
+
+    private function getWebCombinedReportConfig(string $type): ?array
+    {
+        $type = str_replace('_', '-', $type);
+
+        $configs = [
+            'web-combined-hitad-paid' => [
+                'slug' => 'web_combined_hitad_paid',
+                'title' => 'Web Combined Hitad Paid Report',
+                'publication' => 'hitad_print',
+                'group' => 'paid',
+            ],
+            'web-combined-hitad-unpaid' => [
+                'slug' => 'web_combined_hitad_unpaid',
+                'title' => 'Web Combined Hitad Unpaid Report',
+                'publication' => 'hitad_print',
+                'group' => 'unpaid',
+            ],
+            'web-combined-lahipita-paid' => [
+                'slug' => 'web_combined_lahipita_paid',
+                'title' => 'Web Combined Lahipita Paid Report',
+                'publication' => 'lahipita',
+                'group' => 'paid',
+            ],
+            'web-combined-lahipita-unpaid' => [
+                'slug' => 'web_combined_lahipita_unpaid',
+                'title' => 'Web Combined Lahipita Unpaid Report',
                 'publication' => 'lahipita',
                 'group' => 'unpaid',
             ],
@@ -2605,6 +2670,64 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->get();
+        $totalAmount = (float) $ads->sum(function ($ad) {
+            return is_numeric($ad->amount) ? (float) $ad->amount : 0.0;
+        });
+
+        return [
+            'count' => $ads->count(),
+            'total_amount' => $totalAmount,
+            'ads' => $ads,
+        ];
+    }
+
+    private function buildWebCombinedAdvertisementReport(string $publication, string $paymentGroup, Carbon $month): array
+    {
+        $query = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where(function ($q) {
+                $q->whereNull('cities.id')->orWhere('cities.is_active', 1);
+            })
+            ->where('advertisements.publication', $publication)
+            ->where('advertisements.web_combined_ad', 1)
+            ->whereBetween('advertisements.publish_date', [
+                $month->copy()->startOfMonth()->toDateString(),
+                $month->copy()->endOfMonth()->toDateString(),
+            ])
+            ->select(
+                'advertisements.id',
+                'advertisements.publication',
+                'advertisements.advertisement_description',
+                'advertisements.publish_date',
+                'customers.customer_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
+                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                'payments.amount',
+                'payments.payment_date',
+                'payments.payment_status',
+                'payment_methods.payment_method_name as payment_method'
+            )
+            ->orderBy('advertisements.id', 'desc');
+
+        if ($paymentGroup === 'paid') {
+            $query->where('payments.payment_status', 'completed');
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('payments.id')
+                    ->orWhere('payments.payment_status', 'pending')
+                    ->orWhere('payments.payment_status', 'failed');
+            });
+        }
+
+        $ads = $query->get();
         $totalAmount = (float) $ads->sum(function ($ad) {
             return is_numeric($ad->amount) ? (float) $ad->amount : 0.0;
         });

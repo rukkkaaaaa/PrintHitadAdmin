@@ -65,6 +65,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     });
 
     Route::get('/reports', [GeneralController::class, 'reports']);
+    Route::get('/reports/web-combined/{type}/pdf', [GeneralController::class, 'downloadWebCombinedReport']);
     Route::get('/reports/{type}/pdf', [GeneralController::class, 'downloadMonthlyReport']);
 
     /*
