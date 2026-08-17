@@ -24,6 +24,7 @@
 
     <div class="meta">
         <div><strong>Month:</strong> {{ $monthInput }}</div>
+        <div><strong>Total Amount:</strong> Rs. {{ number_format($report['total_amount'] ?? 0, 2) }}</div>
         <div><strong>Total Records:</strong> {{ $report['count'] }}</div>
     </div>
 

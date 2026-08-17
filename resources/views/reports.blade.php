@@ -38,7 +38,7 @@
 			<div class="card text-center">
 				<div class="card-body">
 					<div class="text-muted mb-1">Hitad Paid</div>
-					<h3 class="mb-0 text-success">{{ $reportSections['hitad_paid']['count'] }}</h3>
+					<h3 class="mb-0 text-success">Rs. {{ number_format($reportSections['hitad_paid']['total_amount'] ?? 0, 2) }}</h3>
 				</div>
 			</div>
 		</div>
@@ -46,7 +46,7 @@
 			<div class="card text-center">
 				<div class="card-body">
 					<div class="text-muted mb-1">Hitad Unpaid</div>
-					<h3 class="mb-0 text-warning">{{ $reportSections['hitad_unpaid']['count'] }}</h3>
+					<h3 class="mb-0 text-warning">Rs. {{ number_format($reportSections['hitad_unpaid']['total_amount'] ?? 0, 2) }}</h3>
 				</div>
 			</div>
 		</div>
@@ -54,7 +54,7 @@
 			<div class="card text-center">
 				<div class="card-body">
 					<div class="text-muted mb-1">Lahipita Paid</div>
-					<h3 class="mb-0 text-success">{{ $reportSections['lahipita_paid']['count'] }}</h3>
+					<h3 class="mb-0 text-success">Rs. {{ number_format($reportSections['lahipita_paid']['total_amount'] ?? 0, 2) }}</h3>
 				</div>
 			</div>
 		</div>
@@ -62,7 +62,7 @@
 			<div class="card text-center">
 				<div class="card-body">
 					<div class="text-muted mb-1">Lahipita Unpaid</div>
-					<h3 class="mb-0 text-warning">{{ $reportSections['lahipita_unpaid']['count'] }}</h3>
+					<h3 class="mb-0 text-warning">Rs. {{ number_format($reportSections['lahipita_unpaid']['total_amount'] ?? 0, 2) }}</h3>
 				</div>
 			</div>
 		</div>
@@ -88,7 +88,7 @@
 							<small class="text-muted">{{ $monthLabel }}</small>
 						</div>
 						<div class="d-flex align-items-center gap-2">
-							<span class="badge bg-{{ $section['badge'] }}">{{ $report['count'] }} records</span>
+							<span class="badge bg-{{ $section['badge'] }}">Rs. {{ number_format($report['total_amount'] ?? 0, 2) }}</span>
 							<a href="{{ url('/reports/' . $key . '/pdf') . '?month=' . $monthInput }}" download class="btn btn-sm btn-outline-primary">
 								PDF Export
 							</a>

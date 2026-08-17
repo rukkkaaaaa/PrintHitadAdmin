@@ -2605,9 +2605,13 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->get();
+        $totalAmount = (float) $ads->sum(function ($ad) {
+            return is_numeric($ad->amount) ? (float) $ad->amount : 0.0;
+        });
 
         return [
             'count' => $ads->count(),
+            'total_amount' => $totalAmount,
             'ads' => $ads,
         ];
     }
