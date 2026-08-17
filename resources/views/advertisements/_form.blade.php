@@ -242,7 +242,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">City</label>
-                    <select name="city_id" id="citySelect" class="form-select" required disabled>
+                    <select name="city_id" id="citySelect" class="form-select" disabled>
                         <option value="">Select District first</option>
                         @foreach($cities as $city)
                             @php
@@ -818,7 +818,6 @@
             { field: descTA, label: 'Description' },
             { field: publishInput, label: 'Publish Date' },
             { field: distSel, label: 'District' },
-            { field: citySel, label: 'City' },
             { field: customerNameInput, label: 'Name' },
             { field: nicPassportInput, label: 'NIC / Passport' },
             { field: telephoneInput, label: 'Phone' },
