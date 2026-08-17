@@ -17,6 +17,7 @@ class Advertisement extends Model
         'price',
         'ad_title',
         'advertisement_description',
+        'reference_number',
         'publish_date',
         'publication',
         'web_combined_ad',

@@ -3186,6 +3186,7 @@ class GeneralController extends Controller
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
         $this->ensureRetypedAdvertisementDescriptionColumnExists();
         $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
+        $this->ensureReferenceNumberColumnExists();
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -3195,6 +3196,7 @@ class GeneralController extends Controller
             'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
+            'reference_number' => 'nullable|string|max:255',
             'retyped_advertisement_description' => [
                 'required',
                 'string',
@@ -3320,6 +3322,12 @@ class GeneralController extends Controller
                 'web_combined_ad' => $request->web_combined_ad,
                 'updated_at' => now(),
            ];
+
+            if (Schema::hasColumn('advertisements', 'reference_number')) {
+                $advertisementData['reference_number'] = $request->reference_number;
+            } elseif (Schema::hasColumn('advertisements', 'order_ref')) {
+                $advertisementData['order_ref'] = $request->reference_number;
+            }
 
             if ($topAdSupported) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
@@ -3532,6 +3540,17 @@ class GeneralController extends Controller
 
         Schema::table('advertisements', function (Blueprint $table) {
             $table->boolean('retyped_advertisement_description_done')->default(false)->after('retyped_advertisement_description');
+        });
+    }
+
+    private function ensureReferenceNumberColumnExists(): void
+    {
+        if (Schema::hasColumn('advertisements', 'reference_number') || Schema::hasColumn('advertisements', 'order_ref')) {
+            return;
+        }
+
+        Schema::table('advertisements', function (Blueprint $table) {
+            $table->string('reference_number')->nullable()->after('retyped_advertisement_description_done');
         });
     }
 }

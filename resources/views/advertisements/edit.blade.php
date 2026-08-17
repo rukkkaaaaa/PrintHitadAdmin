@@ -120,6 +120,17 @@
                               rows="4"
                               required
                               {{ $retypedDone ? 'readonly' : '' }}>{{ old('retyped_advertisement_description', $ad->retyped_advertisement_description ?? '') }}</textarea>
+
+                    <div class="mt-3">
+                        <label class="form-label" for="referenceNumberInput">Reference Number</label>
+                        <input type="text"
+                               name="reference_number"
+                               id="referenceNumberInput"
+                               class="form-control"
+                               value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
+                               placeholder="Enter reference number">
+                    </div>
+
                     <input type="hidden" name="retyped_advertisement_description_done" id="retypedDescriptionDoneInput" value="{{ $retypedDone ? 1 : 0 }}">
                     @error('retyped_advertisement_description')
                         <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
