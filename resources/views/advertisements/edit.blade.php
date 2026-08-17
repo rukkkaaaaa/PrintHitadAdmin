@@ -16,6 +16,7 @@
         $canEditPaymentFields = $currentRole === 'super admin';
         $topAdSupported = $topAdSupported ?? false;
         $generalSettings = $generalSettings ?? [];
+        $retypedDone = (bool) ($ad->retyped_advertisement_description_done ?? false);
         $topAdRate = trim($ad->publication ?? '') === 'lahipita'
             ? (float) ($generalSettings['top_ad_rate_si'] ?? 0)
             : (float) ($generalSettings['top_ad_rate_en'] ?? 0);
@@ -25,6 +26,7 @@
         .edit-card { border-radius: 14px; box-shadow: 0 8px 24px rgba(18,38,63,0.08); }
         .section-title { font-size: 1rem; font-weight: 700; color: #566a7f; margin-bottom: 1rem; }
         .form-label { font-weight: 600; }
+        .description-done-btn.is-done { background-color: #28a745; border-color: #28a745; color: #fff; }
     </style>
 
     <form action="{{ url('/advertisements/' . $ad->id . '/update') }}" method="POST" enctype="multipart/form-data">
@@ -89,12 +91,40 @@
 
                 <div class="section-title">Advertisement Details</div>
                 <div class="mb-3">
-                    <label class="form-label">Current Description</label>
-                    <textarea class="form-control mb-2" rows="4" readonly>{{ $ad->advertisement_description }}</textarea>
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                        <label class="form-label mb-0">Current Description</label>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="copyCurrentDescriptionBtn">
+                            Copy description
+                        </button>
+                    </div>
+                    <textarea class="form-control mb-2" id="currentDescriptionBox" rows="4" readonly>{{ $ad->advertisement_description }}</textarea>
                     <small class="text-muted d-block mb-2">The saved description is shown above for reference only. Please retype the updated description below.</small>
 
-                    <label class="form-label">Retype Description</label>
-                    <textarea name="advertisement_description" class="form-control" rows="4" required>{{ old('advertisement_description', $ad->advertisement_description) }}</textarea>
+                    <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                        <label class="form-label mb-0">Retype Description</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="copyRetypedDescriptionBtn">
+                                Copy retyped
+                            </button>
+                            <button type="button"
+                                    id="retypedDescriptionDoneBtn"
+                                    class="btn btn-sm description-done-btn {{ $retypedDone ? 'is-done' : 'btn-outline-secondary' }}"
+                                    {{ $retypedDone ? 'disabled' : '' }}>
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                    <textarea name="retyped_advertisement_description"
+                              id="retypedDescriptionBox"
+                              class="form-control"
+                              rows="4"
+                              required
+                              {{ $retypedDone ? 'readonly' : '' }}>{{ old('retyped_advertisement_description', $ad->retyped_advertisement_description ?? '') }}</textarea>
+                    <input type="hidden" name="retyped_advertisement_description_done" id="retypedDescriptionDoneInput" value="{{ $retypedDone ? 1 : 0 }}">
+                    @error('retyped_advertisement_description')
+                        <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                    @enderror
+                    <small class="text-muted d-block mt-2">Click Done after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
                 </div>
 
                 <div class="row g-3">
@@ -388,6 +418,94 @@
 
                 <script>
                 document.addEventListener('DOMContentLoaded', function () {
+                    var copyBtn = document.getElementById('copyCurrentDescriptionBtn');
+                    var currentDescriptionBox = document.getElementById('currentDescriptionBox');
+                    var copyRetypedBtn = document.getElementById('copyRetypedDescriptionBtn');
+                    var retypedDoneBtn = document.getElementById('retypedDescriptionDoneBtn');
+                    var retypedDescriptionBox = document.getElementById('retypedDescriptionBox');
+                    var retypedDoneInput = document.getElementById('retypedDescriptionDoneInput');
+
+                    if (copyBtn && currentDescriptionBox) {
+                        copyBtn.addEventListener('click', function () {
+                            var text = currentDescriptionBox.value || '';
+
+                            if (!text.trim()) {
+                                return;
+                            }
+
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(text).then(function () {
+                                    copyBtn.textContent = 'Copied!';
+                                    setTimeout(function () {
+                                        copyBtn.textContent = 'Copy description';
+                                    }, 1500);
+                                });
+                                return;
+                            }
+
+                            currentDescriptionBox.removeAttribute('readonly');
+                            currentDescriptionBox.select();
+                            document.execCommand('copy');
+                            currentDescriptionBox.setAttribute('readonly', 'readonly');
+                            copyBtn.textContent = 'Copied!';
+                            setTimeout(function () {
+                                copyBtn.textContent = 'Copy description';
+                            }, 1500);
+                        });
+                    }
+
+                    if (copyRetypedBtn && retypedDescriptionBox) {
+                        copyRetypedBtn.addEventListener('click', function () {
+                            var text = retypedDescriptionBox.value || '';
+
+                            if (!text.trim()) {
+                                return;
+                            }
+
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(text).then(function () {
+                                    copyRetypedBtn.textContent = 'Copied!';
+                                    setTimeout(function () {
+                                        copyRetypedBtn.textContent = 'Copy retyped';
+                                    }, 1500);
+                                });
+                                return;
+                            }
+
+                            var wasReadonly = retypedDescriptionBox.hasAttribute('readonly');
+                            if (wasReadonly) {
+                                retypedDescriptionBox.removeAttribute('readonly');
+                            }
+                            retypedDescriptionBox.select();
+                            document.execCommand('copy');
+                            if (wasReadonly) {
+                                retypedDescriptionBox.setAttribute('readonly', 'readonly');
+                            }
+                            copyRetypedBtn.textContent = 'Copied!';
+                            setTimeout(function () {
+                                copyRetypedBtn.textContent = 'Copy retyped';
+                            }, 1500);
+                        });
+                    }
+
+                    if (retypedDoneBtn && retypedDescriptionBox && retypedDoneInput) {
+                        var lockRetypedDescription = function () {
+                            retypedDescriptionBox.setAttribute('readonly', 'readonly');
+                            retypedDoneInput.value = '1';
+                            retypedDoneBtn.classList.remove('btn-outline-secondary');
+                            retypedDoneBtn.classList.add('is-done');
+                            retypedDoneBtn.disabled = true;
+                        };
+
+                        if (retypedDoneInput.value === '1') {
+                            lockRetypedDescription();
+                        }
+
+                        retypedDoneBtn.addEventListener('click', function () {
+                            lockRetypedDescription();
+                        });
+                    }
+
                     var districtSelect = document.getElementById('district_id');
                     var citySelect = document.getElementById('city_id');
                     if (!districtSelect || !citySelect) return;

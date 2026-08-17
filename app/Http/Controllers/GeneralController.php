@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use ZipStream\ZipStream;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AdvertisementEmail;
@@ -3056,6 +3057,8 @@ class GeneralController extends Controller
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
         $canEditPaymentFields = $currentRole === 'super admin';
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
+        $this->ensureRetypedAdvertisementDescriptionColumnExists();
+        $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -3065,7 +3068,7 @@ class GeneralController extends Controller
             'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
-            'advertisement_description' => [
+            'retyped_advertisement_description' => [
                 'required',
                 'string',
                 function ($attribute, $value, $fail) use ($id) {
@@ -3081,6 +3084,7 @@ class GeneralController extends Controller
                     );
                 },
             ],
+            'retyped_advertisement_description_done' => 'nullable|boolean',
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'required|exists:cities,id',
@@ -3173,8 +3177,14 @@ class GeneralController extends Controller
                     'updated_at' => now(),
                 ]);
 
+            $existingRetypedDone = (bool) ($ad->retyped_advertisement_description_done ?? false);
+            $isRetypedDone = $existingRetypedDone ? true : $request->boolean('retyped_advertisement_description_done');
+
             $advertisementData = [
-                'advertisement_description' => $request->advertisement_description,
+                'retyped_advertisement_description' => $existingRetypedDone
+                    ? $ad->retyped_advertisement_description
+                    : $request->retyped_advertisement_description,
+                'retyped_advertisement_description_done' => $isRetypedDone,
                 'category_id' => $request->category_id,
                 'advertisement_tint_id' => $request->advertisement_tint_id,
                 'district_id' => $request->district_id,
@@ -3374,5 +3384,27 @@ class GeneralController extends Controller
         });
 
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
+    }
+
+    private function ensureRetypedAdvertisementDescriptionColumnExists(): void
+    {
+        if (Schema::hasColumn('advertisements', 'retyped_advertisement_description')) {
+            return;
+        }
+
+        Schema::table('advertisements', function (Blueprint $table) {
+            $table->text('retyped_advertisement_description')->nullable()->after('advertisement_description');
+        });
+    }
+
+    private function ensureRetypedAdvertisementDescriptionDoneColumnExists(): void
+    {
+        if (Schema::hasColumn('advertisements', 'retyped_advertisement_description_done')) {
+            return;
+        }
+
+        Schema::table('advertisements', function (Blueprint $table) {
+            $table->boolean('retyped_advertisement_description_done')->default(false)->after('retyped_advertisement_description');
+        });
     }
 }
