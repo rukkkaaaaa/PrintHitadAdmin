@@ -1719,7 +1719,7 @@ class GeneralController extends Controller
 
         if ($extraWords > 0 && $additionalRate > 0) {
             $items[] = [
-                'label' => 'Additional words (' . $extraWords . ' Ã¯Â¿Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
+                'label' => 'Additional words (' . $extraWords . ' ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¿Ãƒâ€šÃ‚Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
                 'amount' => round($extraWords * $additionalRate, 2),
             ];
         }
@@ -1940,7 +1940,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // Ã¢Å“â€¦ PAYMENTS
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->where('categories.is_active', 1)
@@ -1957,7 +1957,7 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // Ã¢Å“â€¦ Ã°Å¸â€Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
         // free-text search
@@ -2156,10 +2156,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // Ã¢Å“â€¦ ONLY HITAD PRINT ADS
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // Ã¢Å“â€¦ ONLY PAID
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2231,10 +2231,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // Ã¢Å“â€¦ ONLY HITAD PRINT ADS
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
     //         ->where('advertisements.publication', 'hitad_print')
 
-    //         // Ã¢Å“â€¦ UNPAID LOGIC
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id') // no payment
     //                 ->orWhere('payments.payment_status', 'pending') // pending
@@ -2322,10 +2322,10 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // Ã¢Å“â€¦ MAIN FILTER
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ MAIN FILTER
             ->where('advertisements.publication', 'lahipita');
 
-        // Ã°Å¸â€Â search (same as your existing)
+        // ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â search (same as your existing)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2361,10 +2361,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // Ã¢Å“â€¦ ONLY LAHIPITA ADS
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
 
-            // Ã¢Å“â€¦ ONLY PAID
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2436,10 +2436,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // Ã¢Å“â€¦ ONLY LAHIPITA ADS
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY LAHIPITA ADS
     //         ->where('advertisements.publication', 'lahipita')
 
-    //         // Ã¢Å“â€¦ UNPAID LOGIC (IMPORTANT)
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC (IMPORTANT)
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id')
     //                 ->orWhere('payments.payment_status', 'pending')
@@ -2893,6 +2893,9 @@ class GeneralController extends Controller
         $html = view('advertisements.pdf', compact('ad', 'criterias', 'criteriaValues'))->render();
 
            $pdfBytes = Browsershot::html($html)
+    ->setNodeBinary('/usr/bin/node')
+    ->setNpmBinary('/usr/bin/npm')
+    ->setChromePath('/var/www/betaprint_hitad_admin/storage/puppeteer-cache/chrome/linux-152.0.7977.42/chrome-linux64/chrome')
     ->noSandbox()
     ->format('A4')
     ->showBackground()
@@ -3177,7 +3180,7 @@ class GeneralController extends Controller
                     ->html($resolvedHtmlBody);
             });
 
-            // Ã¢Å“â€¦ SAVE TO DATABASE
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE TO DATABASE
             // AdvertisementEmail::create([
             //     'advertisement_id' => $ad->id,
             //     'customer_email' => $ad->email,
@@ -3189,7 +3192,7 @@ class GeneralController extends Controller
             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
         } 
         // catch (\Exception $e) {
-        //     // Ã¢Å“â€¦ SAVE FAILED EMAIL TO DATABASE
+        //     // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE FAILED EMAIL TO DATABASE
         //     AdvertisementEmail::create([
         //         'advertisement_id' => $ad->id,
         //         'customer_email' => $ad->email,
@@ -3210,7 +3213,7 @@ class GeneralController extends Controller
     }
 
     /**
-     * GET: Load advertisement for editing Ã¢â‚¬â€ join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * GET: Load advertisement for editing ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
      *
      * @param int $id
