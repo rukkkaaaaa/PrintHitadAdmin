@@ -81,9 +81,16 @@
                                 <i class="bx bx-edit-alt"></i>
                             </a>
 
-                            <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                            <button class="btn btn-sm btn-outline-success"
+        onclick="confirmDownload(this)"
+        data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
+    <i class="bx bx-download"></i>
+</button>
+
+                            <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
                                 <i class="bx bx-download"></i>
-                            </button>
+                            </button -->
+                            
                         </td>
                     </tr>
 
@@ -113,11 +120,16 @@
 
 {{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
 <script>
-function confirmDownload(adId) {
+	function confirmDownload(btn) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = btn.dataset.downloadUrl;
+    }
+}
+/** function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {
         window.location.href = "/advertisements/" + adId + "/download";
     }
-}
+} */
 </script>
 
 @endsection
