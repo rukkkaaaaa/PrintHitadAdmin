@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Advertisement extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'customer_id',
         'category_id',
@@ -17,52 +21,60 @@ class Advertisement extends Model
         'price',
         'ad_title',
         'advertisement_description',
+        'retyped_advertisement_description',
         'reference_number',
         'publish_date',
         'publication',
         'web_combined_ad',
-        //'status' removed: managed by payments now
     ];
 
+    protected $casts = [
+        'publish_date' => 'date',
+        'web_combined_ad' => 'boolean',
+        'price' => 'decimal:2',
+    ];
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-
-    public function district()
+    public function district(): BelongsTo
     {
         return $this->belongsTo(District::class);
     }
 
-
-    public function city()
+    public function city(): BelongsTo
     {
         return $this->belongsTo(City::class);
     }
 
-
-    public function criteriaValues()
+    public function criteriaValues(): HasMany
     {
         return $this->hasMany(AdvertisementCriteriaValue::class);
     }
 
-
-    public function images()
+    public function images(): HasMany
     {
         return $this->hasMany(AdvertisementImage::class);
     }
 
-
-    public function payments()
+    public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(Payment::class, 'advertisement_id');
+    }
+
+    /**
+     * Get the newest payment belonging to this advertisement.
+     */
+    public function latestPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'advertisement_id')
+            ->latestOfMany();
     }
 }

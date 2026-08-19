@@ -1719,7 +1719,7 @@ class GeneralController extends Controller
 
         if ($extraWords > 0 && $additionalRate > 0) {
             $items[] = [
-                'label' => 'Additional words (' . $extraWords . ' ï¿½ ' . number_format($additionalRate, 2, '.', '') . ')',
+                'label' => 'Additional words (' . $extraWords . ' Ã¯Â¿Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
                 'amount' => round($extraWords * $additionalRate, 2),
             ];
         }
@@ -1940,7 +1940,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // âœ… PAYMENTS
+            // Ã¢Å“â€¦ PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->where('categories.is_active', 1)
@@ -1957,7 +1957,7 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // âœ… ðŸ”¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            // Ã¢Å“â€¦ Ã°Å¸â€Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
         // free-text search
@@ -2156,10 +2156,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // âœ… ONLY HITAD PRINT ADS
+            // Ã¢Å“â€¦ ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // âœ… ONLY PAID
+            // Ã¢Å“â€¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2231,10 +2231,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // âœ… ONLY HITAD PRINT ADS
+    //         // Ã¢Å“â€¦ ONLY HITAD PRINT ADS
     //         ->where('advertisements.publication', 'hitad_print')
 
-    //         // âœ… UNPAID LOGIC
+    //         // Ã¢Å“â€¦ UNPAID LOGIC
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id') // no payment
     //                 ->orWhere('payments.payment_status', 'pending') // pending
@@ -2322,10 +2322,10 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // âœ… MAIN FILTER
+            // Ã¢Å“â€¦ MAIN FILTER
             ->where('advertisements.publication', 'lahipita');
 
-        // ðŸ” search (same as your existing)
+        // Ã°Å¸â€Â search (same as your existing)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2361,10 +2361,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // âœ… ONLY LAHIPITA ADS
+            // Ã¢Å“â€¦ ONLY LAHIPITA ADS
             ->where('advertisements.publication', 'lahipita')
 
-            // âœ… ONLY PAID
+            // Ã¢Å“â€¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2436,10 +2436,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // âœ… ONLY LAHIPITA ADS
+    //         // Ã¢Å“â€¦ ONLY LAHIPITA ADS
     //         ->where('advertisements.publication', 'lahipita')
 
-    //         // âœ… UNPAID LOGIC (IMPORTANT)
+    //         // Ã¢Å“â€¦ UNPAID LOGIC (IMPORTANT)
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id')
     //                 ->orWhere('payments.payment_status', 'pending')
@@ -2892,10 +2892,7 @@ class GeneralController extends Controller
 
         $html = view('advertisements.pdf', compact('ad', 'criterias', 'criteriaValues'))->render();
 
-            $pdfBytes = Browsershot::html($html)
-    ->setNodeBinary('/usr/bin/node')
-    ->setNpmBinary('/usr/bin/npm')
-    ->setChromePath('/var/www/betaprint_hitad_admin/storage/puppeteer-cache/chrome/linux-148.0.7778.97/chrome-linux64/chrome')
+           $pdfBytes = Browsershot::html($html)
     ->noSandbox()
     ->format('A4')
     ->showBackground()
@@ -3180,7 +3177,7 @@ class GeneralController extends Controller
 //                     ->html($resolvedHtmlBody);
 //             });
 
-//             // âœ… SAVE TO DATABASE
+//             // Ã¢Å“â€¦ SAVE TO DATABASE
 //             AdvertisementEmail::create([
 //                 'advertisement_id' => $ad->id,
 //                 'customer_email' => $ad->email,
@@ -3191,7 +3188,7 @@ class GeneralController extends Controller
 
 //             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
 //         } catch (\Exception $e) {
-//             // âœ… SAVE FAILED EMAIL TO DATABASE
+//             // Ã¢Å“â€¦ SAVE FAILED EMAIL TO DATABASE
 //             AdvertisementEmail::create([
 //                 'advertisement_id' => $ad->id,
 //                 'customer_email' => $ad->email,
@@ -3206,7 +3203,7 @@ class GeneralController extends Controller
 //     }
 
     /**
-     * GET: Load advertisement for editing â€” join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * GET: Load advertisement for editing Ã¢â‚¬â€ join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
      *
      * @param int $id
@@ -3687,27 +3684,231 @@ class GeneralController extends Controller
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
     }
 
-    public function getHitadPrintUnpaidAdvertisements(Request $request)
-    {
-        $ads = Advertisement::with(['customer', 'category', 'district', 'city', 'latestPayment.paymentMethod'])
-            ->where('publication', 'hitad_print')
-            ->whereHas('payments', fn($q) => $q->where('is_success', 'false'))
-            ->orderByDesc('id')
-            ->paginate(15);
+public function getHitadprintUnpaidAdvertisements(Request $request)
+{
+    $query = DB::table('advertisements')
+        ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+        ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+        ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+        ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
 
-        return view('advertisements.hitadprint-unpaid', compact('ads'));
+        ->leftJoin('payments', function ($join) {
+            $join->on('advertisements.id', '=', 'payments.advertisement_id');
+        })
+
+        ->leftJoin(
+            'payment_methods',
+            'payments.payment_method_id',
+            '=',
+            'payment_methods.id'
+        )
+
+        // HITAD ONLY
+        ->where('advertisements.publication', 'hitad_print')
+
+        // UNPAID = pending / failed / no payment
+        ->where(function ($q) {
+            $q->where('payments.payment_status', '!=', 'completed')
+              ->orWhereNull('payments.payment_status');
+        })
+
+        ->where('categories.is_active', 1)
+        ->where('districts.is_active', 1)
+
+        ->select(
+            'advertisements.*',
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
+            ),
+
+            'payments.amount',
+            'payments.payment_status',
+
+            'payment_methods.payment_method_name as payment_method'
+        );
+
+    // SEARCH - CUSTOMER
+    if ($request->filled('customer_name')) {
+        $query->where(
+            'customers.customer_name',
+            'like',
+            '%' . $request->customer_name . '%'
+        );
     }
 
-    public function getLahipitaUnpaidAdvertisements(Request $request)
-    {
-        $ads = Advertisement::with(['customer', 'category', 'district', 'city', 'latestPayment.paymentMethod'])
-            ->where('publication', 'lahipita')
-            ->whereHas('payments', fn($q) => $q->where('is_success', 'false'))
-            ->orderByDesc('id')
-            ->paginate(15);
-
-        return view('advertisements.lahipita-unpaid', compact('ads'));
+    // SEARCH - DATE
+    if ($request->filled('publish_date')) {
+        $query->whereDate(
+            'advertisements.publish_date',
+            $request->publish_date
+        );
     }
+
+    // SEARCH - AD TITLE / DESCRIPTION
+    if ($request->filled('ad_title')) {
+        $query->where(
+            'advertisements.advertisement_description',
+            'like',
+            '%' . $request->ad_title . '%'
+        );
+    }
+
+    // SEARCH - PHONE
+    if ($request->filled('phone')) {
+        $query->where(
+            'customers.telephone',
+            'like',
+            '%' . $request->phone . '%'
+        );
+    }
+
+    // SEARCH - EMAIL
+    if ($request->filled('email')) {
+        $query->where(
+            'customers.email',
+            'like',
+            '%' . $request->email . '%'
+        );
+    }
+
+    // SEARCH - CATEGORY
+    if ($request->filled('category_name')) {
+        $query->where(function ($q) use ($request) {
+            $q->where(
+                'categories.category_name_en',
+                'like',
+                '%' . $request->category_name . '%'
+            )
+            ->orWhere(
+                'categories.category_name_si',
+                'like',
+                '%' . $request->category_name . '%'
+            );
+        });
+    }
+
+    $ads = $query
+        ->orderByDesc('advertisements.id')
+        ->paginate(15)
+        ->withQueryString();
+
+    return view('advertisements.unpaid', compact('ads'));
+}
+
+public function getLahipitaUnpaidAdvertisements(Request $request)
+{
+    $query = DB::table('advertisements')
+        ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+        ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+        ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+        ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
+
+        ->leftJoin('payments', function ($join) {
+            $join->on('advertisements.id', '=', 'payments.advertisement_id');
+        })
+
+        ->leftJoin(
+            'payment_methods',
+            'payments.payment_method_id',
+            '=',
+            'payment_methods.id'
+        )
+
+        // LAHIPITA ONLY
+        ->where('advertisements.publication', 'lahipita')
+
+        // UNPAID = pending / failed / no payment
+        ->where(function ($q) {
+            $q->where('payments.payment_status', '!=', 'completed')
+              ->orWhereNull('payments.payment_status');
+        })
+
+        ->where('categories.is_active', 1)
+        ->where('districts.is_active', 1)
+
+        ->select(
+            'advertisements.*',
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
+            ),
+
+            'payments.amount',
+            'payments.payment_status',
+
+            'payment_methods.payment_method_name as payment_method'
+        );
+
+    // SEARCH - CUSTOMER
+    if ($request->filled('customer_name')) {
+        $query->where(
+            'customers.customer_name',
+            'like',
+            '%' . $request->customer_name . '%'
+        );
+    }
+
+    // SEARCH - DATE
+    if ($request->filled('publish_date')) {
+        $query->whereDate(
+            'advertisements.publish_date',
+            $request->publish_date
+        );
+    }
+
+    // SEARCH - AD TITLE / DESCRIPTION
+    if ($request->filled('ad_title')) {
+        $query->where(
+            'advertisements.advertisement_description',
+            'like',
+            '%' . $request->ad_title . '%'
+        );
+    }
+
+    // SEARCH - PHONE
+    if ($request->filled('phone')) {
+        $query->where(
+            'customers.telephone',
+            'like',
+            '%' . $request->phone . '%'
+        );
+    }
+
+    // SEARCH - EMAIL
+    if ($request->filled('email')) {
+        $query->where(
+            'customers.email',
+            'like',
+            '%' . $request->email . '%'
+        );
+    }
+
+    // SEARCH - CATEGORY
+    if ($request->filled('category_name')) {
+        $query->where(function ($q) use ($request) {
+            $q->where(
+                'categories.category_name_en',
+                'like',
+                '%' . $request->category_name . '%'
+            )
+            ->orWhere(
+                'categories.category_name_si',
+                'like',
+                '%' . $request->category_name . '%'
+            );
+        });
+    }
+
+    $ads = $query
+        ->orderByDesc('advertisements.id')
+        ->paginate(15)
+        ->withQueryString();
+
+    return view('advertisements.lahipita_unpaid', compact('ads'));
+}
     
     private function ensureRetypedAdvertisementDescriptionColumnExists(): void
     {
