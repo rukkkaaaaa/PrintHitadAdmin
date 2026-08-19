@@ -227,8 +227,8 @@
                         <option value="">Select District</option>
                         @foreach($districts as $district)
                             @php
-                                $distEn = trim($district->district_name_en ?? '');
-                                $distSi = trim($district->district_name_si ?? '');
+                                $distEn = trim($district->district_name ?? '');
+                                $distSi = trim($district->district_name ?? '');
                                 $distLabel = $isLahipita ? ($distSi ?: $distEn) : ($distEn ?: $distSi);
                             @endphp
                             <option value="{{ $district->id }}"
@@ -246,8 +246,8 @@
                         <option value="">Select District first</option>
                         @foreach($cities as $city)
                             @php
-                                $cityEn = trim($city->city_name_en ?? '');
-                                $citySi = trim($city->city_name_si ?? '');
+                                $cityEn = trim($city->city_name ?? '');
+                                $citySi = trim($city->city_name ?? '');
                                 $cityLabel = $isLahipita ? ($citySi ?: $cityEn) : ($cityEn ?: $citySi);
                             @endphp
                             <option value="{{ $city->id }}"

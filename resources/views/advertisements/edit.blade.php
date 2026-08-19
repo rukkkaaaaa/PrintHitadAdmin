@@ -174,9 +174,9 @@
                                 @php
                                     // Use Sinhala labels for Lahipita, otherwise English
                                     if (trim($ad->publication ?? '') === 'lahipita') {
-                                        $distLabel = trim($d->district_name_si ?? '');
+                                        $distLabel = trim($d->district_name ?? '');
                                     } else {
-                                        $distLabel = trim($d->district_name_en ?? '');
+                                        $distLabel = trim($d->district_name ?? '');
                                     }
                                 @endphp
                                 @if(trim($distLabel) !== '')
@@ -195,9 +195,9 @@
                                     @php
                                         // Use Sinhala labels for Lahipita, otherwise English
                                         if (trim($ad->publication ?? '') === 'lahipita') {
-                                            $cityLabel = trim($c->city_name_si ?? '');
+                                            $cityLabel = trim($c->city_name ?? '');
                                         } else {
-                                            $cityLabel = trim($c->city_name_en ?? '');
+                                            $cityLabel = trim($c->city_name ?? '');
                                         }
                                     @endphp
                                     @if(trim($cityLabel) !== '')

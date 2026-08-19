@@ -41,7 +41,7 @@
 
                         <div class="col-12 mb-3">
                             <label>City Name (EN)</label>
-                            <input type="text" name="city_name_en" class="form-control" required>
+                            <input type="text" name="city_name" class="form-control" required>
                         </div>
 
                         <div class="col-12 mb-3">
@@ -49,7 +49,7 @@
                             <select name="district_id" class="form-control" required>
                                 <option value="">Select</option>
                                 @foreach ($districtsEn as $dist)
-                                    <option value="{{ $dist->id }}">{{ $dist->district_name_en }}</option>
+                                    <option value="{{ $dist->id }}">{{ $dist->district_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -79,7 +79,7 @@
 
                         <div class="col-12 mb-3">
                             <label>City Name (SI)</label>
-                            <input type="text" name="city_name_si" class="form-control" required>
+                            <input type="text" name="city_name" class="form-control" required>
                         </div>
 
                         <div class="col-12 mb-3">
@@ -87,7 +87,7 @@
                             <select name="district_id" class="form-control" required>
                                 <option value="">Select</option>
                                 @foreach ($districtsSi as $dist)
-                                    <option value="{{ $dist->id }}">{{ $dist->district_name_si }}</option>
+                                    <option value="{{ $dist->id }}">{{ $dist->district_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -135,9 +135,9 @@
 
                         <td>{{ $city->id }}</td>
 
-                        <td>{{ $city->city_name_en }}</td>
+                        <td>{{ $city->city_name }}</td>
 
-                        <td>{{ $city->city_name_si }}</td>
+                        <td>{{ $city->city_name }}</td>
 
                         <td>{{ $city->district_name }}</td>
 
@@ -182,43 +182,43 @@
                                         <div class="mb-3">
                                             <label>City Name (EN)</label>
                                             <input type="text"
-                                                   name="city_name_en"
+                                                   name="city_name"
                                                    class="form-control"
-                                                   value="{{ $city->city_name_en }}">
+                                                   value="{{ $city->city_name }}">
                                         </div>
 
                                         <div class="mb-3">
                                             <label>City Name (SI)</label>
                                             <input type="text"
-                                                   name="city_name_si"
+                                                   name="city_name"
                                                    class="form-control"
-                                                   value="{{ $city->city_name_si }}">
+                                                   value="{{ $city->city_name }}">
                                         </div>
 
                                         <div class="mb-3">
                                             <label>District</label>
                                             <select name="district_id" class="form-control">
                                                 @php
-                                                    $showEnOnly = filled($city->city_name_en) && !filled($city->city_name_si);
-                                                    $showSiOnly = filled($city->city_name_si) && !filled($city->city_name_en);
+                                                    $showEnOnly = filled($city->city_name) && !filled($city->city_name);
+                                                    $showSiOnly = filled($city->city_name) && !filled($city->city_name);
                                                 @endphp
 
                                                 @if($showSiOnly)
                                                     @foreach($districtsSi as $dist)
                                                         <option value="{{ $dist->id }}" {{ $city->district_id == $dist->id ? 'selected' : '' }}>
-                                                            {{ $dist->district_name_si }}
+                                                            {{ $dist->district_name }}
                                                         </option>
                                                     @endforeach
                                                 @elseif($showEnOnly)
                                                     @foreach($districtsEn as $dist)
                                                         <option value="{{ $dist->id }}" {{ $city->district_id == $dist->id ? 'selected' : '' }}>
-                                                            {{ $dist->district_name_en }}
+                                                            {{ $dist->district_name }}
                                                         </option>
                                                     @endforeach
                                                 @else
                                                     @foreach ($districts as $dist)
                                                         @php
-                                                            $districtLabel = $dist->district_name_en ?: $dist->district_name_si;
+                                                            $districtLabel = $dist->district_name ?: $dist->district_name;
                                                         @endphp
                                                         @if($districtLabel)
                                                             <option value="{{ $dist->id }}" {{ $city->district_id == $dist->id ? 'selected' : '' }}>
@@ -287,8 +287,8 @@ document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('[id^="editCity"]').forEach(function(modalEl){
         modalEl.addEventListener('shown.bs.modal', function(){
             try {
-                var en = modalEl.querySelector('input[name="city_name_en"]');
-                var si = modalEl.querySelector('input[name="city_name_si"]');
+                var en = modalEl.querySelector('input[name="city_name"]');
+                var si = modalEl.querySelector('input[name="city_name"]');
 
                 if (en && si) {
                     var enVal = (en.value || '').toString().trim();
@@ -342,8 +342,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
         modalEl.addEventListener('hidden.bs.modal', function(){
             try {
-                var en = modalEl.querySelector('input[name="city_name_en"]');
-                var si = modalEl.querySelector('input[name="city_name_si"]');
+                var en = modalEl.querySelector('input[name="city_name"]');
+                var si = modalEl.querySelector('input[name="city_name"]');
                 if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
                 if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
             } catch (e) { /* ignore */ }

@@ -41,7 +41,7 @@
 
                             <div class="col-12 mb-3">
                                 <label>District Name (EN)</label>
-                                <input type="text" name="district_name_en" class="form-control" required>
+                                <input type="text" name="district_name" class="form-control" required>
                             </div>
 
                             <div class="col-12">
@@ -71,7 +71,7 @@
 
                             <div class="col-12 mb-3">
                                 <label>District Name (SI)</label>
-                                <input type="text" name="district_name_si" class="form-control" required>
+                                <input type="text" name="district_name" class="form-control" required>
                             </div>
 
                             <div class="col-12">
@@ -118,9 +118,9 @@
 
                         <td>{{ $dist->id }}</td>
 
-                        <td>{{ $dist->district_name_en }}</td>
+                        <td>{{ $dist->district_name }}</td>
 
-                        <td>{{ $dist->district_name_si }}</td>
+                        <td>{{ $dist->district_name }}</td>
 
                         <td>
                             @if($dist->is_active)
@@ -163,17 +163,17 @@
                                         <div class="mb-3">
                                             <label>District Name (EN)</label>
                                             <input type="text"
-                                                   name="district_name_en"
+                                                   name="district_name"
                                                    class="form-control"
-                                                  value="{{ $dist->district_name_en }}">
+                                                  value="{{ $dist->district_name }}">
                                         </div>
 
                                         <div class="mb-3">
                                             <label>District Name (SI)</label>
                                             <input type="text"
-                                                   name="district_name_si"
+                                                   name="district_name"
                                                    class="form-control"
-                                                  value="{{ $dist->district_name_si }}">
+                                                  value="{{ $dist->district_name }}">
                                         </div>
 
                                         <div class="mb-3">
@@ -236,8 +236,8 @@ document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('[id^="editDistrict"]').forEach(function(modalEl){
         modalEl.addEventListener('shown.bs.modal', function(){
             try {
-                var en = modalEl.querySelector('input[name="district_name_en"]');
-                var si = modalEl.querySelector('input[name="district_name_si"]');
+                var en = modalEl.querySelector('input[name="district_name"]');
+                var si = modalEl.querySelector('input[name="district_name"]');
 
                 if (en && si) {
                     var enVal = (en.value || '').toString().trim();
@@ -291,8 +291,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
         modalEl.addEventListener('hidden.bs.modal', function(){
             try {
-                var en = modalEl.querySelector('input[name="district_name_en"]');
-                var si = modalEl.querySelector('input[name="district_name_si"]');
+                var en = modalEl.querySelector('input[name="district_name"]');
+                var si = modalEl.querySelector('input[name="district_name"]');
                 if (en) { en.readOnly = false; en.classList.remove('bg-light'); }
                 if (si) { si.readOnly = false; si.classList.remove('bg-light'); }
             } catch (e) { /* ignore */ }
