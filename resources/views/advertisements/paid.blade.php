@@ -45,11 +45,8 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Amount</th>
-                    <th>Payment Method</th>
+                    <th>Publish Date</th>
                     <th>Payment Date</th>
                     <th>Payment Status</th>
                     <th>Action</th>
@@ -63,16 +60,9 @@
                         <td>{{ $ad->customer_name }}</td>
                         <td>{{ $ad->category_name }}</td>
 
-                        <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
-
                         <td>Rs. {{ number_format($ad->amount, 2) }}</td>
 
-                        <td>{{ $ad->payment_method }}</td>
+                        <td>{{ $ad->publish_date }}</td>
 
                         <td>{{ $ad->payment_date }}</td>
 
@@ -99,7 +89,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="12" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             No paid advertisements found.
                         </td>
                     </tr>

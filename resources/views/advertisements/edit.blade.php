@@ -39,7 +39,12 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label class="form-label">Customer Name</label>
-                        <input type="text" name="customer_name" class="form-control" value="{{ old('customer_name', $ad->customer_name) }}" required>
+                        <input type="text"
+       name="customer_name"
+       class="form-control"
+       value="{{ mb_strtoupper(old('customer_name', $ad->customer_name), 'UTF-8') }}"
+       oninput="this.value = this.value.toUpperCase()"
+       required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">NIC / Passport</label>
@@ -55,7 +60,12 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label">Address</label>
-                        <input type="text" name="address" class="form-control" value="{{ old('address', $ad->address) }}" required>
+                        <input type="text"
+       name="address"
+       class="form-control"
+       value="{{ mb_strtoupper(old('address', $ad->address), 'UTF-8') }}"
+       oninput="this.value = this.value.toUpperCase()"
+       required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">NIC Front Photo</label>
@@ -395,6 +405,9 @@
                                                 </option>
                                             @endif
                                         @endforeach
+                                        @if(!empty($existing) && !collect($options)->contains(fn($opt) => trim((trim($ad->publication ?? '') === 'lahipita' ? ($opt->advertisement_criteria_option_name_si ?? '') : ($opt->advertisement_criteria_option_name_en ?? ''))) === trim((string) $existing)))
+                                            <option value="{{ $existing }}" selected>{{ $existing }}</option>
+                                        @endif
                                     </select>
                                 @elseif($crit->field_type === 'radio')
                                     <div>
@@ -411,6 +424,12 @@
                                                 </div>
                                             @endif
                                         @endforeach
+                                        @if(!empty($existing) && !collect($options)->contains(fn($opt) => trim((trim($ad->publication ?? '') === 'lahipita' ? ($opt->advertisement_criteria_option_name_si ?? '') : ($opt->advertisement_criteria_option_name_en ?? ''))) === trim((string) $existing)))
+                                            <div class="form-check form-check-inline mt-2">
+                                                <input class="form-check-input" type="radio" name="criteria[{{ $crit->id }}]" id="crit_{{ $crit->id }}_legacy" value="{{ $existing }}" checked>
+                                                <label class="form-check-label text-muted" for="crit_{{ $crit->id }}_legacy">{{ $existing }} (legacy value)</label>
+                                            </div>
+                                        @endif
                                     </div>
                                 @endif
                             </div>

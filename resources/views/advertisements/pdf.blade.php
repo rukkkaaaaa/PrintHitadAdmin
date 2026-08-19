@@ -1,19 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Advertisement Details</title>
+    @php
+        $fontPath = storage_path('fonts/NotoSansSinhala-Regular.ttf');
+        $fontBase64 = file_exists($fontPath) ? base64_encode(file_get_contents($fontPath)) : '';
+    @endphp
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #222; }
-        h2 { text-align: center; margin: 0 0 18px; }
-        h3 { margin: 18px 0 8px; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        td { padding: 8px; border: 1px solid #ccc; vertical-align: top; }
-        .label { width: 28%; font-weight: bold; background: #f7f7f7; }
-        .muted { color: #666; }
-        .section { margin-bottom: 14px; }
-        .criteria-grid { width: 100%; }
-        .criteria-grid td { width: 50%; }
-    </style>
+    @font-face {
+        font-family: 'NotoSansSinhala';
+        font-style: normal;
+        font-weight: normal;
+        src: url('data:font/ttf;base64,{{ $fontBase64 }}') format('truetype');
+    }
+
+    body {
+        font-family: 'NotoSansSinhala', DejaVu Sans, sans-serif;
+        font-size: 12px;
+        color: #222;
+    }
+    h2 { text-align: center; margin: 0 0 18px; }
+    h3 { margin: 18px 0 8px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    td {
+        padding: 8px;
+        border: 1px solid #ccc;
+        vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    .label { width: 28%; font-weight: bold; background: #f7f7f7; }
+    .muted { color: #666; }
+    .section { margin-bottom: 14px; }
+    .criteria-grid { width: 100%; }
+    .criteria-grid td { width: 50%; }
+</style>
 </head>
 <body>
 
@@ -26,6 +48,10 @@
         <tr><td class="label">Description</td><td>{{ $ad->advertisement_description }}</td></tr>
         <tr><td class="label">Publication</td><td>{{ $ad->publication }}</td></tr>
         <tr><td class="label">Publish Date</td><td>{{ $ad->publish_date }}</td></tr>
+        <tr><td class="label">Advertisement Type</td><td>{{ $ad->advertisement_type_name ?? '—' }}</td></tr>
+        <tr><td class="label">Advertisement Size</td><td>{{ $ad->advertisement_size_name ?? '—' }}</td></tr>
+        <tr><td class="label">Advertisement Tint</td><td>{{ $ad->advertisement_tint_name ?? '—' }}</td></tr>
+        <tr><td class="label">Top Ad</td><td>{{ ($ad->top_ad ?? false) ? 'Yes' : 'No' }}</td></tr>
     </table>
 </div>
 

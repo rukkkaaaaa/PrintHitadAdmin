@@ -46,9 +46,6 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Amount</th>
                     <th>Payment Method</th>
                     <th>Payment Status</th>
@@ -63,13 +60,6 @@
                         <td>{{ $ad->id }}</td>
                         <td>{{ $ad->customer_name }}</td>
                         <td>{{ $ad->category_name }}</td>
-
-                        <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
 
                         <td>
                             @if(!is_null($ad->amount))
@@ -117,7 +107,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="11" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             No unpaid advertisements found.
                         </td>
                     </tr>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -11,8 +12,11 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use ZipStream\ZipStream;
-use Illuminate\Support\Facades\Mail;
 use App\Models\AdvertisementEmail;
+use App\Models\Advertisement;
+use App\Mail\UnpaidAdvertisementMail;
+use App\Models\PaymentMethod;
+use Spatie\Browsershot\Browsershot;
 
 class GeneralController extends Controller
 {
@@ -168,6 +172,7 @@ class GeneralController extends Controller
     // GET: Show all advertisement tints
     public function getTints()
     {
+
         $categories = DB::table('categories')
             ->where('is_active', 1)
             ->orderBy('category_name_en')
@@ -175,11 +180,11 @@ class GeneralController extends Controller
             ->get();
 
         $categoriesEn = $categories
-            ->filter(fn ($category) => filled($category->category_name_en))
+            ->filter(fn($category) => filled($category->category_name_en))
             ->values();
 
         $categoriesSi = $categories
-            ->filter(fn ($category) => filled($category->category_name_si))
+            ->filter(fn($category) => filled($category->category_name_si))
             ->values();
 
         $tints = DB::table('advertisement_tints')
@@ -208,7 +213,7 @@ class GeneralController extends Controller
             $categories = ($tintCategories[$tint->id] ?? collect())->values();
 
             $tint->categories = $categories;
-            $tint->category_ids = $categories->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $tint->category_ids = $categories->pluck('id')->map(fn($id) => (int) $id)->all();
 
             return $tint;
         });
@@ -228,12 +233,12 @@ class GeneralController extends Controller
         ]);
 
         $categoryIds = collect($request->input('category_ids', []))
-            ->filter(fn ($id) => filled($id))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => filled($id))
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values();
 
-            if ($categoryIds->count() !== 1) {
+        if ($categoryIds->count() !== 1) {
             return redirect()->back()
                 ->withErrors(['category_ids' => 'Please select exactly one category.'])
                 ->withInput();
@@ -241,21 +246,21 @@ class GeneralController extends Controller
 
         DB::transaction(function () use ($request, $categoryIds) {
             $tintData = [
-    'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
-    'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
-    'category_id' => $categoryIds->first(),
-    'color' => $request->color ?: '',
-    'price' => $request->price ?: 0,
-    'is_active' => 1,
-    'created_at' => now(),
-    'updated_at' => now(),
-];
+                'advertisement_tint_en' => $request->advertisement_tint_en ?: '',
+                'advertisement_tint_si' => $request->advertisement_tint_si ?: '',
+                'category_id' => $categoryIds->first(),
+                'color' => $request->color ?: '',
+                'price' => $request->price ?: 0,
+                'is_active' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
 
             $tintId = DB::table('advertisement_tints')->insertGetId($tintData);
 
 
             DB::table('category_has_advertisement_tints')->insert(
-                $categoryIds->map(fn ($categoryId) => [
+                $categoryIds->map(fn($categoryId) => [
                     'category_id' => $categoryId,
                     'advertisement_tint_id' => $tintId,
                 ])->all()
@@ -278,12 +283,12 @@ class GeneralController extends Controller
         ]);
 
         $categoryIds = collect($request->input('category_ids', []))
-            ->filter(fn ($id) => filled($id))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => filled($id))
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values();
 
-            if ($categoryIds->count() !== 1) {
+        if ($categoryIds->count() !== 1) {
             return redirect()->back()
                 ->withErrors(['category_ids' => 'Please select exactly one category.'])
                 ->withInput();
@@ -308,7 +313,7 @@ class GeneralController extends Controller
                 ->delete();
 
             DB::table('category_has_advertisement_tints')->insert(
-                $categoryIds->map(fn ($categoryId) => [
+                $categoryIds->map(fn($categoryId) => [
                     'category_id' => $categoryId,
                     'advertisement_tint_id' => $id,
                 ])->all()
@@ -404,7 +409,7 @@ class GeneralController extends Controller
         return response()->json($types);
     }
 
-    
+
     /**
      * AJAX: Return advertisement tints for a given category.
      * Responds with JSON containing id and localized label.
@@ -782,7 +787,7 @@ class GeneralController extends Controller
         });
 
         $criteriasEn = $criterias
-            ->filter(fn ($crit) => filled($crit->advertisement_criteria_name_en))
+            ->filter(fn($crit) => filled($crit->advertisement_criteria_name_en))
             ->map(function ($crit) {
                 $label = $crit->advertisement_criteria_name_en;
 
@@ -797,7 +802,7 @@ class GeneralController extends Controller
             ->values();
 
         $criteriasSi = $criterias
-            ->filter(fn ($crit) => filled($crit->advertisement_criteria_name_si))
+            ->filter(fn($crit) => filled($crit->advertisement_criteria_name_si))
             ->map(function ($crit) {
                 $label = $crit->advertisement_criteria_name_si;
 
@@ -893,13 +898,13 @@ class GeneralController extends Controller
     public function addDistrict(Request $request)
     {
         $request->validate([
-            'district_name_en' => 'nullable|string|max:255|required_without:district_name_si',
-            'district_name_si' => 'nullable|string|max:255|required_without:district_name_en',
+            'district_name' => 'nullable|string|max:255|required_without:district_name',
+            'district_name' => 'nullable|string|max:255|required_without:district_name',
         ]);
 
         DB::table('districts')->insert([
-            'district_name_en' => $request->district_name_en ?: null,
-            'district_name_si' => $request->district_name_si ?: null,
+            'district_name' => $request->district_name ?: null,
+            'district_name' => $request->district_name ?: null,
             'is_active' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -919,14 +924,14 @@ class GeneralController extends Controller
     public function updateDistrict(Request $request, $id)
     {
         $request->validate([
-            'district_name_en' => 'nullable|string|max:255|required_without:district_name_si',
-            'district_name_si' => 'nullable|string|max:255|required_without:district_name_en',
+            'district_name' => 'nullable|string|max:255|required_without:district_name',
+            'district_name' => 'nullable|string|max:255|required_without:district_name',
             'is_active' => 'required|boolean',
         ]);
 
         DB::table('districts')->where('id', $id)->update([
-            'district_name_en' => $request->district_name_en ?: null,
-            'district_name_si' => $request->district_name_si ?: null,
+            'district_name' => $request->district_name ?: null,
+            'district_name' => $request->district_name ?: null,
             'is_active' => $request->is_active,
             'updated_at' => now(),
         ]);
@@ -945,7 +950,7 @@ class GeneralController extends Controller
             ->join('districts', 'cities.district_id', '=', 'districts.id')
             ->select(
                 'cities.*',
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name')
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name')
             )
             ->get();
 
@@ -954,11 +959,11 @@ class GeneralController extends Controller
             ->get();
 
         $districtsEn = $districts
-            ->filter(fn ($dist) => filled($dist->district_name_en))
+            ->filter(fn($dist) => filled($dist->district_name))
             ->values();
 
         $districtsSi = $districts
-            ->filter(fn ($dist) => filled($dist->district_name_si))
+            ->filter(fn($dist) => filled($dist->district_name))
             ->values();
 
         return view('cities.index', compact('cities', 'districts', 'districtsEn', 'districtsSi'));
@@ -974,14 +979,14 @@ class GeneralController extends Controller
     public function addCity(Request $request)
     {
         $request->validate([
-            'city_name_en' => 'nullable|string|max:255|required_without:city_name_si',
-            'city_name_si' => 'nullable|string|max:255|required_without:city_name_en',
+            'city_name' => 'nullable|string|max:255|required_without:city_name',
+            'city_name' => 'nullable|string|max:255|required_without:city_name',
             'district_id' => 'required|exists:districts,id',
         ]);
 
         DB::table('cities')->insert([
-            'city_name_en' => $request->city_name_en ?: null,
-            'city_name_si' => $request->city_name_si ?: null,
+            'city_name' => $request->city_name ?: null,
+            'city_name' => $request->city_name ?: null,
             'district_id' => $request->district_id,
             'is_active' => 1,
             'created_at' => now(),
@@ -1002,8 +1007,8 @@ class GeneralController extends Controller
     public function updateCity(Request $request, $id)
     {
         $request->validate([
-            'city_name_en' => 'nullable|string|max:255|required_without:city_name_si',
-            'city_name_si' => 'nullable|string|max:255|required_without:city_name_en',
+            'city_name' => 'nullable|string|max:255|required_without:city_name',
+            'city_name' => 'nullable|string|max:255|required_without:city_name',
             'district_id' => 'required|exists:districts,id',
             'is_active' => 'required|boolean',
         ]);
@@ -1011,8 +1016,8 @@ class GeneralController extends Controller
         DB::table('cities')
             ->where('id', $id)
             ->update([
-                'city_name_en' => $request->city_name_en ?: null,
-                'city_name_si' => $request->city_name_si ?: null,
+                'city_name' => $request->city_name ?: null,
+                'city_name' => $request->city_name ?: null,
                 'district_id' => $request->district_id,
                 'is_active' => $request->is_active,
                 'updated_at' => now(),
@@ -1020,7 +1025,7 @@ class GeneralController extends Controller
 
         return redirect()->back()->with('success', 'City updated successfully!');
     }
-    
+
 
     /**
      * GET: Prepare data for the create advertisement form (categories, districts, cities, criterias, payment methods).
@@ -1060,11 +1065,11 @@ class GeneralController extends Controller
             ->orderBy('id')
             ->get();
 
-                $publicationDeadlines = $this->fetchPublicationDeadlines();
+        $publicationDeadlines = $this->fetchPublicationDeadlines();
 
-         $generalSettings = $this->fetchGeneralSettings();
+        $generalSettings = $this->fetchGeneralSettings();
 
-         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
+        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
 
         return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings', 'topAdSupported'));
     }
@@ -1127,7 +1132,7 @@ class GeneralController extends Controller
         ];
 
         $columnsToUpdate = collect(array_keys($allValues))
-            ->filter(fn ($column) => Schema::hasColumn('general_settings', $column))
+            ->filter(fn($column) => Schema::hasColumn('general_settings', $column))
             ->values();
 
         if ($columnsToUpdate->isEmpty()) {
@@ -1135,7 +1140,7 @@ class GeneralController extends Controller
         }
 
         $data = $columnsToUpdate
-            ->mapWithKeys(fn ($column) => [$column => $allValues[$column]])
+            ->mapWithKeys(fn($column) => [$column => $allValues[$column]])
             ->all();
 
         $hasIdColumn = Schema::hasColumn('general_settings', 'id');
@@ -1302,7 +1307,7 @@ class GeneralController extends Controller
         return $defaults;
     }
 
-    
+
     /**
      * Fetch general settings from DB, with defaults.
      *
@@ -1440,7 +1445,7 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad' => 'nullable|boolean',
-             'top_ad' => 'nullable|boolean',
+            'top_ad' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
@@ -1553,7 +1558,7 @@ class GeneralController extends Controller
 
             foreach ((array) $request->input('criteria', []) as $criteriaId => $criteriaValue) {
                 if (is_array($criteriaValue)) {
-                    $criteriaValue = implode(', ', array_filter($criteriaValue, static fn ($item) => filled($item)));
+                    $criteriaValue = implode(', ', array_filter($criteriaValue, static fn($item) => filled($item)));
                 }
 
                 $criteriaValue = is_string($criteriaValue) ? trim($criteriaValue) : $criteriaValue;
@@ -1630,7 +1635,7 @@ class GeneralController extends Controller
                     'payment_status'        => $request->payment_status ?: 'pending',
                     'payment_date'          => $request->filled('payment_date') ? $request->payment_date : now()->toDateTimeString(),
                     'receipt_number'        => $request->receipt_number,
-                    'payment_slip_file_path'=> $paymentSlipPath,
+                    'payment_slip_file_path' => $paymentSlipPath,
                     'is_success'            => ($request->payment_status === 'completed') ? 'true' : 'false',
                     'session_id'            => '',
                     'success_indicator'     => '',
@@ -1704,7 +1709,7 @@ class GeneralController extends Controller
                 ];
             }
         }
-        
+
         $description = (string) $request->input('advertisement_description', '');
         $pricingRules = $this->resolveDescriptionPricingSettings($publication);
         $wordCount = $this->countWords($description);
@@ -1714,7 +1719,7 @@ class GeneralController extends Controller
 
         if ($extraWords > 0 && $additionalRate > 0) {
             $items[] = [
-                'label' => 'Additional words (' . $extraWords . ' × ' . number_format($additionalRate, 2, '.', '') . ')',
+                'label' => 'Additional words (' . $extraWords . ' ï¿½ ' . number_format($additionalRate, 2, '.', '') . ')',
                 'amount' => round($extraWords * $additionalRate, 2),
             ];
         }
@@ -1753,7 +1758,7 @@ class GeneralController extends Controller
         return $english !== '' ? $english : ($sinhala !== '' ? $sinhala : 'Advertisement item');
     }
 
-    
+
     /**
      * Resolve general description pricing settings for a publication.
      *
@@ -1802,7 +1807,7 @@ class GeneralController extends Controller
 
         $parts = preg_split('/\s+/u', $normalized) ?: [];
 
-        return count(array_filter($parts, static fn ($part) => trim((string) $part) !== ''));
+        return count(array_filter($parts, static fn($part) => trim((string) $part) !== ''));
     }
 
     /**
@@ -1870,8 +1875,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+                DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
                 'payments.payment_status',
                 DB::raw("CASE
                     WHEN advertisements.publication = 'hitad_print' THEN 'Hitad Print'
@@ -1892,9 +1897,9 @@ class GeneralController extends Controller
         // advanced filters
         if ($request->filled('category')) {
             $cat = $request->category;
-            $query->where(function($q) use ($cat) {
+            $query->where(function ($q) use ($cat) {
                 $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+                    ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
             });
         }
 
@@ -1915,7 +1920,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
+        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.all', compact('ads'));
     }
@@ -1946,8 +1951,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+                DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
 
                 'payments.payment_status',
             )
@@ -1967,9 +1972,9 @@ class GeneralController extends Controller
         // advanced filters
         if ($request->filled('category')) {
             $cat = $request->category;
-            $query->where(function($q) use ($cat) {
+            $query->where(function ($q) use ($cat) {
                 $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+                    ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
             });
         }
 
@@ -1990,7 +1995,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
+        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.index', compact('ads'));
     }
@@ -2006,75 +2011,128 @@ class GeneralController extends Controller
      */
     // GET: View single advertisement
     public function viewAdvertisement($id)
-    {
-        $ad = DB::table('advertisements')
-            ->where('advertisements.id', $id)
+{
+    $ad = DB::table('advertisements')
+        ->where('advertisements.id', $id)
 
-            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
-            ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
-            ->where('categories.is_active', 1)
-            ->where('districts.is_active', 1)
-            ->where('cities.is_active', 1)
+        ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+        ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+        ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+        ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+        ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
+        ->leftJoin('advertisement_types', 'advertisements.advertisement_type_id', '=', 'advertisement_types.id')
+        ->leftJoin('advertisement_sizes', 'advertisements.advertisement_size_id', '=', 'advertisement_sizes.id')
+         ->where('categories.is_active', 1)
+        ->where('districts.is_active', 1)
+        ->where('cities.is_active', 1)
 
-            // âœ… LEFT JOIN payments (important)
-            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+        ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+        ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // âœ… LEFT JOIN payment methods
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+        ->select(
+            'advertisements.*',
 
-            ->select(
-                'advertisements.*',
+            'customers.customer_name',
+            'customers.address',
+            'customers.telephone',
+            'customers.email',
+            'customers.nic_passport',
+            'customers.nic_front_img_url',
+            'customers.nic_back_img_url',
 
-                'customers.customer_name',
-                'customers.address',
-                'customers.telephone',
-                'customers.email',
-                'customers.nic_passport',
+            DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+            DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+            DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
+            DB::raw("COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name"),
+            DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as advertisement_type_name'),
+            DB::raw('COALESCE(advertisement_sizes.advertisement_size_en, advertisement_sizes.advertisement_size_si) as advertisement_size_name'),
 
-                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
-                DB::raw("COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name"),
+            'payments.amount',
+            'payments.payment_status',
+            'payments.payment_date',
 
-                // âœ… Payment fields
-                'payments.amount',
-                'payments.payment_status',
-                'payments.payment_date',
+            'payment_methods.payment_method_name as payment_method'
+        )
+        ->first();
 
-                'payment_methods.payment_method_name as payment_method'
-            )
-            ->first();
-
-        if (!$ad) {
-            abort(404);
-        }
-
-        // Load category-specific criterias and existing values for display
-        $criterias = DB::table('advertisement_criterias')
-            ->where('category_id', $ad->category_id)
-            ->where('is_active', 1)
-            ->get();
-
-        $criteriaOptions = DB::table('advertisement_criteria_options')
-            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
-            ->where('is_active', 1)
-            ->get()
-            ->groupBy('advertisement_criteria_id');
-
-        $criteriaValuesRaw = DB::table('advertisement_criteria_values')
-            ->where('advertisement_id', $id)
-            ->get();
-
-        $criteriaValues = [];
-        foreach ($criteriaValuesRaw as $cv) {
-            $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
-        }
-
-        return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues'));
+    if (!$ad) {
+        abort(404);
     }
+
+    $criterias = DB::table('advertisement_criterias')
+        ->where('category_id', $ad->category_id)
+        ->where('is_active', 1)
+        ->get();
+
+    $criteriaIdsFromCategory = $criterias->pluck('id')->filter()->values();
+    $criteriaIdsFromValues = DB::table('advertisement_criteria_values')
+        ->where('advertisement_id', $id)
+        ->pluck('advertisement_criteria_id')
+        ->filter()
+        ->values();
+
+    $criteriaIds = $criteriaIdsFromCategory->merge($criteriaIdsFromValues)->unique()->values();
+
+    $criteriaOptions = DB::table('advertisement_criteria_options')
+        ->whereIn('advertisement_criteria_id', $criteriaIds)
+        ->where('is_active', 1)
+        ->get()
+        ->groupBy('advertisement_criteria_id');
+
+    $criteriaValuesRaw = DB::table('advertisement_criteria_values')
+        ->where('advertisement_id', $id)
+        ->get();
+
+    $criteriaValues = [];
+    foreach ($criteriaValuesRaw as $cv) {
+        $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
+    }
+
+    $currentOptionLabelsByCriteriaId = [];
+    $currentOptions = DB::table('advertisement_criteria_options')
+        ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+        ->where('is_active', 1)
+        ->get();
+
+    foreach ($currentOptions as $option) {
+        $label = trim((string) ($option->advertisement_criteria_option_name_en ?? $option->advertisement_criteria_option_name_si ?? ''));
+        if ($label === '') {
+            continue;
+        }
+
+        $currentOptionLabelsByCriteriaId[(int) $option->advertisement_criteria_id][strtolower($label)] = $label;
+    }
+
+    foreach ($criteriaValues as $criteriaId => $value) {
+        $trimmedValue = trim((string) $value);
+        if ($trimmedValue === '') {
+            continue;
+        }
+
+        foreach ($criterias as $criteria) {
+            if (isset($criteriaValues[$criteria->id]) && $criteriaValues[$criteria->id] !== null) {
+                continue;
+            }
+
+            $normalized = strtolower($trimmedValue);
+            if (isset($currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized])) {
+                $criteriaValues[$criteria->id] = $currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized];
+            }
+        }
+    }
+
+    $images = DB::table('advertisement_images')
+        ->where('advertisement_id', $id)
+        ->where('is_active', 1)
+        ->orderBy('id', 'asc')
+        ->get()
+        ->map(function ($image) {
+            $image->display_url = $this->resolveAdvertisementImageDisplayUrl($image->img_url ?? null);
+            return $image;
+        });
+
+    return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues', 'images'));
+}
 
     /**
      * List hitad_print advertisements that have completed payments (paid).
@@ -2108,8 +2166,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+                DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
 
                 'payments.amount',
                 'payments.payment_date',
@@ -2128,9 +2186,9 @@ class GeneralController extends Controller
 
         if ($request->filled('category')) {
             $cat = $request->category;
-            $query->where(function($q) use ($cat) {
+            $query->where(function ($q) use ($cat) {
                 $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+                    ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
             });
         }
 
@@ -2151,7 +2209,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
+        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.paid', compact('ads'));
     }
@@ -2161,84 +2219,79 @@ class GeneralController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\View\View
      */
-    public function getUnpaidAdvertisements(Request $request)
-    {
-        $query = DB::table('advertisements')
+    // public function getUnpaidAdvertisements(Request $request)
+    // {
+    //     $query = DB::table('advertisements')
 
-            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+    //         ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+    //         ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+    //         ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+    //         ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->where('categories.is_active', 1)
-            ->where('districts.is_active', 1)
-            ->where('cities.is_active', 1)
+    //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+    //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // âœ… ONLY HITAD PRINT ADS
-            ->where('advertisements.publication', 'hitad_print')
+    //         // âœ… ONLY HITAD PRINT ADS
+    //         ->where('advertisements.publication', 'hitad_print')
 
-            // âœ… UNPAID LOGIC
-            ->where(function ($q) {
-                $q->whereNull('payments.id') // no payment
-                    ->orWhere('payments.payment_status', 'pending') // pending
-                    ->orWhere('payments.payment_status', 'failed'); // failed
-            })
+    //         // âœ… UNPAID LOGIC
+    //         ->where(function ($q) {
+    //             $q->whereNull('payments.id') // no payment
+    //                 ->orWhere('payments.payment_status', 'pending') // pending
+    //                 ->orWhere('payments.payment_status', 'failed'); // failed
+    //         })
 
-            ->select(
-                'advertisements.*',
-                'customers.customer_name',
-                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+    //         ->select(
+    //             'advertisements.*',
+    //             'customers.customer_name',
+    //             DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+    //             DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+    //             DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
 
-                'payments.amount',
-                'payments.payment_date',
-                'payments.payment_status',
-                'payment_methods.payment_method_name as payment_method'
-            )
+    //             'payments.amount',
+    //             'payments.payment_date',
+    //             'payments.payment_status',
+    //             'payment_methods.payment_method_name as payment_method'
+    //         );
 
-            ;
+    //     // apply filters
+    //     if ($request->has('search') && !empty($request->search)) {
+    //         $search = $request->search;
+    //         $query->where(function ($q) use ($search) {
+    //             $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+    //                 ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+    //         });
+    //     }
 
-        // apply filters
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
-                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
-            });
-        }
+    //     if ($request->filled('category')) {
+    //         $cat = $request->category;
+    //         $query->where(function ($q) use ($cat) {
+    //             $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+    //                 ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+    //         });
+    //     }
 
-        if ($request->filled('category')) {
-            $cat = $request->category;
-            $query->where(function($q) use ($cat) {
-                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
-            });
-        }
+    //     if ($request->filled('publish_date')) {
+    //         $query->whereDate('advertisements.publish_date', $request->publish_date);
+    //     }
 
-        if ($request->filled('publish_date')) {
-            $query->whereDate('advertisements.publish_date', $request->publish_date);
-        }
+    //     if ($request->filled('customer_name')) {
+    //         $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+    //     }
 
-        if ($request->filled('customer_name')) {
-            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
-        }
+    //     if ($request->filled('phone')) {
+    //         $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+    //     }
 
-        if ($request->filled('phone')) {
-            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
-        }
+    //     if ($request->filled('email')) {
+    //         $query->where('customers.email', 'LIKE', "%{$request->email}%");
+    //     }
 
-        if ($request->filled('email')) {
-            $query->where('customers.email', 'LIKE', "%{$request->email}%");
-        }
+    //     $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+    //     $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
-
-        return view('advertisements.unpaid', compact('ads'));
-    }
+    //     return view('advertisements.unpaid', compact('ads'));
+    // }
     /**
      * List all 'lahipita' advertisements (Sinhala publication) with search and pagination.
      *
@@ -2263,8 +2316,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                'districts.district_name_si as district_name',
-                'cities.city_name_si as city_name',
+                'districts.district_name as district_name',
+                'cities.city_name as city_name',
 
                 'payments.payment_status',
             )
@@ -2318,8 +2371,8 @@ class GeneralController extends Controller
                 'advertisements.*',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                'districts.district_name_si as district_name',
-                'cities.city_name_si as city_name',
+                'districts.district_name as district_name',
+                'cities.city_name as city_name',
 
                 'payments.amount',
                 'payments.payment_date',
@@ -2338,9 +2391,9 @@ class GeneralController extends Controller
 
         if ($request->filled('category')) {
             $cat = $request->category;
-            $query->where(function($q) use ($cat) {
+            $query->where(function ($q) use ($cat) {
                 $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+                    ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
             });
         }
 
@@ -2361,7 +2414,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
+        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.lahipita_paid', compact('ads'));
     }
@@ -2371,84 +2424,79 @@ class GeneralController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\View\View
      */
-    public function getLahipitaUnpaidAdvertisements(Request $request)
-    {
-        $query = DB::table('advertisements')
+    // public function getLahipitaUnpaidAdvertisements(Request $request)
+    // {
+    //     $query = DB::table('advertisements')
 
-            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+    //         ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+    //         ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+    //         ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+    //         ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->where('categories.is_active', 1)
-            ->where('districts.is_active', 1)
-            ->where('cities.is_active', 1)
+    //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+    //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-            // âœ… ONLY LAHIPITA ADS
-            ->where('advertisements.publication', 'lahipita')
+    //         // âœ… ONLY LAHIPITA ADS
+    //         ->where('advertisements.publication', 'lahipita')
 
-            // âœ… UNPAID LOGIC (IMPORTANT)
-            ->where(function ($q) {
-                $q->whereNull('payments.id')
-                    ->orWhere('payments.payment_status', 'pending')
-                    ->orWhere('payments.payment_status', 'failed');
-            })
+    //         // âœ… UNPAID LOGIC (IMPORTANT)
+    //         ->where(function ($q) {
+    //             $q->whereNull('payments.id')
+    //                 ->orWhere('payments.payment_status', 'pending')
+    //                 ->orWhere('payments.payment_status', 'failed');
+    //         })
 
-            ->select(
-                'advertisements.*',
-                'customers.customer_name',
-                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                'districts.district_name_si as district_name',
-                'cities.city_name_si as city_name',
+    //         ->select(
+    //             'advertisements.*',
+    //             'customers.customer_name',
+    //             DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+    //             'districts.district_name as district_name',
+    //             'cities.city_name as city_name',
 
-                'payments.amount',
-                'payments.payment_date',
-                'payments.payment_status',
-                'payment_methods.payment_method_name as payment_method'
-            )
+    //             'payments.amount',
+    //             'payments.payment_date',
+    //             'payments.payment_status',
+    //             'payment_methods.payment_method_name as payment_method'
+    //         );
 
-            ;
+    //     // apply filters
+    //     if ($request->has('search') && !empty($request->search)) {
+    //         $search = $request->search;
+    //         $query->where(function ($q) use ($search) {
+    //             $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
+    //                 ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
+    //         });
+    //     }
 
-        // apply filters
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('advertisements.advertisement_description', 'LIKE', "%{$search}%")
-                    ->orWhere('customers.customer_name', 'LIKE', "%{$search}%");
-            });
-        }
+    //     if ($request->filled('category')) {
+    //         $cat = $request->category;
+    //         $query->where(function ($q) use ($cat) {
+    //             $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
+    //                 ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
+    //         });
+    //     }
 
-        if ($request->filled('category')) {
-            $cat = $request->category;
-            $query->where(function($q) use ($cat) {
-                $q->where('categories.category_name_en', 'LIKE', "%{$cat}%")
-                  ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
-            });
-        }
+    //     if ($request->filled('publish_date')) {
+    //         $query->whereDate('advertisements.publish_date', $request->publish_date);
+    //     }
 
-        if ($request->filled('publish_date')) {
-            $query->whereDate('advertisements.publish_date', $request->publish_date);
-        }
+    //     if ($request->filled('customer_name')) {
+    //         $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
+    //     }
 
-        if ($request->filled('customer_name')) {
-            $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
-        }
+    //     if ($request->filled('phone')) {
+    //         $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
+    //     }
 
-        if ($request->filled('phone')) {
-            $query->where('customers.telephone', 'LIKE', "%{$request->phone}%");
-        }
+    //     if ($request->filled('email')) {
+    //         $query->where('customers.email', 'LIKE', "%{$request->email}%");
+    //     }
 
-        if ($request->filled('email')) {
-            $query->where('customers.email', 'LIKE', "%{$request->email}%");
-        }
+    //     $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+    //     $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
-        $ads->appends($request->only(['search','category','publish_date','customer_name','phone','email']));
-
-        return view('advertisements.lahipita_unpaid', compact('ads'));
-    }
+    //     return view('advertisements.lahipita_unpaid', compact('ads'));
+    // }
 
     /**
      * Reports page: build monthly report sections for both publications and payment groups.
@@ -2474,6 +2522,7 @@ class GeneralController extends Controller
             'lahipita_paid' => $this->buildMonthlyAdvertisementReport('lahipita', 'paid', $month),
             'lahipita_unpaid' => $this->buildMonthlyAdvertisementReport('lahipita', 'unpaid', $month),
         ];
+
         $webCombinedReportSections = [
             'hitad_paid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'paid', $month),
             'hitad_unpaid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'unpaid', $month),
@@ -2518,6 +2567,7 @@ class GeneralController extends Controller
         ])->download($filename);
     }
 
+    
     public function downloadWebCombinedReport(Request $request, string $type)
     {
         $config = $this->getWebCombinedReportConfig($type);
@@ -2651,8 +2701,8 @@ class GeneralController extends Controller
                 'advertisements.publication',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+                DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
@@ -2708,8 +2758,8 @@ class GeneralController extends Controller
                 'advertisements.publish_date',
                 'customers.customer_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                DB::raw('COALESCE(districts.district_name_en, districts.district_name_si) as district_name'),
-                DB::raw('COALESCE(cities.city_name_en, cities.city_name_si) as city_name'),
+                DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
+                DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
                 'payments.amount',
                 'payments.payment_date',
                 'payments.payment_status',
@@ -2742,32 +2792,38 @@ class GeneralController extends Controller
     public function downloadAdvertisement($id)
     {
         $ad = DB::table('advertisements')
-            ->where('advertisements.id', $id)
-            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-            ->join('cities', 'advertisements.city_id', '=', 'cities.id')
-            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
-            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
-            ->where('categories.is_active', 1)
-            ->where('districts.is_active', 1)
-            ->where('cities.is_active', 1)
-            ->select(
-                'advertisements.*',
-                'customers.customer_name',
-                'customers.address',
-                'customers.telephone',
-                'customers.email',
-                'customers.nic_passport',
-                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
-                'districts.district_name_en as district_name',
-                'cities.city_name_en as city_name',
-                'payments.amount',
-                'payments.payment_status',
-                'payments.payment_date',
-                'payment_methods.payment_method_name as payment_method'
-            )
-            ->first();
+    ->where('advertisements.id', $id)
+    ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+    ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+    ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+    ->join('cities', 'advertisements.city_id', '=', 'cities.id')
+    ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+    ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+    ->leftJoin('advertisement_types', 'advertisements.advertisement_type_id', '=', 'advertisement_types.id')
+    ->leftJoin('advertisement_sizes', 'advertisements.advertisement_size_id', '=', 'advertisement_sizes.id')
+    ->leftJoin('advertisement_tints', 'advertisements.advertisement_tint_id', '=', 'advertisement_tints.id')
+    ->where('categories.is_active', 1)
+    ->where('districts.is_active', 1)
+    ->where('cities.is_active', 1)
+    ->select(
+        'advertisements.*',
+        'customers.customer_name',
+        'customers.address',
+        'customers.telephone',
+        'customers.email',
+        'customers.nic_passport',
+        DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+        'districts.district_name as district_name',
+        'cities.city_name as city_name',
+        'payments.amount',
+        'payments.payment_status',
+        'payments.payment_date',
+        'payment_methods.payment_method_name as payment_method',
+        DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as advertisement_type_name'),
+        DB::raw('COALESCE(advertisement_sizes.advertisement_size_en, advertisement_sizes.advertisement_size_si) as advertisement_size_name'),
+        DB::raw('COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name')
+    )
+    ->first();
 
         if (!$ad) {
             abort(404);
@@ -2778,6 +2834,14 @@ class GeneralController extends Controller
             ->where('is_active', 1)
             ->get();
 
+        $criteriaIdsFromCategory = $criterias->pluck('id')->filter()->values();
+        $criteriaIdsFromValues = DB::table('advertisement_criteria_values')
+            ->where('advertisement_id', $id)
+            ->pluck('advertisement_criteria_id')
+            ->filter()
+            ->values();
+        $criteriaIds = $criteriaIdsFromCategory->merge($criteriaIdsFromValues)->unique()->values();
+
         $criteriaValuesRaw = DB::table('advertisement_criteria_values')
             ->where('advertisement_id', $id)
             ->get();
@@ -2787,13 +2851,57 @@ class GeneralController extends Controller
             $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
         }
 
+        $currentOptionLabelsByCriteriaId = [];
+        $currentOptions = DB::table('advertisement_criteria_options')
+            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+            ->where('is_active', 1)
+            ->get();
+
+        foreach ($currentOptions as $option) {
+            $label = trim((string) ($option->advertisement_criteria_option_name_en ?? $option->advertisement_criteria_option_name_si ?? ''));
+            if ($label === '') {
+                continue;
+            }
+
+            $currentOptionLabelsByCriteriaId[(int) $option->advertisement_criteria_id][strtolower($label)] = $label;
+        }
+
+        foreach ($criteriaValues as $criteriaId => $value) {
+            $trimmedValue = trim((string) $value);
+            if ($trimmedValue === '') {
+                continue;
+            }
+
+            foreach ($criterias as $criteria) {
+                if (isset($criteriaValues[$criteria->id]) && $criteriaValues[$criteria->id] !== null) {
+                    continue;
+                }
+
+                $normalized = strtolower($trimmedValue);
+                if (isset($currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized])) {
+                    $criteriaValues[$criteria->id] = $currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized];
+                }
+            }
+        }
+
         $images = DB::table('advertisement_images')
             ->where('advertisement_id', $id)
             ->where('is_active', 1)
             ->orderBy('id', 'asc')
             ->get();
 
-        $pdfBytes = Pdf::loadView('advertisements.pdf', compact('ad', 'criterias', 'criteriaValues'))->output();
+        $html = view('advertisements.pdf', compact('ad', 'criterias', 'criteriaValues'))->render();
+
+            $pdfBytes = Browsershot::html($html)
+    ->setNodeBinary('/usr/bin/node')
+    ->setNpmBinary('/usr/bin/npm')
+    ->setChromePath('/var/www/betaprint_hitad_admin/storage/puppeteer-cache/chrome/linux-148.0.7778.97/chrome-linux64/chrome')
+    ->noSandbox()
+    ->format('A4')
+    ->showBackground()
+    ->waitUntilNetworkIdle()
+    ->pdf();
+
         $zipName = "advertisement_{$id}.zip";
 
         return response()->streamDownload(function () use ($id, $pdfBytes, $images) {
@@ -2893,6 +3001,27 @@ class GeneralController extends Controller
         return null;
     }
 
+    private function resolveAdvertisementImageDisplayUrl(?string $imgUrl): ?string
+{
+    if (!$imgUrl) {
+        return null;
+    }
+
+    if (Str::startsWith($imgUrl, ['http://', 'https://', '//'])) {
+        return $imgUrl;
+    }
+
+    if (Str::startsWith($imgUrl, '/')) {
+        return $imgUrl;
+    }
+
+    try {
+        return Storage::disk('oracle')->url($imgUrl);
+    } catch (\Throwable $e) {
+        return asset('storage/' . ltrim($imgUrl, '/'));
+    }
+}
+
     private function buildAdvertisementImageZipName(?string $imgUrl, int $index): string
     {
         $path = $imgUrl ? (parse_url($imgUrl, PHP_URL_PATH) ?: $imgUrl) : '';
@@ -2912,169 +3041,169 @@ class GeneralController extends Controller
      * @param int $id Advertisement ID
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function sendLinkEmail($id)
-    {
-        $ad = DB::table('advertisements')
-            ->where('advertisements.id', $id)
-            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
-            ->select(
-                'advertisements.id',
-                'advertisements.publication',
-                'advertisements.advertisement_description',
-                'customers.customer_name',
-                'customers.email',
-                'payments.amount',
-                'payments.payment_status'
-            )
-            ->first();
+//     public function sendLinkEmail($id)
+//     {
+//         $ad = DB::table('advertisements')
+//             ->where('advertisements.id', $id)
+//             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+//             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+//             ->select(
+//                 'advertisements.id',
+//                 'advertisements.publication',
+//                 'advertisements.advertisement_description',
+//                 'customers.customer_name',
+//                 'customers.email',
+//                 'payments.amount',
+//                 'payments.payment_status'
+//             )
+//             ->first();
 
-        if (!$ad) {
-            return redirect()->back()->with('error', 'Advertisement not found.');
-        }
+//         if (!$ad) {
+//             return redirect()->back()->with('error', 'Advertisement not found.');
+//         }
 
-        if (!$ad->email) {
-            return redirect()->back()->with('error', 'Customer email not found.');
-        }
+//         if (!$ad->email) {
+//             return redirect()->back()->with('error', 'Customer email not found.');
+//         }
 
-        try {
-            $adViewUrl = url('/advertisements/' . $ad->id . '/view');
-            $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
+//         try {
+//             $adViewUrl = url('/advertisements/' . $ad->id . '/view');
+//             $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
 
-            $adTitle = trim((string) ($ad->advertisement_description ?? ''));
-            $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
-            $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
-            $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
-            $paymentStatusLabel = $isPaid ? 'Completed' : 'Pending';
-            $paymentStatusColor = $isPaid ? '#2e7d32' : '#d32f2f';
-            $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
-            $orderId = 'ORD' . $ad->id;
-            $formattedAmount = $ad->amount ? 'LKR ' . number_format($ad->amount, 2) : 'Not set';
-            $isLahipita = strtolower((string) ($ad->publication ?? '')) === 'lahipita';
-            $publicationLabel = $isLahipita ? 'Lahipita' : 'HitAd';
+//             $adTitle = trim((string) ($ad->advertisement_description ?? ''));
+//             $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
+//             $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
+//             $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
+//             $paymentStatusLabel = $isPaid ? 'Completed' : 'Pending';
+//             $paymentStatusColor = $isPaid ? '#2e7d32' : '#d32f2f';
+//             $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
+//             $orderId = 'ORD' . $ad->id;
+//             $formattedAmount = $ad->amount ? 'LKR ' . number_format($ad->amount, 2) : 'Not set';
+//             $isLahipita = strtolower((string) ($ad->publication ?? '')) === 'lahipita';
+//             $publicationLabel = $isLahipita ? 'Lahipita' : 'HitAd';
 
-            $introText = $isPaid
-                ? "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. We confirm that your payment has been successfully received."
-                : "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. Please complete your payment to activate your advertisement.";
+//             $introText = $isPaid
+//                 ? "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. We confirm that your payment has been successfully received."
+//                 : "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. Please complete your payment to activate your advertisement.";
 
-            $extraInstructions = $isPaid
-                ? ""
-                : "<tr><td colspan='2' style='padding: 16px 0 0;'>" .
-                    "<p style='margin:0 0 8px; color:#333; font-size:14px;'>Please complete the payment via bank deposit using the details below:</p>" .
-                    "<p style='margin:0; color:#333; font-size:14px;'><strong>Bank Name:</strong> Commercial Bank of Ceylon<br><strong>Account Number:</strong> 0123456789</p>" .
-                    "<p style='margin:8px 0 0; color:#333; font-size:14px;'>Once the payment is completed, please forward the payment slip for verification.</p>" .
-                    "</td></tr>";
+//             $extraInstructions = $isPaid
+//                 ? ""
+//                 : "<tr><td colspan='2' style='padding: 16px 0 0;'>" .
+//                 "<p style='margin:0 0 8px; color:#333; font-size:14px;'>Please complete the payment via bank deposit using the details below:</p>" .
+//                 "<p style='margin:0; color:#333; font-size:14px;'><strong>Bank Name:</strong> Commercial Bank of Ceylon<br><strong>Account Number:</strong> 0123456789</p>" .
+//                 "<p style='margin:8px 0 0; color:#333; font-size:14px;'>Once the payment is completed, please forward the payment slip for verification.</p>" .
+//                 "</td></tr>";
 
-            $bannerImagePath = $isLahipita
-                ? public_path('assets/img/illustrations/lahipita-mail.jpg.jpeg')
-                : public_path('assets/img/illustrations/hitad_logo.jpeg');
+//             $bannerImagePath = $isLahipita
+//                 ? public_path('assets/img/illustrations/lahipita-mail.jpg.jpeg')
+//                 : public_path('assets/img/illustrations/hitad_logo.jpeg');
 
-            $htmlBody = "
-<!DOCTYPE html>
-<html>
-<head><meta charset='UTF-8'></head>
-<body style='margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;'>
-  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f4f4; padding: 30px 0;'>
-    <tr>
-      <td align='center'>
-        <table width='100%' cellpadding='0' cellspacing='0' style='max-width:680px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+//             $htmlBody = "
+// <!DOCTYPE html>
+// <html>
+// <head><meta charset='UTF-8'></head>
+// <body style='margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;'>
+//   <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f4f4; padding: 30px 0;'>
+//     <tr>
+//       <td align='center'>
+//         <table width='100%' cellpadding='0' cellspacing='0' style='max-width:680px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
 
-          <!-- Banner -->
-          <tr>
-            <td style='padding:0;'>
-              <img src='__BANNER_SRC__' alt='{$publicationLabel} Print Advertisement' style='width:100%; display:block;'>
-            </td>
-          </tr>
+//           <!-- Banner -->
+//           <tr>
+//             <td style='padding:0;'>
+//               <img src='__BANNER_SRC__' alt='{$publicationLabel} Print Advertisement' style='width:100%; display:block;'>
+//             </td>
+//           </tr>
 
-          <!-- Body -->
-          <tr>
-            <td style='padding: 32px 36px;'>
+//           <!-- Body -->
+//           <tr>
+//             <td style='padding: 32px 36px;'>
 
-              <p style='margin:0 0 8px; font-size:16px; color:#222;'>Dear <strong>{$ad->customer_name}</strong>,</p>
-              <p style='margin:0 0 24px; font-size:15px; color:#1565C0; line-height:1.6;'>{$introText}</p>
+//               <p style='margin:0 0 8px; font-size:16px; color:#222;'>Dear <strong>{$ad->customer_name}</strong>,</p>
+//               <p style='margin:0 0 24px; font-size:15px; color:#1565C0; line-height:1.6;'>{$introText}</p>
 
-              <!-- Info Table -->
-              <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse; margin-bottom:24px;'>
-                <tr style='border-bottom:1px solid #e0e0e0;'>
-                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222; width:50%;'>Order ID</td>
-                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$orderId}</td>
-                </tr>
-                <tr style='border-bottom:1px solid #e0e0e0;'>
-                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Payment Status</td>
-                  <td style='padding:14px 0; font-size:14px; color:{$paymentStatusColor}; text-align:right; font-weight:bold;'>{$paymentStatusLabel}</td>
-                </tr>
-                <tr style='border-bottom:1px solid #e0e0e0;'>
-                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Total Amount</td>
-                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$formattedAmount}</td>
-                </tr>
-                {$extraInstructions}
-              </table>
+//               <!-- Info Table -->
+//               <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse; margin-bottom:24px;'>
+//                 <tr style='border-bottom:1px solid #e0e0e0;'>
+//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222; width:50%;'>Order ID</td>
+//                   <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$orderId}</td>
+//                 </tr>
+//                 <tr style='border-bottom:1px solid #e0e0e0;'>
+//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Payment Status</td>
+//                   <td style='padding:14px 0; font-size:14px; color:{$paymentStatusColor}; text-align:right; font-weight:bold;'>{$paymentStatusLabel}</td>
+//                 </tr>
+//                 <tr style='border-bottom:1px solid #e0e0e0;'>
+//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Total Amount</td>
+//                   <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$formattedAmount}</td>
+//                 </tr>
+//                 {$extraInstructions}
+//               </table>
 
-              <!-- Ad Description -->
-              <p style='margin:0 0 8px; font-size:15px; font-weight:bold; color:#222;'>Advertisement Description</p>
-              <p style='margin:0 0 24px; font-size:14px; color:#1565C0; line-height:1.6;'>{$adTitle}</p>
+//               <!-- Ad Description -->
+//               <p style='margin:0 0 8px; font-size:15px; font-weight:bold; color:#222;'>Advertisement Description</p>
+//               <p style='margin:0 0 24px; font-size:14px; color:#1565C0; line-height:1.6;'>{$adTitle}</p>
 
-              <!-- CTA Button -->
-              <p style='margin:0 0 24px;'>
-                <a href='{$adViewUrl}' style='display:inline-block; padding:13px 28px; background-color:#1565C0; color:#ffffff; text-decoration:none; border-radius:5px; font-size:15px; font-weight:bold;'>{$actionText}</a>
-              </p>
+//               <!-- CTA Button -->
+//               <p style='margin:0 0 24px;'>
+//                 <a href='{$adViewUrl}' style='display:inline-block; padding:13px 28px; background-color:#1565C0; color:#ffffff; text-decoration:none; border-radius:5px; font-size:15px; font-weight:bold;'>{$actionText}</a>
+//               </p>
 
-              <!-- Support -->
-              <p style='margin:0 0 4px; font-size:14px; color:#555;'>If you require further assistance, please contact our support team:</p>
-              <p style='margin:0 0 24px; font-size:14px; color:#555;'>
-                +94 74 364 3560 (Technical Support)<br>
-                +94 112 479 520 (Online Support)
-              </p>
+//               <!-- Support -->
+//               <p style='margin:0 0 4px; font-size:14px; color:#555;'>If you require further assistance, please contact our support team:</p>
+//               <p style='margin:0 0 24px; font-size:14px; color:#555;'>
+//                 +94 74 364 3560 (Technical Support)<br>
+//                 +94 112 479 520 (Online Support)
+//               </p>
 
-                            <p style='margin:0; font-size:14px; color:#333;'>Kind regards,<br><strong>{$publicationLabel} Team</strong></p>
-            </td>
-          </tr>
+//                             <p style='margin:0; font-size:14px; color:#333;'>Kind regards,<br><strong>{$publicationLabel} Team</strong></p>
+//             </td>
+//           </tr>
 
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>";
+//         </table>
+//       </td>
+//     </tr>
+//   </table>
+// </body>
+// </html>";
 
-            Mail::send([], [], function ($message) use ($ad, $htmlBody, $bannerImagePath, $isLahipita) {
-                $bannerSrc = file_exists($bannerImagePath)
-                    ? $message->embed($bannerImagePath)
-                    : rtrim(config('app.url'), '/') . ($isLahipita
-                        ? '/assets/img/illustrations/lahipita-mail.jpg.jpeg'
-                        : '/assets/img/illustrations/hitad_logo.jpeg');
-                $resolvedHtmlBody = str_replace('__BANNER_SRC__', $bannerSrc, $htmlBody);
+//             Mail::send([], [], function ($message) use ($ad, $htmlBody, $bannerImagePath, $isLahipita) {
+//                 $bannerSrc = file_exists($bannerImagePath)
+//                     ? $message->embed($bannerImagePath)
+//                     : rtrim(config('app.url'), '/') . ($isLahipita
+//                         ? '/assets/img/illustrations/lahipita-mail.jpg.jpeg'
+//                         : '/assets/img/illustrations/hitad_logo.jpeg');
+//                 $resolvedHtmlBody = str_replace('__BANNER_SRC__', $bannerSrc, $htmlBody);
 
-                $message->to($ad->email)
-                    ->from(config('mail.from.address'), config('mail.from.name'))
-                    ->subject('Your Advertisement Link - Print Hitad')
-                    ->html($resolvedHtmlBody);
-            });
+//                 $message->to($ad->email)
+//                     ->from(config('mail.from.address'), config('mail.from.name'))
+//                     ->subject('Your Advertisement Link - Print Hitad')
+//                     ->html($resolvedHtmlBody);
+//             });
 
-            // âœ… SAVE TO DATABASE
-            AdvertisementEmail::create([
-                'advertisement_id' => $ad->id,
-                'customer_email' => $ad->email,
-                'customer_name' => $ad->customer_name,
-                'amount' => $ad->amount,
-                'status' => 'sent',
-            ]);
+//             // âœ… SAVE TO DATABASE
+//             AdvertisementEmail::create([
+//                 'advertisement_id' => $ad->id,
+//                 'customer_email' => $ad->email,
+//                 'customer_name' => $ad->customer_name,
+//                 'amount' => $ad->amount,
+//                 'status' => 'sent',
+//             ]);
 
-            return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
-        } catch (\Exception $e) {
-            // âœ… SAVE FAILED EMAIL TO DATABASE
-            AdvertisementEmail::create([
-                'advertisement_id' => $ad->id,
-                'customer_email' => $ad->email,
-                'customer_name' => $ad->customer_name,
-                'amount' => $ad->amount,
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
-            ]);
+//             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
+//         } catch (\Exception $e) {
+//             // âœ… SAVE FAILED EMAIL TO DATABASE
+//             AdvertisementEmail::create([
+//                 'advertisement_id' => $ad->id,
+//                 'customer_email' => $ad->email,
+//                 'customer_name' => $ad->customer_name,
+//                 'amount' => $ad->amount,
+//                 'status' => 'failed',
+//                 'error_message' => $e->getMessage(),
+//             ]);
 
-            return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
-        }
-    }
+//             return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+//         }
+//     }
 
     /**
      * GET: Load advertisement for editing â€” join customer & payment info and prepare lookup lists (categories, districts, cities).
@@ -3133,11 +3262,11 @@ class GeneralController extends Controller
             }
 
             foreach ($districts as $d) {
-                $d->district_name_en = trim($d->district_name_si ?? '') !== '' ? $d->district_name_si : ($d->district_name_en ?? '');
+                $d->district_name = trim($d->district_name ?? '') !== '' ? $d->district_name : ($d->district_name ?? '');
             }
 
             foreach ($cities as $c) {
-                $c->city_name_en = trim($c->city_name_si ?? '') !== '' ? $c->city_name_si : ($c->city_name_en ?? '');
+                $c->city_name = trim($c->city_name ?? '') !== '' ? $c->city_name : ($c->city_name ?? '');
             }
         }
 
@@ -3147,8 +3276,16 @@ class GeneralController extends Controller
             ->where('is_active', 1)
             ->get();
 
+        $criteriaIdsFromCategory = $criterias->pluck('id')->filter()->values();
+        $criteriaIdsFromValues = DB::table('advertisement_criteria_values')
+            ->where('advertisement_id', $id)
+            ->pluck('advertisement_criteria_id')
+            ->filter()
+            ->values();
+        $criteriaIds = $criteriaIdsFromCategory->merge($criteriaIdsFromValues)->unique()->values();
+
         $criteriaOptions = DB::table('advertisement_criteria_options')
-            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+            ->whereIn('advertisement_criteria_id', $criteriaIds)
             ->where('is_active', 1)
             ->get()
             ->groupBy('advertisement_criteria_id');
@@ -3163,12 +3300,45 @@ class GeneralController extends Controller
             $criteriaValues[$cv->advertisement_criteria_id] = $cv->advertisement_criteria_option_value;
         }
 
+        $currentOptionLabelsByCriteriaId = [];
+        $currentOptions = DB::table('advertisement_criteria_options')
+            ->whereIn('advertisement_criteria_id', $criterias->pluck('id'))
+            ->where('is_active', 1)
+            ->get();
+
+        foreach ($currentOptions as $option) {
+            $label = trim((string) ($option->advertisement_criteria_option_name_en ?? $option->advertisement_criteria_option_name_si ?? ''));
+            if ($label === '') {
+                continue;
+            }
+
+            $currentOptionLabelsByCriteriaId[(int) $option->advertisement_criteria_id][strtolower($label)] = $label;
+        }
+
+        foreach ($criteriaValues as $criteriaId => $value) {
+            $trimmedValue = trim((string) $value);
+            if ($trimmedValue === '') {
+                continue;
+            }
+
+            foreach ($criterias as $criteria) {
+                if (isset($criteriaValues[$criteria->id]) && $criteriaValues[$criteria->id] !== null) {
+                    continue;
+                }
+
+                $normalized = strtolower($trimmedValue);
+                if (isset($currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized])) {
+                    $criteriaValues[$criteria->id] = $currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized];
+                }
+            }
+        }
+
         if (!$ad) {
             abort(404);
         }
         $generalSettings = $this->fetchGeneralSettings();
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
-         return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
+        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
     }
 
     /**
@@ -3220,7 +3390,7 @@ class GeneralController extends Controller
             'publish_date' => [
                 'required',
                 'date',
-                                function ($attribute, $value, $fail) use ($id) {
+                function ($attribute, $value, $fail) use ($id) {
                     $ad = DB::table('advertisements')->where('id', $id)->first();
 
                     if (!$ad) {
@@ -3237,7 +3407,6 @@ class GeneralController extends Controller
                     }
 
                     $this->validatePublicationPublishDate((string) ($ad->publication ?? ''), (string) $value, $fail);
-                
                 },
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
@@ -3249,7 +3418,7 @@ class GeneralController extends Controller
             'payment_date' => $canEditPaymentFields
                 ? ['nullable', 'date_format:Y-m-d\TH:i']
                 : ['prohibited'],
-                'receipt_number' => $canEditPaymentFields
+            'receipt_number' => $canEditPaymentFields
                 ? ['nullable', 'string', 'max:255']
                 : ['prohibited'],
             'payment_slip' => $canEditPaymentFields
@@ -3272,7 +3441,7 @@ class GeneralController extends Controller
             }
         }
 
-       DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
+        DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
             $payment = DB::table('payments')->where('advertisement_id', $id)->first();
 
@@ -3296,8 +3465,8 @@ class GeneralController extends Controller
             DB::table('customers')
                 ->where('id', $ad->customer_id)
                 ->update([
-                    'customer_name' => $request->customer_name,
-                    'address' => $request->address,
+                    'customer_name' => mb_strtoupper(trim($request->customer_name), 'UTF-8'),
+'address' => mb_strtoupper(trim($request->address), 'UTF-8'),
                     'telephone' => $request->telephone,
                     'nic_passport' => $request->nic_passport,
                     'email' => $request->email,
@@ -3314,14 +3483,13 @@ class GeneralController extends Controller
                     ? $ad->retyped_advertisement_description
                     : $request->retyped_advertisement_description,
                 'retyped_advertisement_description_done' => $isRetypedDone,
-                'category_id' => $request->category_id,
                 'advertisement_tint_id' => $request->advertisement_tint_id,
                 'district_id' => $request->district_id,
                 'city_id' => $request->filled('city_id') ? $request->city_id : null,
                 'publish_date' => $request->publish_date,
                 'web_combined_ad' => $request->web_combined_ad,
                 'updated_at' => now(),
-           ];
+            ];
 
             if (Schema::hasColumn('advertisements', 'reference_number')) {
                 $advertisementData['reference_number'] = $request->reference_number;
@@ -3355,18 +3523,18 @@ class GeneralController extends Controller
                     $file = $request->file('payment_slip');
                     // Store the file in OCI bucket
                     if ($request->hasFile('payment_slip')) {
-    $file = $request->file('payment_slip');
-    try {
-        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
-        if (!$paymentSlipPath) {
-            throw new \Exception('Storage returned empty path');
-        }
-        $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
-    } catch (\Throwable $e) {
-        $paymentSlipPath = $file->store('payment_slips', 'public');
-        \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
-    }
-}
+                        $file = $request->file('payment_slip');
+                        try {
+                            $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+                            if (!$paymentSlipPath) {
+                                throw new \Exception('Storage returned empty path');
+                            }
+                            $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
+                        } catch (\Throwable $e) {
+                            $paymentSlipPath = $file->store('payment_slips', 'public');
+                            \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
+                        }
+                    }
                 }
 
                 $data = array_filter([
@@ -3376,7 +3544,7 @@ class GeneralController extends Controller
                     'receipt_number' => $request->receipt_number,
                     'payment_slip_file_path' => $paymentSlipPath,
                     'updated_at' => now(),
-                ], static fn ($value) => $value !== null);
+                ], static fn($value) => $value !== null);
 
                 if ($payment) {
                     DB::table('payments')->where('id', $payment->id)->update($data);
@@ -3395,26 +3563,25 @@ class GeneralController extends Controller
 
                     DB::table('payments')->insert($insert);
                 }
-
-                 } elseif ($canEditPaymentFields && ($request->filled('receipt_number') || $request->hasFile('payment_slip'))) {
+            } elseif ($canEditPaymentFields && ($request->filled('receipt_number') || $request->hasFile('payment_slip'))) {
                 // Handle receipt_number and payment_slip updates even if payment_status is not being changed
                 if ($payment) {
                     $paymentSlipPath = null;
                     if ($request->hasFile('payment_slip')) {
                         $file = $request->file('payment_slip');
                         if ($request->hasFile('payment_slip')) {
-    $file = $request->file('payment_slip');
-    try {
-        $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
-        if (!$paymentSlipPath) {
-            throw new \Exception('Storage returned empty path');
-        }
-        $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
-    } catch (\Throwable $e) {
-        $paymentSlipPath = $file->store('payment_slips', 'public');
-        \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
-    }
-}
+                            $file = $request->file('payment_slip');
+                            try {
+                                $paymentSlipPath = $file->storePublicly('payment_slips', 'oracle');
+                                if (!$paymentSlipPath) {
+                                    throw new \Exception('Storage returned empty path');
+                                }
+                                $paymentSlipPath = Storage::disk('oracle')->url($paymentSlipPath);
+                            } catch (\Throwable $e) {
+                                $paymentSlipPath = $file->store('payment_slips', 'public');
+                                \Log::error('Oracle storage failed for payment slip: ' . $e->getMessage());
+                            }
+                        }
                     }
 
                     $updateData = [];
@@ -3438,7 +3605,7 @@ class GeneralController extends Controller
                 foreach ($criteriaInput as $criteriaId => $criteriaValue) {
                     // normalize scalar values
                     if (is_array($criteriaValue)) {
-                        $value = implode(', ', array_filter($criteriaValue, static fn ($item) => filled($item)));
+                        $value = implode(', ', array_filter($criteriaValue, static fn($item) => filled($item)));
                     } else {
                         $value = $criteriaValue;
                     }
@@ -3515,12 +3682,33 @@ class GeneralController extends Controller
                     }
                 }
             }
-            
         });
 
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
     }
 
+    public function getHitadPrintUnpaidAdvertisements(Request $request)
+    {
+        $ads = Advertisement::with(['customer', 'category', 'district', 'city', 'latestPayment.paymentMethod'])
+            ->where('publication', 'hitad_print')
+            ->whereHas('payments', fn($q) => $q->where('is_success', 'false'))
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        return view('advertisements.hitadprint-unpaid', compact('ads'));
+    }
+
+    public function getLahipitaUnpaidAdvertisements(Request $request)
+    {
+        $ads = Advertisement::with(['customer', 'category', 'district', 'city', 'latestPayment.paymentMethod'])
+            ->where('publication', 'lahipita')
+            ->whereHas('payments', fn($q) => $q->where('is_success', 'false'))
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        return view('advertisements.lahipita-unpaid', compact('ads'));
+    }
+    
     private function ensureRetypedAdvertisementDescriptionColumnExists(): void
     {
         if (Schema::hasColumn('advertisements', 'retyped_advertisement_description')) {
@@ -3542,7 +3730,7 @@ class GeneralController extends Controller
             $table->boolean('retyped_advertisement_description_done')->default(false)->after('retyped_advertisement_description');
         });
     }
-
+    
     private function ensureReferenceNumberColumnExists(): void
     {
         if (Schema::hasColumn('advertisements', 'reference_number') || Schema::hasColumn('advertisements', 'order_ref')) {

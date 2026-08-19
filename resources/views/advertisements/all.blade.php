@@ -85,10 +85,7 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
                     <th>Publication</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Publish Date</th>
                     <th>Payment</th>
                     <th>Action</th>
@@ -102,13 +99,7 @@
                         <td>{{ $ad->customer_name }}</td>
                         <td>{{ $ad->category_name }}</td>
 
-                        <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
                         <td>{{ $ad->publication_label ?? $ad->publication }}</td>
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
 
                         <td>{{ $ad->publish_date }}</td>
 
@@ -133,7 +124,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="11" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No advertisements found.
                         </td>
                     </tr>
