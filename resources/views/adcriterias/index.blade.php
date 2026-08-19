@@ -49,11 +49,11 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Field Type</label>
                             <select name="field_type" class="form-control" required>
-                                <option value="text">Text</option>
-                                <option value="number">Number</option>
-                                <option value="dropdown">Dropdown</option>
-                                <option value="image">Image</option>
-                            </select>
+    <option value="">Select Field Type</option>
+    <option value="dropdown">Dropdown</option>
+    <option value="textarea">Textarea</option>
+    <option value="radio">Radio</option>
+</select>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -100,11 +100,11 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Field Type</label>
                             <select name="field_type" class="form-control" required>
-                                <option value="text">Text</option>
-                                <option value="number">Number</option>
-                                <option value="dropdown">Dropdown</option>
-                                <option value="image">Image</option>
-                            </select>
+    <option value="">Select Field Type</option>
+    <option value="dropdown">Dropdown</option>
+    <option value="textarea">Textarea</option>
+    <option value="radio">Radio</option>
+</select>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -228,12 +228,19 @@
 
                                         <div class="mb-3">
                                             <label>Field Type</label>
-                                            <select name="field_type" class="form-control">
-                                                <option value="text" {{ $crit->field_type == 'text' ? 'selected' : '' }}>Text</option>
-                                                <option value="number" {{ $crit->field_type == 'number' ? 'selected' : '' }}>Number</option>
-                                                <option value="dropdown" {{ $crit->field_type == 'dropdown' ? 'selected' : '' }}>Dropdown</option>
-                                                <option value="image" {{ $crit->field_type == 'image' ? 'selected' : '' }}>Image</option>
-                                            </select>
+                                            <select name="field_type" class="form-control" required>
+    <option value="dropdown" {{ $crit->field_type == 'dropdown' ? 'selected' : '' }}>
+        Dropdown
+    </option>
+
+    <option value="textarea" {{ $crit->field_type == 'textarea' ? 'selected' : '' }}>
+        Textarea
+    </option>
+
+    <option value="radio" {{ $crit->field_type == 'radio' ? 'selected' : '' }}>
+        Radio
+    </option>
+</select>
                                         </div>
 
                                         <div class="mb-3">

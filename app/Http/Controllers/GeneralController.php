@@ -706,7 +706,7 @@ class GeneralController extends Controller
         $request->validate([
             'advertisement_criteria_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_name_si',
             'advertisement_criteria_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_name_en',
-            'field_type' => 'required|string|max:50',
+            'field_type' => 'required|in:dropdown,textarea,radio',
             'category_id' => 'required|integer|exists:categories,id',
         ]);
 
@@ -736,7 +736,7 @@ class GeneralController extends Controller
         $request->validate([
             'advertisement_criteria_name_en' => 'nullable|string|max:255|required_without:advertisement_criteria_name_si',
             'advertisement_criteria_name_si' => 'nullable|string|max:255|required_without:advertisement_criteria_name_en',
-            'field_type' => 'required|string|max:50',
+            'field_type' => 'required|in:dropdown,textarea,radio',
             'category_id' => 'required|integer|exists:categories,id',
             'is_active' => 'required|boolean',
         ]);
@@ -3038,169 +3038,176 @@ class GeneralController extends Controller
      * @param int $id Advertisement ID
      * @return \Illuminate\Http\RedirectResponse
      */
-//     public function sendLinkEmail($id)
-//     {
-//         $ad = DB::table('advertisements')
-//             ->where('advertisements.id', $id)
-//             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-//             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
-//             ->select(
-//                 'advertisements.id',
-//                 'advertisements.publication',
-//                 'advertisements.advertisement_description',
-//                 'customers.customer_name',
-//                 'customers.email',
-//                 'payments.amount',
-//                 'payments.payment_status'
-//             )
-//             ->first();
+    public function sendLinkEmail($id)
+    {
+        $ad = DB::table('advertisements')
+            ->where('advertisements.id', $id)
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->select(
+                'advertisements.id',
+                'advertisements.publication',
+                'advertisements.advertisement_description',
+                'customers.customer_name',
+                'customers.email',
+                'payments.amount',
+                'payments.payment_status'
+            )
+            ->first();
 
-//         if (!$ad) {
-//             return redirect()->back()->with('error', 'Advertisement not found.');
-//         }
+        if (!$ad) {
+            return redirect()->back()->with('error', 'Advertisement not found.');
+        }
 
-//         if (!$ad->email) {
-//             return redirect()->back()->with('error', 'Customer email not found.');
-//         }
+        if (!$ad->email) {
+            return redirect()->back()->with('error', 'Customer email not found.');
+        }
 
-//         try {
-//             $adViewUrl = url('/advertisements/' . $ad->id . '/view');
-//             $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
+        try {
+            $adViewUrl = url('/advertisements/' . $ad->id . '/view');
+            $amount = $ad->amount ? 'Rs. ' . number_format($ad->amount, 2) : 'Not set';
 
-//             $adTitle = trim((string) ($ad->advertisement_description ?? ''));
-//             $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
-//             $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
-//             $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
-//             $paymentStatusLabel = $isPaid ? 'Completed' : 'Pending';
-//             $paymentStatusColor = $isPaid ? '#2e7d32' : '#d32f2f';
-//             $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
-//             $orderId = 'ORD' . $ad->id;
-//             $formattedAmount = $ad->amount ? 'LKR ' . number_format($ad->amount, 2) : 'Not set';
-//             $isLahipita = strtolower((string) ($ad->publication ?? '')) === 'lahipita';
-//             $publicationLabel = $isLahipita ? 'Lahipita' : 'HitAd';
+            $adTitle = trim((string) ($ad->advertisement_description ?? ''));
+            $adTitle = $adTitle !== '' ? e($adTitle) : 'N/A';
+            $normalizedPaymentStatus = strtolower(trim((string) ($ad->payment_status ?? '')));
+            $isPaid = in_array($normalizedPaymentStatus, ['completed', 'paid', 'success'], true);
+            $paymentStatusLabel = $isPaid ? 'Completed' : 'Pending';
+            $paymentStatusColor = $isPaid ? '#2e7d32' : '#d32f2f';
+            $actionText = $isPaid ? 'View Advertisement' : 'View Advertisement & Pay Now';
+            $orderId = 'ORD' . $ad->id;
+            $formattedAmount = $ad->amount ? 'LKR ' . number_format($ad->amount, 2) : 'Not set';
+            $isLahipita = strtolower((string) ($ad->publication ?? '')) === 'lahipita';
+            $publicationLabel = $isLahipita ? 'Lahipita' : 'HitAd';
 
-//             $introText = $isPaid
-//                 ? "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. We confirm that your payment has been successfully received."
-//                 : "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. Please complete your payment to activate your advertisement.";
+            $introText = $isPaid
+                ? "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. We confirm that your payment has been successfully received."
+                : "Thank you for placing your print advertisement with <strong>{$publicationLabel}</strong>. Please complete your payment to activate your advertisement.";
 
-//             $extraInstructions = $isPaid
-//                 ? ""
-//                 : "<tr><td colspan='2' style='padding: 16px 0 0;'>" .
-//                 "<p style='margin:0 0 8px; color:#333; font-size:14px;'>Please complete the payment via bank deposit using the details below:</p>" .
-//                 "<p style='margin:0; color:#333; font-size:14px;'><strong>Bank Name:</strong> Commercial Bank of Ceylon<br><strong>Account Number:</strong> 0123456789</p>" .
-//                 "<p style='margin:8px 0 0; color:#333; font-size:14px;'>Once the payment is completed, please forward the payment slip for verification.</p>" .
-//                 "</td></tr>";
+            $extraInstructions = $isPaid
+                ? ""
+                : "<tr><td colspan='2' style='padding: 16px 0 0;'>" .
+                "<p style='margin:0 0 8px; color:#333; font-size:14px;'>Please complete the payment via bank deposit using the details below:</p>" .
+                "<p style='margin:0; color:#333; font-size:14px;'><strong>Bank Name:</strong> Commercial Bank of Ceylon<br><strong>Account Number:</strong> 0123456789</p>" .
+                "<p style='margin:8px 0 0; color:#333; font-size:14px;'>Once the payment is completed, please forward the payment slip for verification.</p>" .
+                "</td></tr>";
 
-//             $bannerImagePath = $isLahipita
-//                 ? public_path('assets/img/illustrations/lahipita-mail.jpg.jpeg')
-//                 : public_path('assets/img/illustrations/hitad_logo.jpeg');
+            $bannerImagePath = $isLahipita
+                ? public_path('assets/img/illustrations/lahipita-mail.jpg.jpeg')
+                : public_path('assets/img/illustrations/hitad_logo.jpeg');
 
-//             $htmlBody = "
-// <!DOCTYPE html>
-// <html>
-// <head><meta charset='UTF-8'></head>
-// <body style='margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;'>
-//   <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f4f4; padding: 30px 0;'>
-//     <tr>
-//       <td align='center'>
-//         <table width='100%' cellpadding='0' cellspacing='0' style='max-width:680px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
+            $htmlBody = "
+<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'></head>
+<body style='margin:0; padding:0; background-color:#f4f4f4; font-family: Arial, sans-serif;'>
+  <table width='100%' cellpadding='0' cellspacing='0' style='background-color:#f4f4f4; padding: 30px 0;'>
+    <tr>
+      <td align='center'>
+        <table width='100%' cellpadding='0' cellspacing='0' style='max-width:680px; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);'>
 
-//           <!-- Banner -->
-//           <tr>
-//             <td style='padding:0;'>
-//               <img src='__BANNER_SRC__' alt='{$publicationLabel} Print Advertisement' style='width:100%; display:block;'>
-//             </td>
-//           </tr>
+          <!-- Banner -->
+          <tr>
+            <td style='padding:0;'>
+              <img src='__BANNER_SRC__' alt='{$publicationLabel} Print Advertisement' style='width:100%; display:block;'>
+            </td>
+          </tr>
 
-//           <!-- Body -->
-//           <tr>
-//             <td style='padding: 32px 36px;'>
+          <!-- Body -->
+          <tr>
+            <td style='padding: 32px 36px;'>
 
-//               <p style='margin:0 0 8px; font-size:16px; color:#222;'>Dear <strong>{$ad->customer_name}</strong>,</p>
-//               <p style='margin:0 0 24px; font-size:15px; color:#1565C0; line-height:1.6;'>{$introText}</p>
+              <p style='margin:0 0 8px; font-size:16px; color:#222;'>Dear <strong>{$ad->customer_name}</strong>,</p>
+              <p style='margin:0 0 24px; font-size:15px; color:#1565C0; line-height:1.6;'>{$introText}</p>
 
-//               <!-- Info Table -->
-//               <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse; margin-bottom:24px;'>
-//                 <tr style='border-bottom:1px solid #e0e0e0;'>
-//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222; width:50%;'>Order ID</td>
-//                   <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$orderId}</td>
-//                 </tr>
-//                 <tr style='border-bottom:1px solid #e0e0e0;'>
-//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Payment Status</td>
-//                   <td style='padding:14px 0; font-size:14px; color:{$paymentStatusColor}; text-align:right; font-weight:bold;'>{$paymentStatusLabel}</td>
-//                 </tr>
-//                 <tr style='border-bottom:1px solid #e0e0e0;'>
-//                   <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Total Amount</td>
-//                   <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$formattedAmount}</td>
-//                 </tr>
-//                 {$extraInstructions}
-//               </table>
+              <!-- Info Table -->
+              <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse; margin-bottom:24px;'>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222; width:50%;'>Order ID</td>
+                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$orderId}</td>
+                </tr>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Payment Status</td>
+                  <td style='padding:14px 0; font-size:14px; color:{$paymentStatusColor}; text-align:right; font-weight:bold;'>{$paymentStatusLabel}</td>
+                </tr>
+                <tr style='border-bottom:1px solid #e0e0e0;'>
+                  <td style='padding:14px 0; font-size:14px; font-weight:bold; color:#222;'>Total Amount</td>
+                  <td style='padding:14px 0; font-size:14px; color:#444; text-align:right;'>{$formattedAmount}</td>
+                </tr>
+                {$extraInstructions}
+              </table>
 
-//               <!-- Ad Description -->
-//               <p style='margin:0 0 8px; font-size:15px; font-weight:bold; color:#222;'>Advertisement Description</p>
-//               <p style='margin:0 0 24px; font-size:14px; color:#1565C0; line-height:1.6;'>{$adTitle}</p>
+              <!-- Ad Description -->
+              <p style='margin:0 0 8px; font-size:15px; font-weight:bold; color:#222;'>Advertisement Description</p>
+              <p style='margin:0 0 24px; font-size:14px; color:#1565C0; line-height:1.6;'>{$adTitle}</p>
 
-//               <!-- CTA Button -->
-//               <p style='margin:0 0 24px;'>
-//                 <a href='{$adViewUrl}' style='display:inline-block; padding:13px 28px; background-color:#1565C0; color:#ffffff; text-decoration:none; border-radius:5px; font-size:15px; font-weight:bold;'>{$actionText}</a>
-//               </p>
+              <!-- CTA Button -->
+              <p style='margin:0 0 24px;'>
+                <a href='{$adViewUrl}' style='display:inline-block; padding:13px 28px; background-color:#1565C0; color:#ffffff; text-decoration:none; border-radius:5px; font-size:15px; font-weight:bold;'>{$actionText}</a>
+              </p>
 
-//               <!-- Support -->
-//               <p style='margin:0 0 4px; font-size:14px; color:#555;'>If you require further assistance, please contact our support team:</p>
-//               <p style='margin:0 0 24px; font-size:14px; color:#555;'>
-//                 +94 74 364 3560 (Technical Support)<br>
-//                 +94 112 479 520 (Online Support)
-//               </p>
+              <!-- Support -->
+              <p style='margin:0 0 4px; font-size:14px; color:#555;'>If you require further assistance, please contact our support team:</p>
+              <p style='margin:0 0 24px; font-size:14px; color:#555;'>
+                +94 74 364 3560 (Technical Support)<br>
+                +94 112 479 520 (Online Support)
+              </p>
 
-//                             <p style='margin:0; font-size:14px; color:#333;'>Kind regards,<br><strong>{$publicationLabel} Team</strong></p>
-//             </td>
-//           </tr>
+                            <p style='margin:0; font-size:14px; color:#333;'>Kind regards,<br><strong>{$publicationLabel} Team</strong></p>
+            </td>
+          </tr>
 
-//         </table>
-//       </td>
-//     </tr>
-//   </table>
-// </body>
-// </html>";
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
 
-//             Mail::send([], [], function ($message) use ($ad, $htmlBody, $bannerImagePath, $isLahipita) {
-//                 $bannerSrc = file_exists($bannerImagePath)
-//                     ? $message->embed($bannerImagePath)
-//                     : rtrim(config('app.url'), '/') . ($isLahipita
-//                         ? '/assets/img/illustrations/lahipita-mail.jpg.jpeg'
-//                         : '/assets/img/illustrations/hitad_logo.jpeg');
-//                 $resolvedHtmlBody = str_replace('__BANNER_SRC__', $bannerSrc, $htmlBody);
+            Mail::send([], [], function ($message) use ($ad, $htmlBody, $bannerImagePath, $isLahipita) {
+                $bannerSrc = file_exists($bannerImagePath)
+                    ? $message->embed($bannerImagePath)
+                    : rtrim(config('app.url'), '/') . ($isLahipita
+                        ? '/assets/img/illustrations/lahipita-mail.jpg.jpeg'
+                        : '/assets/img/illustrations/hitad_logo.jpeg');
+                $resolvedHtmlBody = str_replace('__BANNER_SRC__', $bannerSrc, $htmlBody);
 
-//                 $message->to($ad->email)
-//                     ->from(config('mail.from.address'), config('mail.from.name'))
-//                     ->subject('Your Advertisement Link - Print Hitad')
-//                     ->html($resolvedHtmlBody);
-//             });
+                $message->to($ad->email)
+                    ->from(config('mail.from.address'), config('mail.from.name'))
+                    ->subject('Your Advertisement Link - Print Hitad')
+                    ->html($resolvedHtmlBody);
+            });
 
-//             // Ã¢Å“â€¦ SAVE TO DATABASE
-//             AdvertisementEmail::create([
-//                 'advertisement_id' => $ad->id,
-//                 'customer_email' => $ad->email,
-//                 'customer_name' => $ad->customer_name,
-//                 'amount' => $ad->amount,
-//                 'status' => 'sent',
-//             ]);
+            // Ã¢Å“â€¦ SAVE TO DATABASE
+            // AdvertisementEmail::create([
+            //     'advertisement_id' => $ad->id,
+            //     'customer_email' => $ad->email,
+            //     'customer_name' => $ad->customer_name,
+            //     'amount' => $ad->amount,
+            //     'status' => 'sent',
+            // ]);
 
-//             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
-//         } catch (\Exception $e) {
-//             // Ã¢Å“â€¦ SAVE FAILED EMAIL TO DATABASE
-//             AdvertisementEmail::create([
-//                 'advertisement_id' => $ad->id,
-//                 'customer_email' => $ad->email,
-//                 'customer_name' => $ad->customer_name,
-//                 'amount' => $ad->amount,
-//                 'status' => 'failed',
-//                 'error_message' => $e->getMessage(),
-//             ]);
+            return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
+        } 
+        // catch (\Exception $e) {
+        //     // Ã¢Å“â€¦ SAVE FAILED EMAIL TO DATABASE
+        //     AdvertisementEmail::create([
+        //         'advertisement_id' => $ad->id,
+        //         'customer_email' => $ad->email,
+        //         'customer_name' => $ad->customer_name,
+        //         'amount' => $ad->amount,
+        //         'status' => 'failed',
+        //         'error_message' => $e->getMessage(),
+        //     ]);
 
-//             return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
-//         }
-//     }
+        //     return redirect()->back()->with('error', 'Failed to send email: ' . $e->getMessage());
+        // }
+
+        catch (\Exception $e) {
+
+    return redirect()->back()
+        ->with('error', 'Failed to send email: ' . $e->getMessage());
+}
+    }
 
     /**
      * GET: Load advertisement for editing Ã¢â‚¬â€ join customer & payment info and prepare lookup lists (categories, districts, cities).
