@@ -3749,220 +3749,35 @@ class GeneralController extends Controller
         return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
     }
 
-public function getHitadprintUnpaidAdvertisements(Request $request)
+public function getHitadPrintUnpaidAdvertisements(Request $request)
 {
-    $query = DB::table('advertisements')
-        ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-        ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-        ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-        ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
-
-        ->leftJoin('payments', function ($join) {
-            $join->on('advertisements.id', '=', 'payments.advertisement_id');
+    $ads = Advertisement::with([
+            'customer',
+            'category',
+            'latestPayment'
+        ])
+        ->where('publication', 'hitad_print')
+        ->whereHas('payments', function ($q) {
+            $q->where('is_success', 'false');
         })
+        ->orderByDesc('id')
+        ->paginate(30);
 
-        // ->leftJoin(
-        //     'payment_methods',
-        //     'payments.payment_method_id',
-        //     '=',
-        //     'payment_methods.id'
-        // )
-
-        // HITAD ONLY
-        ->where('advertisements.publication', 'hitad_print')
-
-        // UNPAID = pending / failed / no payment
-        ->where(function ($q) {
-            $q->where('payments.payment_status', '!=', 'completed')
-              ->orWhereNull('payments.payment_status');
-        })
-
-        ->where('categories.is_active', 1)
-        ->where('districts.is_active', 1)
-
-        ->select(
-    'advertisements.*',
-    'customers.customer_name',
-
-    DB::raw(
-        'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
-    ),
-
-    'payments.amount',
-    'payments.payment_status'
-);
-
-    // SEARCH - CUSTOMER
-    if ($request->filled('customer_name')) {
-        $query->where(
-            'customers.customer_name',
-            'like',
-            '%' . $request->customer_name . '%'
-        );
-    }
-
-    // SEARCH - DATE
-    if ($request->filled('publish_date')) {
-        $query->whereDate(
-            'advertisements.publish_date',
-            $request->publish_date
-        );
-    }
-
-    // SEARCH - AD TITLE / DESCRIPTION
-    if ($request->filled('ad_title')) {
-        $query->where(
-            'advertisements.advertisement_description',
-            'like',
-            '%' . $request->ad_title . '%'
-        );
-    }
-
-    // SEARCH - PHONE
-    if ($request->filled('phone')) {
-        $query->where(
-            'customers.telephone',
-            'like',
-            '%' . $request->phone . '%'
-        );
-    }
-
-    // SEARCH - EMAIL
-    if ($request->filled('email')) {
-        $query->where(
-            'customers.email',
-            'like',
-            '%' . $request->email . '%'
-        );
-    }
-
-    // SEARCH - CATEGORY
-    if ($request->filled('category_name')) {
-        $query->where(function ($q) use ($request) {
-            $q->where(
-                'categories.category_name_en',
-                'like',
-                '%' . $request->category_name . '%'
-            )
-            ->orWhere(
-                'categories.category_name_si',
-                'like',
-                '%' . $request->category_name . '%'
-            );
-        });
-    }
-
-    $ads = $query
-        ->orderByDesc('advertisements.id')
-        ->paginate(30)
-        ->withQueryString();
-
-    return view('advertisements.unpaid', compact('ads'));
+    return view('advertisements.hitadprint-unpaid', compact('ads'));
 }
 
-public function getLahipitaUnpaidAdvertisements(Request $request)
-{
-    $query = DB::table('advertisements')
-        ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
-        ->join('categories', 'advertisements.category_id', '=', 'categories.id')
-        ->join('districts', 'advertisements.district_id', '=', 'districts.id')
-        ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
+    public function getLahipitaUnpaidAdvertisements(Request $request)
+    {
+        $ads = Advertisement::with(['customer', 'category', 'latestPayment'])
+            ->where('publication', 'lahipita')
+            ->whereHas('payments', function ($q) {
+            $q->where('is_success', 'false');
+            })
+            ->orderByDesc('id')
+            ->paginate(30);
 
-        ->leftJoin('payments', function ($join) {
-            $join->on('advertisements.id', '=', 'payments.advertisement_id');
-        })
-
-        // LAHIPITA ONLY
-        ->where('advertisements.publication', 'lahipita')
-
-        // UNPAID = pending / failed / no payment
-        ->where(function ($q) {
-            $q->where('payments.payment_status', '!=', 'completed')
-              ->orWhereNull('payments.payment_status');
-        })
-
-        ->where('categories.is_active', 1)
-        ->where('districts.is_active', 1)
-
-        ->select(
-            'advertisements.*',
-            'customers.customer_name',
-
-            DB::raw(
-                'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
-            ),
-
-            'payments.amount',
-            'payments.payment_status'
-        );
-
-    // SEARCH - CUSTOMER
-    if ($request->filled('customer_name')) {
-        $query->where(
-            'customers.customer_name',
-            'like',
-            '%' . $request->customer_name . '%'
-        );
+        return view('advertisements.lahipita-unpaid', compact('ads'));
     }
-
-    // SEARCH - DATE
-    if ($request->filled('publish_date')) {
-        $query->whereDate(
-            'advertisements.publish_date',
-            $request->publish_date
-        );
-    }
-
-    // SEARCH - AD TITLE / DESCRIPTION
-    if ($request->filled('ad_title')) {
-        $query->where(
-            'advertisements.advertisement_description',
-            'like',
-            '%' . $request->ad_title . '%'
-        );
-    }
-
-    // SEARCH - PHONE
-    if ($request->filled('phone')) {
-        $query->where(
-            'customers.telephone',
-            'like',
-            '%' . $request->phone . '%'
-        );
-    }
-
-    // SEARCH - EMAIL
-    if ($request->filled('email')) {
-        $query->where(
-            'customers.email',
-            'like',
-            '%' . $request->email . '%'
-        );
-    }
-
-    // SEARCH - CATEGORY
-    if ($request->filled('category_name')) {
-        $query->where(function ($q) use ($request) {
-            $q->where(
-                'categories.category_name_en',
-                'like',
-                '%' . $request->category_name . '%'
-            )
-            ->orWhere(
-                'categories.category_name_si',
-                'like',
-                '%' . $request->category_name . '%'
-            );
-        });
-    }
-
-    $ads = $query
-        ->orderByDesc('advertisements.id')
-        ->paginate(30)
-        ->withQueryString();
-
-    return view('advertisements.lahipita_unpaid', compact('ads'));
-}
     
     private function ensureRetypedAdvertisementDescriptionColumnExists(): void
     {

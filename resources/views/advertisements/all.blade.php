@@ -59,14 +59,14 @@
                         <input type="text" name="category" class="form-control" placeholder="Category name"
                                value="{{ request('category') }}">
                     </div>
-                    <div class="col-md-8 text-end">
+                    <!-- <div class="col-md-8 text-end">
                         <a href="{{ url('/advertisements/create') }}" class="btn btn-success me-2">
                             <i class="bx bx-plus"></i> New Ad
                         </a>
                         <a href="#" class="btn btn-outline-secondary">
                             <i class="bx bx-cloud-download"></i> Export
                         </a>
-                    </div>
+                    </div> -->
                 </div>
             </form>
         </div>

@@ -6,6 +6,26 @@
 <div class="container mt-4">
     <h2 class="mb-3">Lahipita - Unpaid Advertisements</h2>
 
+        {{-- ✅ EMAIL SUCCESS NOTIFICATION --}}
+    @if(session('success'))
+        <div id="emailSuccessNotification" class="email-success-notification">
+            <div class="email-success-content">
+                <i class="bx bx-check-circle email-success-icon"></i>
+
+                <span class="email-success-message">
+                    {{ session('success') }}
+                </span>
+
+                <button type="button"
+                        class="email-success-close"
+                        onclick="closeEmailSuccessNotification()"
+                        aria-label="Close">
+                    &times;
+                </button>
+            </div>
+        </div>
+    @endif
+
     <style>
         /* Unified page tweaks for all advertisement tables */
         .ads-card { border-radius: 12px; box-shadow: 0 6px 18px rgba(18,38,63,0.06); overflow: hidden; }
@@ -20,6 +40,94 @@
         .table-responsive { padding: 0.75rem 1rem; }
         @media (max-width: 767px) {
             .action-btns .btn { margin-bottom: .35rem; }
+        }
+
+        /* ✅ EMAIL SUCCESS NOTIFICATION */
+        .email-success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            min-width: 320px;
+            max-width: 450px;
+            background-color: #198754;
+            color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.20);
+            animation: emailNotificationSlideIn 0.4s ease;
+        }
+
+        .email-success-content {
+            display: flex;
+            align-items: center;
+            padding: 15px 18px;
+        }
+
+        .email-success-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .email-success-message {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .email-success-close {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 400;
+            line-height: 1;
+            margin-left: 15px;
+            padding: 0;
+            cursor: pointer;
+            opacity: 0.85;
+        }
+
+        .email-success-close:hover {
+            opacity: 1;
+        }
+
+        .email-notification-hide {
+            animation: emailNotificationSlideOut 0.4s ease forwards;
+        }
+
+        @keyframes emailNotificationSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes emailNotificationSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .email-success-notification {
+                left: 15px;
+                right: 15px;
+                min-width: auto;
+                max-width: none;
+            }
         }
     </style>
 
@@ -142,6 +250,30 @@
         window.location.href = "/advertisements/" + adId + "/download";
     }
 } */
+
+
+{{-- ✅ EMAIL SUCCESS NOTIFICATION SCRIPT --}}
+function closeEmailSuccessNotification() {
+    const notification = document.getElementById('emailSuccessNotification');
+
+    if (notification) {
+        notification.classList.add('email-notification-hide');
+
+        setTimeout(function () {
+            notification.remove();
+        }, 400);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const notification = document.getElementById('emailSuccessNotification');
+
+    if (notification) {
+        setTimeout(function () {
+            closeEmailSuccessNotification();
+        }, 3000);
+    }
+});
 </script>
 
 @endsection

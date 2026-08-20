@@ -185,10 +185,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
 
     // Paid / Unpaid
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
-Route::get(
-    '/advertisements/unpaid',
-    [GeneralController::class, 'getHitadPrintUnpaidAdvertisements']
-)->name('advertisements.unpaid');
+    Route::get('/advertisements/unpaid', [GeneralController::class, 'getHitadPrintUnpaidAdvertisements']);
 
     // Lahipita
     Route::get('/advertisements/lahipita', [GeneralController::class, 'getLahipitaAdvertisements']);
