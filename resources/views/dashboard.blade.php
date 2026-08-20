@@ -15,9 +15,9 @@
           </div>
         </div>
         <div class="col-sm-5 text-center text-sm-left">
-          <div class="card-body pb-0 px-0 px-md-4">
+          <!-- <div class="card-body pb-0 px-0 px-md-4">
             <img src="/assets/img/illustrations/man-with-laptop-light.png" height="140" alt="Admin" />
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

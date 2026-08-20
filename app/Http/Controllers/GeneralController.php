@@ -1919,7 +1919,7 @@ class GeneralController extends Controller
             $query->where('customers.email', 'LIKE', "%{$request->email}%");
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
         $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.all', compact('ads'));
@@ -1994,7 +1994,7 @@ class GeneralController extends Controller
             $query->where('customers.email', 'LIKE', "%{$request->email}%");
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
         $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.index', compact('ads'));
@@ -2208,7 +2208,7 @@ class GeneralController extends Controller
             $query->where('customers.email', 'LIKE', "%{$request->email}%");
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
         $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
 
         return view('advertisements.paid', compact('ads'));
@@ -2334,7 +2334,7 @@ class GeneralController extends Controller
             });
         }
 
-        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(10);
+        $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
         $ads->appends($request->only('search'));
 
         return view('advertisements.lahipita_all', compact('ads'))
@@ -2456,7 +2456,7 @@ class GeneralController extends Controller
 
     $ads = $query
         ->orderBy('advertisements.id', 'desc')
-        ->paginate(10);
+        ->paginate(30);
 
     $ads->appends(
         $request->only([
@@ -3854,7 +3854,7 @@ public function getHitadprintUnpaidAdvertisements(Request $request)
 
     $ads = $query
         ->orderByDesc('advertisements.id')
-        ->paginate(15)
+        ->paginate(30)
         ->withQueryString();
 
     return view('advertisements.unpaid', compact('ads'));
@@ -3958,7 +3958,7 @@ public function getLahipitaUnpaidAdvertisements(Request $request)
 
     $ads = $query
         ->orderByDesc('advertisements.id')
-        ->paginate(15)
+        ->paginate(30)
         ->withQueryString();
 
     return view('advertisements.lahipita_unpaid', compact('ads'));
