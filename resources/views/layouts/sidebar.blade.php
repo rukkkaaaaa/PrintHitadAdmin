@@ -73,6 +73,20 @@
             <div>Hitad All Ads</div>
           </a>
         </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
+
+    <a
+        href="{{ url('/advertisements/lahipita/approved') }}"
+        class="menu-link"
+    >
+
+        <div>
+            Lahipita Approved Ads
+        </div>
+
+    </a>
+
+</li>
       </ul>
     </li>
 
@@ -97,6 +111,20 @@
             <div>Lahipita All Ads</div>
           </a>
         </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
+
+    <a
+        href="{{ url('/advertisements/lahipita/approved') }}"
+        class="menu-link"
+    >
+
+        <div>
+            Lahipita Approved Ads
+        </div>
+
+    </a>
+
+</li>
       </ul>
     </li>
 
@@ -262,6 +290,20 @@
             <div>Hitad All Ads</div>
           </a>
         </li>
+        <li class="menu-item {{ request()->is('advertisements/hitad/approved') ? 'active' : '' }}">
+
+    <a
+        href="{{ url('/advertisements/hitad/approved') }}"
+        class="menu-link"
+    >
+
+        <div>
+            Hitad Approved Ads
+        </div>
+
+    </a>
+
+</li>
       </ul>
     </li>
 
@@ -287,6 +329,20 @@
             <div>Lahipita All Ads</div>
           </a>
         </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
+
+    <a
+        href="{{ url('/advertisements/lahipita/approved') }}"
+        class="menu-link"
+    >
+
+        <div>
+            Lahipita Approved Ads
+        </div>
+
+    </a>
+
+</li>
       </ul>
     </li>
 

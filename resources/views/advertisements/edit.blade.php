@@ -120,7 +120,7 @@
                                     id="retypedDescriptionDoneBtn"
                                     class="btn btn-sm description-done-btn {{ $retypedDone ? 'is-done' : 'btn-outline-secondary' }}"
                                     {{ $retypedDone ? 'disabled' : '' }}>
-                                Done
+                                Update
                             </button>
                         </div>
                     </div>
@@ -132,20 +132,29 @@
                               {{ $retypedDone ? 'readonly' : '' }}>{{ old('retyped_advertisement_description', $ad->retyped_advertisement_description ?? '') }}</textarea>
 
                     <div class="mt-3">
-                        <label class="form-label" for="referenceNumberInput">Reference Number</label>
-                        <input type="text"
-                               name="reference_number"
-                               id="referenceNumberInput"
-                               class="form-control"
-                               value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
-                               placeholder="Enter reference number">
-                    </div>
+    <label class="form-label" for="referenceNumberInput">
+        Reference Number
+    </label>
+
+    <input type="text"
+           name="reference_number"
+           id="referenceNumberInput"
+           class="form-control @error('reference_number') is-invalid @enderror"
+           value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
+           placeholder="Enter reference number">
+
+    @error('reference_number')
+        <div class="invalid-feedback">
+            {{ $message }}
+        </div>
+    @enderror
+</div>
 
                     <input type="hidden" name="retyped_advertisement_description_done" id="retypedDescriptionDoneInput" value="{{ $retypedDone ? 1 : 0 }}">
                     @error('retyped_advertisement_description')
                         <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
                     @enderror
-                    <small class="text-muted d-block mt-2">Click Done after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
+                    <small class="text-muted d-block mt-2">Click Updtae after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
                 </div>
 
                 <div class="row g-3">
@@ -258,9 +267,9 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Web Combined Ad</label>
-                        <select name="web_combined_ad" class="form-select">
-                            <option value="0" {{ old('web_combined_ad', $ad->web_combined_ad) == 0 ? 'selected' : '' }}>No</option>
-                            <option value="1" {{ old('web_combined_ad', $ad->web_combined_ad) == 1 ? 'selected' : '' }}>Yes</option>
+                        <select name="web_combined_ad_hitadlk" class="form-select">
+                            <option value="0" {{ old('web_combined_ad_hitadlk', $ad->web_combined_ad_hitadlk) == 0 ? 'selected' : '' }}>No</option>
+                            <option value="1" {{ old('web_combined_ad_hitadlk', $ad->web_combined_ad_hitadlk) == 1 ? 'selected' : '' }}>Yes</option>
                         </select>
                     </div>
 
@@ -438,7 +447,13 @@
                 @endif
                 
                 <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button class="btn btn-primary">Update</button>
+                    <button
+    type="submit"
+    name="action"
+    value="approve"
+    class="btn btn-success">
+    <i class="bx bx-check-circle"></i> Approved
+</button>
                     <a href="{{ url('/advertisements') }}" class="btn btn-secondary">Cancel</a>
                 </div>
             </div>

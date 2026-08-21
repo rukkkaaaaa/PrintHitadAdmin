@@ -158,6 +158,46 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     */
     Route::get('/members', [GeneralController::class, 'getMembers']);
 
+Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Approved Advertisements
+|--------------------------------------------------------------------------
+*/
+
+// Hitad approved ads
+Route::get(
+    '/advertisements/hitad/approved',
+    [GeneralController::class, 'getHitadApprovedAdvertisements']
+);
+
+// Lahipita approved ads
+Route::get(
+    '/advertisements/lahipita/approved',
+    [GeneralController::class, 'getLahipitaApprovedAdvertisements']
+);
+
+// Hitad - View approved advertisement once
+Route::post(
+    '/advertisements/hitad/approved/{id}/view',
+    [GeneralController::class, 'viewHitadApprovedAdvertisementOnce']
+);
+
+// Lahipita - View approved advertisement once
+Route::post(
+    '/advertisements/lahipita/approved/{id}/view',
+    [GeneralController::class, 'viewLahipitaApprovedAdvertisementOnce']
+);
+
+
+// Existing normal view
+Route::get(
+    '/advertisements/{id}/view',
+    [GeneralController::class, 'viewAdvertisement']
+);
+
     /*
     |--------------------------------------------------------------------------
     | Advertisements
@@ -183,7 +223,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
     Route::post('/advertisements/{id}/send-link-email', [GeneralController::class, 'sendLinkEmail']);
 
-    // Paid / Unpaid
+    //  Hitad
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
     Route::get('/advertisements/unpaid', [GeneralController::class, 'getHitadPrintUnpaidAdvertisements']);
 

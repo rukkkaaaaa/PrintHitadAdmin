@@ -19,6 +19,13 @@
         .search-input .input-group-text { background: transparent; border-left: 0; }
         .table-responsive { padding: 0.75rem 1rem; }
         @media (max-width: 767px) { .action-btns .btn { margin-bottom: .35rem; } }
+        .approved-ad-row > td {
+        background-color: #d1e7dd !important;
+        }
+
+        .approved-ad-row:hover > td {
+        background-color: #badbcc !important;
+        }
     </style>
 
     <!-- Search + actions -->
@@ -49,6 +56,7 @@
                     <th>Publish Date</th>
                     <th>Payment Date</th>
                     <th>Payment Status</th>
+                    <th>Approved By</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -71,6 +79,29 @@
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
+                        <td>
+                            @if(!empty($ad->approved_by_admin_id))
+
+                                <span class="badge bg-success">
+                                 <i class="bx bx-check-circle"></i>
+                                    {{ $ad->approved_admin_name ?? 'Admin' }}
+                                </span>
+
+                            @if(!empty($ad->approved_at))
+                                <small class="text-muted d-block mt-1">
+                                {{ \Carbon\Carbon::parse($ad->approved_at)->format('Y-m-d H:i') }}
+                            </small>
+                            @endif
+
+                         @else
+
+                            <span class="text-muted">
+                                Not Approved
+                                </span>
+
+                            @endif
+                        </td>
+
                         {{-- ACTIONS --}}
                         <td class="action-btns">
                             <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
@@ -82,10 +113,10 @@
                             </a>
 
                             <button class="btn btn-sm btn-outline-success"
-        onclick="confirmDownload(this)"
-        data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
-    <i class="bx bx-download"></i>
-</button>
+                                onclick="confirmDownload(this)"
+                                data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
+                                <i class="bx bx-download"></i>
+                            </button>
 
                             <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
                                 <i class="bx bx-download"></i>

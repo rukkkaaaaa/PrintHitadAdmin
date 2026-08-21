@@ -19,6 +19,13 @@
         .search-input .input-group-text { background: transparent; border-left: 0; }
         .table-responsive { padding: 0.75rem 1rem; }
         @media (max-width: 767px) { .action-btns .btn { margin-bottom: .35rem; } }
+        .approved-ad-row > td {
+        background-color: #d1e7dd !important;
+        }
+
+        .approved-ad-row:hover > td {
+        background-color: #badbcc !important;
+        }
     </style>
 
     <!-- Search + actions -->
@@ -41,12 +48,14 @@
                     <th>Publish Date</th>
                     <th>Payment Date</th>
                     <th>Payment Status</th>
+                    <th>Approved By</th>
                     <th>Action</th>
                 </tr>
             </thead>
 
             <tbody>
                 @forelse ($ads as $ad)
+                <tr class="{{ !empty($ad->approved_at) ? 'approved-ad-row' : '' }}">
                     <tr>
                         <td>{{ $ad->id }}</td>
                         <td>{{ $ad->customer_name }}</td>
@@ -55,17 +64,40 @@
                         <td>Rs. {{ number_format($ad->amount, 2) }}</td>
 
                         <td>
-    {{ $ad->publish_date
-        ? \Carbon\Carbon::parse($ad->publish_date)->format('Y-m-d')
-        : '-'
-    }}
-</td>
+                            {{ $ad->publish_date
+                            ? \Carbon\Carbon::parse($ad->publish_date)->format('Y-m-d')
+                                : '-'
+                            }}
+                        </td>
 
                         <td>{{ $ad->payment_date }}</td>
 
                         {{-- PAYMENT STATUS --}}
                         <td>
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
+                        </td>
+
+                        <td>
+                            @if(!empty($ad->approved_by_admin_id))
+
+                                <span class="badge bg-success">
+                                 <i class="bx bx-check-circle"></i>
+                                    {{ $ad->approved_admin_name ?? 'Admin' }}
+                                </span>
+
+                            @if(!empty($ad->approved_at))
+                                <small class="text-muted d-block mt-1">
+                                {{ \Carbon\Carbon::parse($ad->approved_at)->format('Y-m-d H:i') }}
+                            </small>
+                            @endif
+
+                         @else
+
+                            <span class="text-muted">
+                                Not Approved
+                                </span>
+
+                            @endif
                         </td>
 
                         {{-- ACTIONS --}}
@@ -79,10 +111,10 @@
                             </a>
 
                             <button class="btn btn-sm btn-outline-success"
-        onclick="confirmDownload(this)"
-        data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
-    <i class="bx bx-download"></i>
-</button>
+                                onclick="confirmDownload(this)"
+                                data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
+                                <i class="bx bx-download"></i>
+                            </button>
 
                             <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
                                 <i class="bx bx-download"></i>

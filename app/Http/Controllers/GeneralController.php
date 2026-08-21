@@ -17,6 +17,7 @@ use App\Models\Advertisement;
 use App\Mail\UnpaidAdvertisementMail;
 use App\Models\PaymentMethod;
 use Spatie\Browsershot\Browsershot;
+use Illuminate\Validation\Rule;
 
 class GeneralController extends Controller
 {
@@ -1453,7 +1454,7 @@ class GeneralController extends Controller
                     $this->validatePublicationPublishDate((string) request('publication'), (string) $value, $fail);
                 },
             ],
-            'web_combined_ad' => 'nullable|boolean',
+            'web_combined_ad_hitadlk' => 'nullable|boolean',
             'top_ad' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
@@ -1541,7 +1542,7 @@ class GeneralController extends Controller
                 'advertisement_description' => $request->advertisement_description,
                 'publish_date' => $request->publish_date,
                 'publication' => $request->publication,
-                'web_combined_ad' => $request->boolean('web_combined_ad'),
+                'web_combined_ad_hitadlk' => $request->boolean('web_combined_ad_hitadlk'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -1872,6 +1873,12 @@ class GeneralController extends Controller
     {
         $query = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin(
+                'admins',
+                'advertisements.approved_by_admin_id',
+                '=',
+                'admins.id'
+            )
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
@@ -1883,6 +1890,7 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
+                'admins.admin_name as approved_admin_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
                 DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
@@ -1945,6 +1953,12 @@ class GeneralController extends Controller
         $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin(
+                'admins',
+                'advertisements.approved_by_admin_id',
+                '=',
+                'admins.id'
+            )
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
@@ -1959,6 +1973,7 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
+                'admins.admin_name as approved_admin_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
                 DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
@@ -2019,7 +2034,7 @@ class GeneralController extends Controller
      * @return \Illuminate\View\View
      */
     // GET: View single advertisement
-    public function viewAdvertisement($id)
+    public function viewAdvertisement($id, $approvedReadOnly = false)
 {
     $ad = DB::table('advertisements')
         ->where('advertisements.id', $id)
@@ -2140,8 +2155,8 @@ class GeneralController extends Controller
             return $image;
         });
 
-    return view('advertisements.view', compact('ad', 'criterias', 'criteriaOptions', 'criteriaValues', 'images'));
-}
+    return view('advertisements.view', compact('ad','criterias','criteriaOptions','criteriaValues','images','approvedReadOnly'));
+    }
 
     /**
      * List hitad_print advertisements that have completed payments (paid).
@@ -2155,6 +2170,12 @@ class GeneralController extends Controller
         $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+             ->leftJoin(
+                'admins',
+                'advertisements.approved_by_admin_id',
+                '=',
+                'admins.id'
+            )
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
@@ -2174,6 +2195,7 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
+                'admins.admin_name as approved_admin_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
                 DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
@@ -2312,6 +2334,12 @@ class GeneralController extends Controller
         $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin(
+                'admins',
+                'advertisements.approved_by_admin_id',
+                '=',
+                'admins.id'
+            )
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
@@ -2324,6 +2352,7 @@ class GeneralController extends Controller
             ->select(
                 'advertisements.*',
                 'customers.customer_name',
+                'admins.admin_name as approved_admin_name',
                 DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
                 'districts.district_name as district_name',
                 'cities.city_name as city_name',
@@ -2360,6 +2389,12 @@ class GeneralController extends Controller
     $query = DB::table('advertisements')
 
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->leftJoin(
+                'admins',
+                'advertisements.approved_by_admin_id',
+                '=',
+                'admins.id'
+            )
             ->join('categories', 'advertisements.category_id', '=', 'categories.id')
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
@@ -2379,7 +2414,7 @@ class GeneralController extends Controller
         ->select(
             'advertisements.*',
             'customers.customer_name',
-
+            'admins.admin_name as approved_admin_name',
             DB::raw(
                 'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
             ),
@@ -2561,6 +2596,221 @@ class GeneralController extends Controller
 
     //     return view('advertisements.lahipita_unpaid', compact('ads'));
     // }
+
+
+
+
+    /**
+ * Get approved Hitad advertisements.
+ */
+public function getHitadApprovedAdvertisements(Request $request)
+{
+    $ads = DB::table('advertisements')
+        ->join(
+            'customers',
+            'advertisements.customer_id',
+            '=',
+            'customers.id'
+        )
+        ->join(
+            'categories',
+            'advertisements.category_id',
+            '=',
+            'categories.id'
+        )
+        ->leftJoin(
+            'admins as viewer_admin',
+            'advertisements.viewed_by_admin_id',
+            '=',
+            'viewer_admin.id'
+        )
+
+        // Only Hitad
+        ->where('advertisements.publication', 'hitad_print')
+
+        // Only approved advertisements
+        ->whereNotNull('advertisements.approved_by_admin_id')
+        ->whereNotNull('advertisements.approved_at')
+
+        ->select(
+            'advertisements.id',
+            'advertisements.publish_date',
+            'advertisements.publication',
+            'advertisements.viewed_by_admin_id',
+            'advertisements.viewed_at',
+
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
+            ),
+
+            'viewer_admin.admin_name as viewed_admin_name'
+        )
+        ->orderByDesc('advertisements.id')
+        ->paginate(30);
+
+    $pageTitle = 'Hitad - Approved Advertisements';
+    $publication = 'hitad_print';
+
+    return view(
+        'advertisements.approved',
+        compact('ads', 'pageTitle', 'publication')
+    );
+}
+
+
+/**
+ * Get approved Lahipita advertisements.
+ */
+public function getLahipitaApprovedAdvertisements(Request $request)
+{
+    $ads = DB::table('advertisements')
+        ->join(
+            'customers',
+            'advertisements.customer_id',
+            '=',
+            'customers.id'
+        )
+        ->join(
+            'categories',
+            'advertisements.category_id',
+            '=',
+            'categories.id'
+        )
+        ->leftJoin(
+            'admins as viewer_admin',
+            'advertisements.viewed_by_admin_id',
+            '=',
+            'viewer_admin.id'
+        )
+
+        // Only Lahipita
+        ->where('advertisements.publication', 'lahipita')
+
+        // Only approved advertisements
+        ->whereNotNull('advertisements.approved_by_admin_id')
+        ->whereNotNull('advertisements.approved_at')
+
+        ->select(
+            'advertisements.id',
+            'advertisements.publish_date',
+            'advertisements.publication',
+            'advertisements.viewed_by_admin_id',
+            'advertisements.viewed_at',
+
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_si, categories.category_name_en) as category_name'
+            ),
+
+            'viewer_admin.admin_name as viewed_admin_name'
+        )
+        ->orderByDesc('advertisements.id')
+        ->paginate(30);
+
+    $pageTitle = 'Lahipita - Approved Advertisements';
+    $publication = 'lahipita';
+
+    return view(
+        'advertisements.approved',
+        compact('ads', 'pageTitle', 'publication')
+    );
+}
+
+
+/**
+ * Hitad approved advertisement - view once.
+ */
+public function viewHitadApprovedAdvertisementOnce($id)
+{
+    return $this->viewApprovedAdvertisementOnce($id, 'hitad_print');
+}
+
+
+/**
+ * Lahipita approved advertisement - view once.
+ */
+public function viewLahipitaApprovedAdvertisementOnce($id)
+{
+    return $this->viewApprovedAdvertisementOnce($id, 'lahipita');
+}
+
+
+/**
+ * Save who viewed the approved advertisement.
+ */
+private function viewApprovedAdvertisementOnce($id, string $publication)
+{
+    $adminId = data_get(session('user'), 'id');
+
+    if (!$adminId) {
+        return redirect('/login')
+            ->with('error', 'Please login first.');
+    }
+
+    /*
+     * Important:
+     * whereNull(viewed_by_admin_id) makes sure the advertisement
+     * can only be marked as viewed ONE TIME.
+     */
+    $updated = DB::table('advertisements')
+        ->where('id', $id)
+        ->where('publication', $publication)
+        ->whereNotNull('approved_by_admin_id')
+        ->whereNotNull('approved_at')
+        ->whereNull('viewed_by_admin_id')
+        ->update([
+            'viewed_by_admin_id' => $adminId,
+            'viewed_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+    /*
+     * If nothing was updated, either:
+     * - advertisement does not exist
+     * - advertisement is not approved
+     * - advertisement was already viewed
+     */
+    if ($updated === 0) {
+
+        $ad = DB::table('advertisements')
+            ->where('id', $id)
+            ->where('publication', $publication)
+            ->first();
+
+        if (!$ad) {
+            abort(404);
+        }
+
+        if (
+            empty($ad->approved_by_admin_id) ||
+            empty($ad->approved_at)
+        ) {
+            return redirect()->back()
+                ->with('error', 'This advertisement is not approved.');
+        }
+
+        if (!empty($ad->viewed_by_admin_id)) {
+            return redirect()->back()
+                ->with('error', 'This advertisement has already been viewed.');
+        }
+
+        return redirect()->back()
+            ->with('error', 'Unable to view advertisement.');
+    }
+
+    /*
+     * Show advertisement as read-only.
+     */
+    return $this->viewAdvertisement($id, true);
+}
+
+
+
+
+
 
     /**
      * Reports page: build monthly report sections for both publications and payment groups.
@@ -2810,7 +3060,7 @@ class GeneralController extends Controller
                 $q->whereNull('cities.id')->orWhere('cities.is_active', 1);
             })
             ->where('advertisements.publication', $publication)
-            ->where('advertisements.web_combined_ad', 1)
+            ->where('advertisements.web_combined_ad_hitadlk', 1)
             ->whereBetween('advertisements.publish_date', [
                 $month->copy()->startOfMonth()->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),
@@ -3437,7 +3687,12 @@ class GeneralController extends Controller
             'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
-            'reference_number' => 'nullable|string|max:255',
+            'reference_number' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('advertisements', 'reference_number')->ignore($id)
+            ],
             'retyped_advertisement_description' => [
                 'required',
                 'string',
@@ -3481,7 +3736,7 @@ class GeneralController extends Controller
                 },
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
-            'web_combined_ad' => 'required|boolean',
+            'web_combined_ad_hitadlk' => 'required|boolean',
             'top_ad' => $topAdSupported ? ['nullable', 'boolean'] : ['prohibited'],
             'payment_status' => $canEditPaymentFields
                 ? ['nullable', 'in:pending,completed,failed']
@@ -3497,7 +3752,9 @@ class GeneralController extends Controller
                 : ['prohibited'],
             'criteria_image' => 'nullable|array',
             'criteria_image.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
-        ]);
+       ], [
+    'reference_number.unique' => 'This reference number is already used by another advertisement.',
+]);
 
         if ($request->filled('advertisement_tint_id')) {
             $isTintInCategory = DB::table('category_has_advertisement_tints')
@@ -3537,7 +3794,7 @@ class GeneralController extends Controller
                 ->where('id', $ad->customer_id)
                 ->update([
                     'customer_name' => mb_strtoupper(trim($request->customer_name), 'UTF-8'),
-'address' => mb_strtoupper(trim($request->address), 'UTF-8'),
+                    'address' => mb_strtoupper(trim($request->address), 'UTF-8'),
                     'telephone' => $request->telephone,
                     'nic_passport' => $request->nic_passport,
                     'email' => $request->email,
@@ -3558,9 +3815,19 @@ class GeneralController extends Controller
                 'district_id' => $request->district_id,
                 'city_id' => $request->filled('city_id') ? $request->city_id : null,
                 'publish_date' => $request->publish_date,
-                'web_combined_ad' => $request->web_combined_ad,
+                'web_combined_ad_hitadlk' => $request->boolean('web_combined_ad_hitadlk'),
                 'updated_at' => now(),
             ];
+
+                if ($request->input('action') === 'approve') {
+
+                    $adminId = data_get(session('user'), 'id');
+
+                    if ($adminId) {
+                    $advertisementData['approved_by_admin_id'] = $adminId;
+                    $advertisementData['approved_at'] = now();
+                    }
+                }
 
             if (Schema::hasColumn('advertisements', 'reference_number')) {
                 $advertisementData['reference_number'] = $request->reference_number;
@@ -3755,7 +4022,13 @@ class GeneralController extends Controller
             }
         });
 
-        return redirect('/advertisements')->with('success', 'Advertisement updated successfully!');
+        if ($request->input('action') === 'approve') {
+        return redirect('/advertisements')
+        ->with('success', 'Advertisement approved successfully!');
+        }
+
+        return redirect('/advertisements')
+        ->with('success', 'Advertisement updated successfully!');
     }
 
 public function getHitadPrintUnpaidAdvertisements(Request $request)

@@ -135,7 +135,7 @@
 
         <tr>
     <td class="label">Web Combined</td>
-    <td>{{ ($ad->web_combined_ad ?? false) ? 'Yes' : 'No' }}</td>
+    <td>{{ ($ad->web_combined_ad_hitadlk ?? false) ? 'Yes' : 'No' }}</td>
 </tr>
 
     </table>

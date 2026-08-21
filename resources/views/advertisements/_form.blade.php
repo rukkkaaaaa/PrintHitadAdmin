@@ -191,9 +191,9 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label d-block">Web Combined Ad</label>
-                    <select name="web_combined_ad" class="form-select">
-                        <option value="0" {{ old('web_combined_ad', 0) == 0 ? 'selected' : '' }}>No</option>
-                        <option value="1" {{ old('web_combined_ad') == 1 ? 'selected' : '' }}>Yes</option>
+                    <select name="web_combined_ad_hitadlk" class="form-select">
+                        <option value="0" {{ old('web_combined_ad_hitadlk', 0) == 0 ? 'selected' : '' }}>No</option>
+                        <option value="1" {{ old('web_combined_ad_hitadlk') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
                 </div>
                 @if($topAdSupported)
