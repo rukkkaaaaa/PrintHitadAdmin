@@ -20,6 +20,35 @@
         </div>
     @endif
 
+    <!-- Search -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" action="{{ url('/users') }}">
+            <div class="row g-2">
+                <div class="col-md-10">
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-control"
+                        placeholder="Search by email..."
+                        value="{{ request('email') }}"
+                    >
+                </div>
+
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary">
+                        Search
+                    </button>
+
+                    <a href="{{ url('/users') }}" class="btn btn-secondary">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
     <!-- User Create Form -->
     <div class="card mb-4">
         <div class="card-header">Create New User</div>

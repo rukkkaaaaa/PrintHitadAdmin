@@ -188,8 +188,23 @@ class AuthController extends Controller
             return redirect('/users')->with('success', 'User created successfully.');
         }
 
-        $users = DB::select("SELECT id, admin_name as name, email, role, created_at FROM admins ORDER BY created_at DESC");
-        $roles = self::USER_ROLES;
+        $query = DB::table('admins')
+    ->select(
+        'id',
+        'admin_name as name',
+        'email',
+        'role',
+        'created_at'
+    );
+
+if ($request->filled('email')) {
+    $query->where('email', 'LIKE', '%' . $request->input('email') . '%');
+}
+
+$users = $query
+    ->orderByDesc('created_at')
+    ->get();
+    $roles = self::USER_ROLES;
 
         $editUser = null;
         if ($request->filled('edit')) {

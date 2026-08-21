@@ -14,6 +14,43 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+        {{-- Search --}}
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <form method="GET" action="{{ url()->current() }}">
+                <div class="row g-2 align-items-center">
+
+                    <div class="col-md-9">
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control"
+                            placeholder="Search by name, email, NIC or passport..."
+                            value="{{ request('search') }}"
+                        >
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+
+                        @if(request('search'))
+                            <a href="{{ url()->current() }}" class="btn btn-secondary">
+                                Clear
+                            </a>
+                        @endif
+
+                    </div>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong>All Members</strong>

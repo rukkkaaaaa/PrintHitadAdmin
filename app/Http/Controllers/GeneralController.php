@@ -20,14 +20,23 @@ use Spatie\Browsershot\Browsershot;
 
 class GeneralController extends Controller
 {
-    public function getMembers()
-    {
-        $members = DB::table('customers')
-            ->orderBy('id', 'desc')
-            ->get();
+    public function getMembers(Request $request)
+{
+    $search = trim($request->input('search', ''));
 
-        return view('members.index', compact('members'));
-    }
+    $members = DB::table('customers')
+        ->when($search !== '', function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('nic_passport', 'LIKE', "%{$search}%");
+            });
+        })
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return view('members.index', compact('members', 'search'));
+}
 
     /**
      * Return list of categories and render the categories.index view.

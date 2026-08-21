@@ -132,6 +132,12 @@
             <td class="label">Top Ad</td>
             <td>{{ ($ad->top_ad ?? false) ? 'Yes' : 'No' }}</td>
         </tr>
+
+        <tr>
+    <td class="label">Web Combined</td>
+    <td>{{ ($ad->web_combined_ad ?? false) ? 'Yes' : 'No' }}</td>
+</tr>
+
     </table>
 </div>
 
