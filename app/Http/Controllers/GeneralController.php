@@ -1128,6 +1128,9 @@ class GeneralController extends Controller
             'free_word_limit_si' => 'required|integer|min:0|max:100000',
             'top_ad_rate_en' => 'required|numeric|min:0|max:999999.99',
             'top_ad_rate_si' => 'required|numeric|min:0|max:999999.99',
+            'web_combined_ad_rate_en_hitadlk' => 'required|numeric|min:0|max:999999.99',
+            'web_combined_ad_rate_si_hitadlk' => 'required|numeric|min:0|max:999999.99',
+            'web_combined_ad_rate_si_hitadprint' => 'required|numeric|min:0|max:999999.99',
         ]);
 
         $allValues = [
@@ -1139,6 +1142,9 @@ class GeneralController extends Controller
             'free_word_limit_si' => (int) $request->input('free_word_limit_si'),
             'top_ad_rate_en' => (float) $request->input('top_ad_rate_en'),
             'top_ad_rate_si' => (float) $request->input('top_ad_rate_si'),
+            'web_combined_ad_rate_en_hitadlk' => (float) $request->input('web_combined_ad_rate_en_hitadlk'),
+            'web_combined_ad_rate_si_hitadlk' => (float) $request->input('web_combined_ad_rate_si_hitadlk'),
+            'web_combined_ad_rate_si_hitadprint' => (float) $request->input('web_combined_ad_rate_si_hitadprint'),
         ];
 
         $columnsToUpdate = collect(array_keys($allValues))
@@ -1334,6 +1340,9 @@ class GeneralController extends Controller
             'free_word_limit_si' => 15,
             'top_ad_rate_en' => 100.00,
             'top_ad_rate_si' => 100.00,
+            'web_combined_ad_rate_en_hitadlk' => 300.00,
+            'web_combined_ad_rate_si_hitadlk' => 300.00,
+            'web_combined_ad_rate_si_hitadprint' => 300.00,
         ];
 
         if (!Schema::hasTable('general_settings')) {
@@ -2633,8 +2642,8 @@ public function getHitadApprovedAdvertisements(Request $request)
         ->whereNotNull('advertisements.approved_at')
 
         ->where(function ($query) {
-            $query->whereNull('advertisements.web_combined_ad_hitadprint')
-                ->orWhere('advertisements.web_combined_ad_hitadprint', 0);
+            $query->whereNull('advertisements.print_combined_ad_hitadprint')
+                ->orWhere('advertisements.print_combined_ad_hitadprint', 0);
             })
 
         ->select(
@@ -2845,7 +2854,7 @@ public function getHitadPrintOnPaperAdvertisements(Request $request)
         ->where('advertisements.publication', 'hitad_print')
 
         // Only Print on Hitad Paper = Yes
-        ->where('advertisements.web_combined_ad_hitadprint', 1)
+        ->where('advertisements.print_combined_ad_hitadprint', 1)
 
         ->select(
             'advertisements.id',
@@ -2905,7 +2914,7 @@ public function getLahipitaPrintOnPaperAdvertisements(Request $request)
         ->where('advertisements.publication', 'lahipita')
 
         // Only Print on Hitad Paper = Yes
-        ->where('advertisements.web_combined_ad_hitadprint', 1)
+        ->where('advertisements.print_combined_ad_hitadprint', 1)
 
         ->select(
             'advertisements.id',
@@ -2973,7 +2982,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     $updated = DB::table('advertisements')
         ->where('id', $id)
         ->where('publication', $publication)
-        ->where('web_combined_ad_hitadprint', 1)
+        ->where('print_combined_ad_hitadprint', 1)
         ->whereNull('print_hitad_viewed_by_admin_id')
         ->update([
             'print_hitad_viewed_by_admin_id' => $adminId,
@@ -2992,7 +3001,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             abort(404);
         }
 
-        if ((int) ($ad->web_combined_ad_hitadprint ?? 0) !== 1) {
+        if ((int) ($ad->print_combined_ad_hitadprint ?? 0) !== 1) {
             return redirect()->back()
                 ->with('error', 'This advertisement is not marked for Print on Hitad Paper.');
         }
@@ -3955,7 +3964,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'web_combined_ad_hitadlk' => 'required|boolean',
-            'web_combined_ad_hitadprint' => $isLahipitaAdvertisement
+            'print_combined_ad_hitadprint' => $isLahipitaAdvertisement
                 ? ['nullable', 'boolean']
                 : ['prohibited'],
             'top_ad' => $topAdSupported ? ['nullable', 'boolean'] : ['prohibited'],
@@ -4043,11 +4052,11 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 trim((string) ($ad->publication ?? '')) === 'lahipita';
                 if ($isLahipita) {
                     // Lahipita admin is allowed to change it
-                        $advertisementData['web_combined_ad_hitadprint'] =
-                        $request->boolean('web_combined_ad_hitadprint');
+                        $advertisementData['print_combined_ad_hitadprint'] =
+                        $request->boolean('print_combined_ad_hitadprint');
                 } else {
                     // Hitad advertisement can never use this option
-                    $advertisementData['web_combined_ad_hitadprint'] = 0;
+                    $advertisementData['print_combined_ad_hitadprint'] = 0;
                 }
 
                 if ($request->input('action') === 'approve') {
@@ -4268,7 +4277,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 }
                 if (
                     $publication === 'lahipita' &&
-                    $request->boolean('web_combined_ad_hitadprint')) {
+                    $request->boolean('print_combined_ad_hitadprint')) {
                         return redirect('/advertisements/lahipita/print-on-paper')
                             ->with(
                             'success',

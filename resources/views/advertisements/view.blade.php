@@ -27,7 +27,7 @@
         <p><strong>Tint:</strong> {{ $ad->advertisement_tint_name ?: 'No Tint' }}</p>
         <p><strong>Top Ad:</strong> {{ ($ad->top_ad ?? false) ? 'Yes' : 'No' }}</p>
         <p><strong>Web Combined Ad:</strong> {{ (int)($ad->web_combined_ad_hitadlk ?? 0) === 1 ? 'Yes' : 'No' }}</p>
-        <p><strong>Print on Hitad Paper:</strong>{{ (int)($ad->web_combined_ad_hitadprint ?? 0) === 1 ? 'Yes' : 'No' }}</p>
+        <p><strong>Print on Hitad Paper:</strong>{{ (int)($ad->print_combined_ad_hitadprint ?? 0) === 1 ? 'Yes' : 'No' }}</p>
 
         <hr>
 

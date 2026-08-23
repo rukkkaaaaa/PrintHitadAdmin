@@ -84,6 +84,23 @@
                         <label class="form-label" for="top_ad_rate_si">Top Ad Rate (Sinhala)</label>
                         <input type="number" min="0" step="0.01" class="form-control" id="top_ad_rate_si" name="top_ad_rate_si" value="{{ old('top_ad_rate_si', number_format((float) $settings['top_ad_rate_si'], 2, '.', '')) }}" required>
                     </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="web_combined_ad_rate_en_hitadlk">Web Combined Ad Rate (English) - HitadLK</label>
+                        <input type="number" min="0" step="0.01" class="form-control" id="web_combined_ad_rate_en_hitadlk" name="web_combined_ad_rate_en_hitadlk" value="{{ old('web_combined_ad_rate_en_hitadlk', number_format((float) $settings['web_combined_ad_rate_en_hitadlk'], 2, '.', '')) }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="web_combined_ad_rate_si_hitadlk">Web Combined Ad Rate (Sinhala) - HitadLK</label>
+                        <input type="number" min="0" step="0.01" class="form-control" id="web_combined_ad_rate_si_hitadlk" name="web_combined_ad_rate_si_hitadlk" value="{{ old('web_combined_ad_rate_si_hitadlk', number_format((float) $settings['web_combined_ad_rate_si_hitadlk'], 2, '.', '')) }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="web_combined_ad_rate_si_hitadprint">Web Combined Ad Rate (Sinhala) - HitadPrint</label>
+                        <input type="number" min="0" step="0.01" class="form-control" id="web_combined_ad_rate_si_hitadprint" name="web_combined_ad_rate_si_hitadprint" value="{{ old('web_combined_ad_rate_si_hitadprint', number_format((float) $settings['web_combined_ad_rate_si_hitadprint'], 2, '.', '')) }}" required>
+                    </div>
+
+                
                 </div>
 
                 <div class="d-flex justify-content-end mt-4">

@@ -470,9 +470,9 @@
                             <label class="form-label"> Print on Hitad Paper </label>
                     @if($isLahipitaAdvertisement)
                     {{-- Only Lahipita advertisements can change this --}}
-                        <select name="web_combined_ad_hitadprint" class="form-select">
-                            <option value="0" {{ old( 'web_combined_ad_hitadprint', $ad->web_combined_ad_hitadprint ?? 0 ) == 0 ? 'selected' : '' }} > No </option>
-                            <option value="1" {{ old('web_combined_ad_hitadprint', $ad->web_combined_ad_hitadprint ?? 0) == 1 ? 'selected' : '' }} >Yes</option>
+                        <select name="print_combined_ad_hitadprint" class="form-select">
+                            <option value="0" {{ old( 'print_combined_ad_hitadprint', $ad->print_combined_ad_hitadprint ?? 0 ) == 0 ? 'selected' : '' }} > No </option>
+                            <option value="1" {{ old('print_combined_ad_hitadprint', $ad->print_combined_ad_hitadprint ?? 0) == 1 ? 'selected' : '' }} >Yes</option>
                         </select>
                             <small class="text-muted"> Select Yes if this Lahipita advertisement should also be printed on Hitad paper. </small>
                     @else
