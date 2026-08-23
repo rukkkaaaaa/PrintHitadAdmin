@@ -2697,11 +2697,6 @@ public function getLahipitaApprovedAdvertisements(Request $request)
         ->whereNotNull('advertisements.approved_by_admin_id')
         ->whereNotNull('advertisements.approved_at')
 
-        ->where(function ($query) {
-            $query->whereNull('advertisements.web_combined_ad_hitadprint')
-                ->orWhere('advertisements.web_combined_ad_hitadprint', 0);
-            })
-
         ->select(
             'advertisements.id',
             'advertisements.publish_date',
@@ -4055,24 +4050,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     $advertisementData['web_combined_ad_hitadprint'] = 0;
                 }
 
-                $isPrintOnHitadPaper = $isLahipita && $request->boolean('web_combined_ad_hitadprint');
-
-                if ($isPrintOnHitadPaper) {
-
-                    /*
-                     * Print on Hitad Paper ads must NOT be approved ads.
-                     */
-                    $advertisementData['approved_by_admin_id'] = null;
-                    $advertisementData['approved_at'] = null;
-
-                    // Also clear old Approved Ads viewing information
-                    $advertisementData['viewed_by_admin_id'] = null;
-                    $advertisementData['viewed_at'] = null;
-
-                } elseif ($request->input('action') === 'approve') {
-
+                if ($request->input('action') === 'approve') {
                     $adminId = data_get(session('user'), 'id');
-
                     if ($adminId) {
                         $advertisementData['approved_by_admin_id'] = $adminId;
                         $advertisementData['approved_at'] = now();
@@ -4275,21 +4254,30 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $publication = DB::table('advertisements')
             ->where('id', $id)
             ->value('publication');
-            if ( $publication === 'lahipita' && $request->boolean('web_combined_ad_hitadprint')) {
-            return redirect( '/advertisements/lahipita/print-on-paper')->with(
-                'success',
-                'Advertisement moved to the Print on Hitad Paper section successfully!'
-            );
-        }
-
-        if ($request->input('action') === 'approve') {
-        return redirect('/advertisements')
-        ->with('success', 'Advertisement approved successfully!');
-        }
-
-        return redirect('/advertisements')
-        ->with('success', 'Advertisement updated successfully!');
-    }
+            if ($request->input('action') === 'approve') {
+                if ($publication === 'lahipita') {
+                    return redirect('/advertisements/lahipita/approved')
+                        ->with('success', 'Lahipita advertisement approved successfully!');
+                    }
+                if ($publication === 'hitad_print') {
+                    return redirect('/advertisements/hitad/approved')
+                        ->with('success', 'Hitad advertisement approved successfully!');
+                    }
+                return redirect('/advertisements')
+                    ->with('success', 'Advertisement approved successfully!');
+                }
+                if (
+                    $publication === 'lahipita' &&
+                    $request->boolean('web_combined_ad_hitadprint')) {
+                        return redirect('/advertisements/lahipita/print-on-paper')
+                            ->with(
+                            'success',
+                            'Advertisement updated and added to the Print on Hitad Paper section!'
+                        );
+                }
+                return redirect('/advertisements')
+                    ->with('success', 'Advertisement updated successfully!');
+            }
 
 public function getHitadPrintUnpaidAdvertisements(Request $request)
 {
