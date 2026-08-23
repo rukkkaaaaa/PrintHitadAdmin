@@ -13,14 +13,22 @@ use Illuminate\Support\Facades\DB;
 */
 Route::get('/', function () {
     if (Session::has('user')) {
-        $user = session('user');
 
-        $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('admins')->count();
-        $adCount = DB::table('advertisements')->count();
+        $role = strtolower(
+            trim((string) data_get(session('user'), 'role', ''))
+        );
 
-        return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
+        if ($role === 'team chandana') {
+            return redirect('/advertisements/lahipita/approved');
+        }
+
+        if ($role === 'team nalaka') {
+            return redirect('/advertisements/hitad/approved');
+        }
+
+        return redirect('/dashboard');
     }
+
     return redirect('/login');
 });
 

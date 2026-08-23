@@ -1,6 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
+
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
     <h2 class="mb-3">All Print Advertisements</h2>
@@ -95,7 +106,9 @@
                     <th>Publication</th>
                     <th>Publish Date</th>
                     <th>Payment</th>
+                    @unless($hideAuditColumns)
                     <th>Approved By</th>
+                @endunless
                     <th>Action</th>
                 </tr>
             </thead>
@@ -116,6 +129,7 @@
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
+                        @unless($hideAuditColumns)
                         <td>
                             @if(!empty($ad->approved_by_admin_id))
 
@@ -138,6 +152,7 @@
 
                             @endif
                         </td>
+                        @endunless
 
                         <td class="action-btns">
                             <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
@@ -163,7 +178,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted">
+                        <td colspan="{{ $hideAuditColumns ? 7 : 8 }}" class="text-center text-muted">
                             No advertisements found.
                         </td>
                     </tr>

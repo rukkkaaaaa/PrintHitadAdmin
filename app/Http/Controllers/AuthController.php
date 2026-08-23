@@ -12,7 +12,10 @@ use Illuminate\Validation\Rule;
 class AuthController extends Controller
 {
     private const USER_ROLES = [
+        'administrative level',
         'super admin',
+        'team chandana',
+        'team nalaka',
         'report admin',
         'site admin',
         'advertising admin',
@@ -23,11 +26,14 @@ class AuthController extends Controller
         $r = strtolower(trim($role));
 
         return match ($r) {
+            'administrative level' => 0,
             'super admin' => 1,
             'site admin' => 2,
             'advertising admin' => 3,
             'report admin' => 4,
-            default => 4,
+            'team chandana' => 5,
+            'team nalaka' => 6,
+            default => 99,
         };
     }
 
@@ -36,12 +42,55 @@ class AuthController extends Controller
         $r = strtolower(trim((string) $role));
 
         return match ($r) {
-            'super admin' => 'super admin',
+            'administrative level', 'administrative' => 'administrative level',
+            'super admin', 'superadmin', 'super' => 'super admin',
+            'team chandana', 'chandana' => 'team chandana',
+            'team nalaka', 'nalaka' => 'team nalaka',
             'reporter', 'reporting', 'reportingrole', 'report admin' => 'report admin',
             'site admin' => 'site admin',
-            'advertice admin', 'advertising', 'advertising role', 'advertising admin' => 'advertising admin',
+            'advertice admin',
+            'advertising',
+            'advertising role',
+            'advertising admin' => 'advertising admin',
             default => 'report admin',
         };
+    }
+
+    private function getCurrentUserRole(): string
+    {
+        return strtolower(trim((string) data_get(session('user'), 'role', '')));
+    }
+
+    private function canManageUsers(): bool
+    {
+        return in_array(
+            $this->getCurrentUserRole(),
+                ['administrative level', 'super admin'],
+                true
+            );
+    }
+
+
+    private function getAssignableRoles(): array
+    {
+        $currentRole = $this->getCurrentUserRole();
+        // Administrative Level can create every type of user
+            if ($currentRole === 'administrative level') {
+            return self::USER_ROLES;
+        }
+
+        // Super Admin can create users,
+        // but CANNOT create Administrative Level
+        if ($currentRole === 'super admin') {
+            return array_values(
+                array_filter(
+                    self::USER_ROLES,
+                    fn ($role) => $role !== 'administrative level'
+                )
+         );
+        }
+
+        return [];
     }
 
     /**
@@ -128,6 +177,16 @@ class AuthController extends Controller
             'role' => $this->normalizeRoleName($user[0]->role ?? null),
         ]);
 
+        $loggedInRole = $this->normalizeRoleName($user[0]->role ?? null);
+            return match ($loggedInRole) {
+            'team chandana' =>
+                redirect('/advertisements/lahipita/approved'),
+            'team nalaka' =>
+                redirect('/advertisements/hitad/approved'),
+            default =>
+                redirect('/dashboard'),
+        };
+
         // send users to dashboard (reporting users are allowed to view dashboard too)
         return redirect('/dashboard');
     }
@@ -155,10 +214,18 @@ class AuthController extends Controller
      */
     public function manageUsers(Request $request)
     {
+        
+        if (!$this->canManageUsers()) {
+            abort(403, 'You do not have permission to manage users.');
+        }
+
+        $currentRole = $this->getCurrentUserRole();
+
+        $roles = $this->getAssignableRoles();
         if ($request->isMethod('post')) {
             $name = $request->input('name');
             $email = $request->input('email');
-            $role = $this->normalizeRoleName($request->input('role'));
+            $role = strtolower(trim((string) $request->input('role')));
             $password = $request->input('password');
             $password_confirmation = $request->input('password_confirmation');
 
@@ -171,8 +238,8 @@ class AuthController extends Controller
                 return back()->with('error', 'Email already exists.');
             }
 
-            if (!in_array($role, self::USER_ROLES, true)) {
-                return back()->with('error', 'Please select a valid user role.');
+            if (!in_array($role, $roles, true)) {
+                return back()->with('error','You do not have permission to create this user role.');
             }
 
             DB::insert("INSERT INTO admins (admin_name, priority_level, email, role, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", [
@@ -189,22 +256,23 @@ class AuthController extends Controller
         }
 
         $query = DB::table('admins')
-    ->select(
-        'id',
-        'admin_name as name',
-        'email',
-        'role',
-        'created_at'
-    );
+            ->select(
+                'id',
+                'admin_name as name',
+                'email',
+                'role',
+                'created_at');
+            if ($currentRole === 'super admin') {
+            $query->where('role', '!=', 'administrative level');
+        }
 
-if ($request->filled('email')) {
-    $query->where('email', 'LIKE', '%' . $request->input('email') . '%');
-}
+        if ($request->filled('email')) {
+            $query->where('email', 'LIKE', '%' . $request->input('email') . '%');
+        }
 
-$users = $query
-    ->orderByDesc('created_at')
-    ->get();
-    $roles = self::USER_ROLES;
+        $users = $query
+            ->orderByDesc('created_at')
+            ->get();
 
         $editUser = null;
         if ($request->filled('edit')) {
@@ -226,10 +294,31 @@ $users = $query
      */
     public function updateUser(Request $request, $id)
     {
+        if (!$this->canManageUsers()) {
+        abort(403, 'You do not have permission to manage users.');
+        }
+
+        $currentRole = $this->getCurrentUserRole();
+        $user = DB::table('admins')->where('id', $id)->first();
+
+        if (!$user) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        // Super Admin cannot modify Administrative Level accounts
+        if (
+            $currentRole === 'super admin' &&
+            strtolower(trim((string) $user->role)) === 'administrative level'
+        ) {
+            return redirect('/users')->with('error','Super Admin cannot modify Administrative Level users.');
+        }
+
+        $allowedRoles = $this->getAssignableRoles();
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('admins', 'email')->ignore($id)],
-            'role' => ['required', Rule::in(self::USER_ROLES)],
+            'role' => ['required', Rule::in($allowedRoles)],
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
@@ -273,6 +362,25 @@ $users = $query
      */
     public function deleteUser($id)
     {
+        
+        if (!$this->canManageUsers()) {
+            abort(403, 'You do not have permission to manage users.');
+        }
+
+        $currentRole = $this->getCurrentUserRole();
+        $user = DB::table('admins')->where('id', $id)->first();
+
+        if (!$user) {
+            return redirect('/users')->with('error', 'User not found.');
+        }
+
+        // Super Admin cannot delete Administrative Level
+        if (
+            $currentRole === 'super admin' &&
+            strtolower(trim((string) $user->role)) === 'administrative level'
+        ) {
+            return redirect('/users')->with('error','Super Admin cannot delete Administrative Level users.');
+        }
         if (session('user.id') == $id) {
             return redirect('/users')->with('error', 'You cannot delete the currently logged-in user.');
         }

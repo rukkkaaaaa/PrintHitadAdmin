@@ -2,6 +2,16 @@
 
 @section('content')
 
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
     <h2 class="mb-3">Lahipita - Paid Advertisements</h2>
@@ -48,7 +58,9 @@
                     <th>Publish Date</th>
                     <th>Payment Date</th>
                     <th>Payment Status</th>
-                    <th>Approved By</th>
+                    @unless($hideAuditColumns)
+                        <th>Approved By</th>
+                    @endunless
                     <th>Action</th>
                 </tr>
             </thead>
@@ -77,6 +89,7 @@
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
 
+                        @unless($hideAuditColumns)
                         <td>
                             @if(!empty($ad->approved_by_admin_id))
 
@@ -99,6 +112,7 @@
 
                             @endif
                         </td>
+                        @endunless
 
                         {{-- ACTIONS --}}
                         <td class="action-btns">
@@ -125,7 +139,7 @@
 
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted">
+                        <td colspan="{{ $hideAuditColumns ? 7 : 8 }}" class="text-center text-muted">
                             No Lahipita paid advertisements found.
                         </td>
                     </tr>

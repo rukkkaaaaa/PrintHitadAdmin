@@ -2,6 +2,16 @@
 
 @section('content')
 
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 
     <div class="container mt-4">
@@ -81,7 +91,9 @@
 
                                 <th>Publish Date</th>
 
-                                <th>Viewed By</th>
+                                @unless($hideAuditColumns)
+                                    <th>Viewed By</th>
+                                @endunless
 
                                 <th>Actions</th>
 
@@ -119,7 +131,7 @@
                                     {{ $ad->publish_date }}
                                 </td>
 
-
+                                @unless($hideAuditColumns)
                                 {{-- VIEWED BY --}}
                                 <td>
 
@@ -153,6 +165,7 @@
                                     @endif
 
                                 </td>
+                                @endunless
 
 
                                 {{-- ACTION --}}
@@ -216,7 +229,7 @@
                             <tr>
 
                                 <td
-                                    colspan="6"
+                                    colspan="{{ $hideAuditColumns ? 5 : 6 }}"
                                     class="text-center text-muted py-4"
                                 >
 

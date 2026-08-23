@@ -1,13 +1,61 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-  @php
-    $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-    $isReportingRole = in_array($currentRole, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);
-    $isAdvertisingRole = in_array($currentRole, ['advertice admin', 'advertising', 'advertising role', 'advertising admin'], true);
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $isAdministrativeLevel = $currentRole === 'administrative level';
+
+    $isSuperAdmin = $currentRole === 'super admin';
+
+    $isTeamChandana = $currentRole === 'team chandana';
+
+    $isTeamNalaka = $currentRole === 'team nalaka';
+
+    $isReportingRole = in_array(
+        $currentRole,
+        ['reporting', 'reportingrole', 'report admin', 'reporter'],
+        true
+    );
+
+    $isAdvertisingRole = in_array(
+        $currentRole,
+        [
+            'advertice admin',
+            'advertising',
+            'advertising role',
+            'advertising admin'
+        ],
+        true
+    );
+
     $isSiteAdmin = $currentRole === 'site admin';
-  @endphp
+
+
+    // Logo/home destination
+    if ($isTeamChandana) {
+
+        $homeUrl = '/advertisements/lahipita/approved';
+
+    } elseif ($isTeamNalaka) {
+
+        $homeUrl = '/advertisements/hitad/approved';
+
+    } elseif ($isReportingRole) {
+
+        $homeUrl = '/reports';
+
+    } else {
+
+        $homeUrl = '/dashboard';
+
+    }
+
+@endphp
 
   <div class="app-brand demo">
-    <a href="{{ url($isReportingRole ? '/reports' : '/dashboard') }}" class="app-brand-link">
+    <a href="{{ url($homeUrl) }}">
       <span class="app-brand-logo demo">
         <br>
         <img src="{{ asset('assets/img/favicon/logo.png') }}" alt="Logo" class="w-px-150 h-auto" />
@@ -29,7 +77,80 @@
       <span class="menu-header-text">Pages</span>
     </li>
 
-    @if($isAdvertisingRole)
+    @if($isTeamChandana)
+
+    <li class="menu-item active open">
+
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+
+            <i class="menu-icon tf-icons bx bx-printer"></i>
+
+            <div>Lahipita Print</div>
+
+        </a>
+
+        <ul class="menu-sub">
+
+            <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
+
+                <a
+                    href="{{ url('/advertisements/lahipita/approved') }}"
+                    class="menu-link"
+                >
+                    <div>Lahipita Approved Ads</div>
+                </a>
+
+            </li>
+
+
+            <li class="menu-item {{ request()->is('advertisements/lahipita/print-on-paper') ? 'active' : '' }}">
+
+                <a
+                    href="{{ url('/advertisements/lahipita/print-on-paper') }}"
+                    class="menu-link"
+                >
+                    <div>Print on Hitad Paper Ads</div>
+                </a>
+
+            </li>
+
+        </ul>
+
+    </li>
+
+
+@elseif($isTeamNalaka)
+
+    <li class="menu-item active open">
+
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+
+            <i class="menu-icon tf-icons bx bx-dock-top"></i>
+
+            <div>Hitad Print</div>
+
+        </a>
+
+        <ul class="menu-sub">
+
+            <li class="menu-item {{ request()->is('advertisements/hitad/approved') ? 'active' : '' }}">
+
+                <a
+                    href="{{ url('/advertisements/hitad/approved') }}"
+                    class="menu-link"
+                >
+                    <div>Hitad Approved Ads</div>
+                </a>
+
+            </li>
+
+        </ul>
+
+    </li>
+
+
+@elseif($isAdvertisingRole)
+
     <!-- Advertising menu: Dashboard + Add Advertisement + Print sections + Online links only -->
     <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
       <a href="{{ url('/dashboard') }}" class="menu-link">
