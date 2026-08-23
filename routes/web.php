@@ -198,6 +198,36 @@ Route::get(
     [GeneralController::class, 'viewAdvertisement']
 );
 
+/*
+|--------------------------------------------------------------------------
+| Print on Hitad Paper Advertisements
+|--------------------------------------------------------------------------
+*/
+
+// Hitad list
+Route::get(
+    '/advertisements/hitad/print-on-paper',
+    [GeneralController::class, 'getHitadPrintOnPaperAdvertisements']
+);
+
+// Lahipita list
+Route::get(
+    '/advertisements/lahipita/print-on-paper',
+    [GeneralController::class, 'getLahipitaPrintOnPaperAdvertisements']
+);
+
+// Hitad - View once
+Route::post(
+    '/advertisements/hitad/print-on-paper/{id}/view',
+    [GeneralController::class, 'viewHitadPrintOnPaperOnce']
+);
+
+// Lahipita - View once
+Route::post(
+    '/advertisements/lahipita/print-on-paper/{id}/view',
+    [GeneralController::class, 'viewLahipitaPrintOnPaperOnce']
+);
+
     /*
     |--------------------------------------------------------------------------
     | Advertisements

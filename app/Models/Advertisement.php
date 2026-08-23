@@ -26,11 +26,13 @@ class Advertisement extends Model
         'publish_date',
         'publication',
         'web_combined_ad_hitadlk',
+        'web_combined_ad_hitadprint',
     ];
 
     protected $casts = [
         'publish_date' => 'date',
         'web_combined_ad_hitadlk' => 'boolean',
+        'web_combined_ad_hitadprint' => 'boolean',
         'price' => 'decimal:2',
     ];
 

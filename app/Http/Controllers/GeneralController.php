@@ -2034,7 +2034,7 @@ class GeneralController extends Controller
      * @return \Illuminate\View\View
      */
     // GET: View single advertisement
-    public function viewAdvertisement($id, $approvedReadOnly = false)
+    public function viewAdvertisement($id, $approvedReadOnly = false, $readOnlyBackUrl = null, $readOnlyBackLabel = null)
 {
     $ad = DB::table('advertisements')
         ->where('advertisements.id', $id)
@@ -2155,7 +2155,7 @@ class GeneralController extends Controller
             return $image;
         });
 
-    return view('advertisements.view', compact('ad','criterias','criteriaOptions','criteriaValues','images','approvedReadOnly'));
+    return view('advertisements.view', compact('ad','criterias','criteriaOptions','criteriaValues','images','approvedReadOnly', 'readOnlyBackUrl', 'readOnlyBackLabel'));
     }
 
     /**
@@ -2632,6 +2632,11 @@ public function getHitadApprovedAdvertisements(Request $request)
         ->whereNotNull('advertisements.approved_by_admin_id')
         ->whereNotNull('advertisements.approved_at')
 
+        ->where(function ($query) {
+            $query->whereNull('advertisements.web_combined_ad_hitadprint')
+                ->orWhere('advertisements.web_combined_ad_hitadprint', 0);
+            })
+
         ->select(
             'advertisements.id',
             'advertisements.publish_date',
@@ -2691,6 +2696,11 @@ public function getLahipitaApprovedAdvertisements(Request $request)
         // Only approved advertisements
         ->whereNotNull('advertisements.approved_by_admin_id')
         ->whereNotNull('advertisements.approved_at')
+
+        ->where(function ($query) {
+            $query->whereNull('advertisements.web_combined_ad_hitadprint')
+                ->orWhere('advertisements.web_combined_ad_hitadprint', 0);
+            })
 
         ->select(
             'advertisements.id',
@@ -2806,6 +2816,214 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
      */
     return $this->viewAdvertisement($id, true);
 }
+
+
+
+
+
+/**
+ * Hitad - Print on Hitad Paper advertisements.
+ */
+public function getHitadPrintOnPaperAdvertisements(Request $request)
+{
+    $ads = DB::table('advertisements')
+        ->join(
+            'customers',
+            'advertisements.customer_id',
+            '=',
+            'customers.id'
+        )
+        ->join(
+            'categories',
+            'advertisements.category_id',
+            '=',
+            'categories.id'
+        )
+        ->leftJoin(
+            'admins as print_viewer_admin',
+            'advertisements.print_hitad_viewed_by_admin_id',
+            '=',
+            'print_viewer_admin.id'
+        )
+
+        // Only Hitad
+        ->where('advertisements.publication', 'hitad_print')
+
+        // Only Print on Hitad Paper = Yes
+        ->where('advertisements.web_combined_ad_hitadprint', 1)
+
+        ->select(
+            'advertisements.id',
+            'advertisements.publish_date',
+            'advertisements.publication',
+
+            'advertisements.print_hitad_viewed_by_admin_id',
+            'advertisements.print_hitad_viewed_at',
+
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_en, categories.category_name_si) as category_name'
+            ),
+
+            'print_viewer_admin.admin_name as print_viewed_admin_name'
+        )
+        ->orderByDesc('advertisements.id')
+        ->paginate(30);
+
+    $pageTitle = 'Hitad - Print on Hitad Paper Ads';
+    $publication = 'hitad_print';
+
+    return view(
+        'advertisements.print_on_hitad_paper',
+        compact('ads', 'pageTitle', 'publication')
+    );
+}
+
+
+/**
+ * Lahipita - Print on Hitad Paper advertisements.
+ */
+public function getLahipitaPrintOnPaperAdvertisements(Request $request)
+{
+    $ads = DB::table('advertisements')
+        ->join(
+            'customers',
+            'advertisements.customer_id',
+            '=',
+            'customers.id'
+        )
+        ->join(
+            'categories',
+            'advertisements.category_id',
+            '=',
+            'categories.id'
+        )
+        ->leftJoin(
+            'admins as print_viewer_admin',
+            'advertisements.print_hitad_viewed_by_admin_id',
+            '=',
+            'print_viewer_admin.id'
+        )
+
+        // Only Lahipita
+        ->where('advertisements.publication', 'lahipita')
+
+        // Only Print on Hitad Paper = Yes
+        ->where('advertisements.web_combined_ad_hitadprint', 1)
+
+        ->select(
+            'advertisements.id',
+            'advertisements.publish_date',
+            'advertisements.publication',
+
+            'advertisements.print_hitad_viewed_by_admin_id',
+            'advertisements.print_hitad_viewed_at',
+
+            'customers.customer_name',
+
+            DB::raw(
+                'COALESCE(categories.category_name_si, categories.category_name_en) as category_name'
+            ),
+
+            'print_viewer_admin.admin_name as print_viewed_admin_name'
+        )
+        ->orderByDesc('advertisements.id')
+        ->paginate(30);
+
+    $pageTitle = 'Lahipita - Print on Hitad Paper Ads';
+    $publication = 'lahipita';
+
+    return view(
+        'advertisements.print_on_hitad_paper',
+        compact('ads', 'pageTitle', 'publication')
+    );
+}
+
+
+/**
+ * Hitad Print on Paper - View once.
+ */
+public function viewHitadPrintOnPaperOnce($id)
+{
+    return $this->viewPrintOnHitadPaperOnce($id, 'hitad_print');
+}
+
+
+/**
+ * Lahipita Print on Paper - View once.
+ */
+public function viewLahipitaPrintOnPaperOnce($id)
+{
+    return $this->viewPrintOnHitadPaperOnce($id, 'lahipita');
+}
+
+
+/**
+ * Save which admin viewed a Print on Hitad Paper advertisement.
+ */
+private function viewPrintOnHitadPaperOnce($id, string $publication)
+{
+    $adminId = data_get(session('user'), 'id');
+
+    if (!$adminId) {
+        return redirect('/login')
+            ->with('error', 'Please login first.');
+    }
+
+    /*
+     * whereNull() is very important.
+     * It prevents a second admin from viewing it again.
+     */
+    $updated = DB::table('advertisements')
+        ->where('id', $id)
+        ->where('publication', $publication)
+        ->where('web_combined_ad_hitadprint', 1)
+        ->whereNull('print_hitad_viewed_by_admin_id')
+        ->update([
+            'print_hitad_viewed_by_admin_id' => $adminId,
+            'print_hitad_viewed_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+    if ($updated === 0) {
+
+        $ad = DB::table('advertisements')
+            ->where('id', $id)
+            ->where('publication', $publication)
+            ->first();
+
+        if (!$ad) {
+            abort(404);
+        }
+
+        if ((int) ($ad->web_combined_ad_hitadprint ?? 0) !== 1) {
+            return redirect()->back()
+                ->with('error', 'This advertisement is not marked for Print on Hitad Paper.');
+        }
+
+        if (!empty($ad->print_hitad_viewed_by_admin_id)) {
+            return redirect()->back()
+                ->with('error', 'This advertisement has already been viewed.');
+        }
+
+        return redirect()->back()
+            ->with('error', 'Unable to view advertisement.');
+    }
+
+    // Correct back URL for the read-only advertisement page
+    $backUrl = $publication === 'lahipita'
+        ? url('/advertisements/lahipita/print-on-paper')
+        : url('/advertisements/hitad/print-on-paper');
+
+    return $this->viewAdvertisement(
+        $id,
+        true,
+        $backUrl,
+        'Back to Print on Hitad Paper Ads'
+    );
+}
+
 
 
 
@@ -3675,9 +3893,14 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
         $canEditPaymentFields = $currentRole === 'super admin';
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
-        $this->ensureRetypedAdvertisementDescriptionColumnExists();
-        $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
-        $this->ensureReferenceNumberColumnExists();
+        $existingAd = DB::table('advertisements') ->where('id', $id) ->first();
+            if (!$existingAd) {
+                abort(404); }
+        $isLahipitaAdvertisement =
+            trim((string) ($existingAd->publication ?? '')) === 'lahipita';
+                $this->ensureRetypedAdvertisementDescriptionColumnExists();
+                $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
+                $this->ensureReferenceNumberColumnExists();
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -3737,6 +3960,9 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
             'web_combined_ad_hitadlk' => 'required|boolean',
+            'web_combined_ad_hitadprint' => $isLahipitaAdvertisement
+                ? ['nullable', 'boolean']
+                : ['prohibited'],
             'top_ad' => $topAdSupported ? ['nullable', 'boolean'] : ['prohibited'],
             'payment_status' => $canEditPaymentFields
                 ? ['nullable', 'in:pending,completed,failed']
@@ -3818,14 +4044,38 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
                 'web_combined_ad_hitadlk' => $request->boolean('web_combined_ad_hitadlk'),
                 'updated_at' => now(),
             ];
+            $isLahipita =
+                trim((string) ($ad->publication ?? '')) === 'lahipita';
+                if ($isLahipita) {
+                    // Lahipita admin is allowed to change it
+                        $advertisementData['web_combined_ad_hitadprint'] =
+                        $request->boolean('web_combined_ad_hitadprint');
+                } else {
+                    // Hitad advertisement can never use this option
+                    $advertisementData['web_combined_ad_hitadprint'] = 0;
+                }
 
-                if ($request->input('action') === 'approve') {
+                $isPrintOnHitadPaper = $isLahipita && $request->boolean('web_combined_ad_hitadprint');
+
+                if ($isPrintOnHitadPaper) {
+
+                    /*
+                     * Print on Hitad Paper ads must NOT be approved ads.
+                     */
+                    $advertisementData['approved_by_admin_id'] = null;
+                    $advertisementData['approved_at'] = null;
+
+                    // Also clear old Approved Ads viewing information
+                    $advertisementData['viewed_by_admin_id'] = null;
+                    $advertisementData['viewed_at'] = null;
+
+                } elseif ($request->input('action') === 'approve') {
 
                     $adminId = data_get(session('user'), 'id');
 
                     if ($adminId) {
-                    $advertisementData['approved_by_admin_id'] = $adminId;
-                    $advertisementData['approved_at'] = now();
+                        $advertisementData['approved_by_admin_id'] = $adminId;
+                        $advertisementData['approved_at'] = now();
                     }
                 }
 
@@ -4021,6 +4271,16 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
                 }
             }
         });
+
+        $publication = DB::table('advertisements')
+            ->where('id', $id)
+            ->value('publication');
+            if ( $publication === 'lahipita' && $request->boolean('web_combined_ad_hitadprint')) {
+            return redirect( '/advertisements/lahipita/print-on-paper')->with(
+                'success',
+                'Advertisement moved to the Print on Hitad Paper section successfully!'
+            );
+        }
 
         if ($request->input('action') === 'approve') {
         return redirect('/advertisements')

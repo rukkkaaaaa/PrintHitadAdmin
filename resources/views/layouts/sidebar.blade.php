@@ -73,22 +73,13 @@
             <div>Hitad All Ads</div>
           </a>
         </li>
-        <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
-
-    <a
-        href="{{ url('/advertisements/lahipita/approved') }}"
-        class="menu-link"
-    >
-
-        <div>
-            Lahipita Approved Ads
-        </div>
-
-    </a>
-
-</li>
-      </ul>
-    </li>
+        <li class="menu-item {{ request()->is('advertisements/hitad/approved') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/hitad/approved') }}" class="menu-link">
+            <div> Hitad Approved Ads</div>
+          </a>
+        </li>
+    </ul>
+  </li>
 
     <li class="menu-item {{ request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -112,19 +103,10 @@
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
-
-    <a
-        href="{{ url('/advertisements/lahipita/approved') }}"
-        class="menu-link"
-    >
-
-        <div>
-            Lahipita Approved Ads
-        </div>
-
-    </a>
-
-</li>
+        <a href="{{ url('/advertisements/lahipita/approved') }}" class="menu-link">
+          <div> Lahipita Approved Ads </div>
+        </a>
+        </li>
       </ul>
     </li>
 
@@ -291,21 +273,17 @@
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/hitad/approved') ? 'active' : '' }}">
-
-    <a
-        href="{{ url('/advertisements/hitad/approved') }}"
-        class="menu-link"
-    >
-
-        <div>
-            Hitad Approved Ads
-        </div>
-
-    </a>
-
-</li>
-      </ul>
-    </li>
+          <a href="{{ url('/advertisements/hitad/approved') }}" class="menu-link">
+            <div>Hitad Approved Ads</div>
+          </a>
+      </li>
+      <!-- <li class="menu-item {{ request()->is('advertisements/hitad/print-on-paper') ? 'active' : '' }}">
+        <a href="{{ url('/advertisements/hitad/print-on-paper') }}" class="menu-link" >
+          <div> Print on Hitad Paper Ads</div>
+        </a>
+      </li> -->
+    </ul>
+  </li>
 
     <!-- ================= LAHIPITA PRINT ================= -->
     <li class="menu-item {{ request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
@@ -330,21 +308,17 @@
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
-
-    <a
-        href="{{ url('/advertisements/lahipita/approved') }}"
-        class="menu-link"
-    >
-
-        <div>
-            Lahipita Approved Ads
-        </div>
-
-    </a>
-
-</li>
-      </ul>
-    </li>
+        <a href="{{ url('/advertisements/lahipita/approved') }}" class="menu-link" >
+            <div> Lahipita Approved Ads </div>
+        </a>
+      </li>
+      <li class="menu-item {{ request()->is('advertisements/lahipita/print-on-paper') ? 'active' : '' }}">
+        <a href="{{ url('/advertisements/lahipita/print-on-paper') }}" class="menu-link">
+          <div> Print on Hitad Paper Ads </div>
+        </a>
+      </li>
+    </ul>
+  </li>
 
     <!-- ================= HITAD ONLINE ================= -->
     <li class="menu-item">

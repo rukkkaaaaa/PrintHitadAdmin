@@ -134,9 +134,14 @@
         </tr>
 
         <tr>
-    <td class="label">Web Combined</td>
-    <td>{{ ($ad->web_combined_ad_hitadlk ?? false) ? 'Yes' : 'No' }}</td>
-</tr>
+            <td class="label">Web Combined</td>
+            <td>{{ ($ad->web_combined_ad_hitadlk ?? false) ? 'Yes' : 'No' }}</td>
+        </tr>
+
+        <tr>
+            <td class="label">Print on Hitad Paper</td>
+            <td>{{ ($ad->web_combined_ad_hitadprint ?? false) ? 'Yes' : 'No' }}</td>
+        </tr>
 
     </table>
 </div>

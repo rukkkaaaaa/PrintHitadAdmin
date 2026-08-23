@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-4">
+<div class="container mt-4 ea-page">
+
     <h2 class="mb-3">Edit Advertisement</h2>
 
     @if(session('success'))
@@ -23,10 +24,198 @@
     @endphp
 
     <style>
-        .edit-card { border-radius: 14px; box-shadow: 0 8px 24px rgba(18,38,63,0.08); }
-        .section-title { font-size: 1rem; font-weight: 700; color: #566a7f; margin-bottom: 1rem; }
-        .form-label { font-weight: 600; }
-        .description-done-btn.is-done { background-color: #28a745; border-color: #28a745; color: #fff; }
+        :root {
+            --ea-indigo: #5F61E6;
+            --ea-indigo-dark: #4749c4;
+            --ea-slate: #788393;
+            --ea-slate-light: #aeb7c2;
+            --ea-cyan: #03B0D4;
+            --ea-cyan-dark: #0292b0;
+            --ea-bg-tint: #f2fbfd;
+            --ea-card-bg: #ffffff;
+            --ea-border: #e3eaf0;
+        }
+
+        .ea-page {
+            padding-bottom: 2rem;
+        }
+
+        .ea-page .alert-success {
+            border: none;
+            border-left: 4px solid var(--ea-cyan);
+            background-color: #e9fbfd;
+            color: #036578;
+            border-radius: 10px;
+        }
+
+        /* Card */
+        .edit-card {
+            border: 1px solid var(--ea-border);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(51, 65, 122, 0.08);
+            background:
+                linear-gradient(var(--ea-card-bg), var(--ea-card-bg)) padding-box,
+                linear-gradient(90deg, var(--ea-indigo), var(--ea-cyan)) border-box;
+            border-top: 5px solid transparent;
+            overflow: hidden;
+        }
+
+        .edit-card .card-body {
+            padding: 2rem;
+            background: linear-gradient(180deg, var(--ea-bg-tint) 0%, #ffffff 220px);
+        }
+
+        /* Section titles */
+        .section-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--ea-slate);
+            margin-bottom: 1.1rem;
+            padding-left: 0.85rem;
+            border-left: 4px solid var(--ea-cyan);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: 0.2px;
+        }
+
+        hr.my-4 {
+            border-top: 1px dashed var(--ea-border);
+            opacity: 1;
+        }
+
+        /* Labels */
+        .form-label {
+            font-weight: 600;
+            color: #3d4a5c;
+            font-size: 0.92rem;
+        }
+
+        /* Inputs, selects, textareas */
+        .edit-card .form-control,
+        .edit-card .form-select {
+            border: 1.5px solid var(--ea-border);
+            border-radius: 10px;
+            padding: 0.55rem 0.85rem;
+            font-size: 0.94rem;
+            background-color: #fbfdfe;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        .edit-card .form-control:focus,
+        .edit-card .form-select:focus {
+            border-color: var(--ea-cyan);
+            box-shadow: 0 0 0 0.2rem rgba(3, 176, 212, 0.15);
+            background-color: #ffffff;
+        }
+
+        .edit-card .form-control:disabled,
+        .edit-card .form-select:disabled,
+        .edit-card .form-control[readonly] {
+            background-color: #f3f5f8;
+            color: var(--ea-slate);
+            opacity: 1;
+        }
+
+        .edit-card .form-control::placeholder {
+            color: var(--ea-slate-light);
+        }
+
+        /* Uploaded / current file info boxes */
+        .ea-file-box {
+            margin-top: 0.6rem;
+            padding: 0.65rem 0.8rem;
+            background-color: #eef8fc;
+            border-radius: 10px;
+            border-left: 3px solid var(--ea-cyan);
+        }
+
+        .ea-file-box .form-control {
+            background-color: #ffffff !important;
+        }
+
+        /* Description boxes */
+        #currentDescriptionBox {
+            background-color: #f6f8fa;
+            border-style: dashed;
+            color: #56606f;
+        }
+
+        #retypedDescriptionBox[readonly] {
+            background-color: #f0fdf6;
+            border-color: #b9ebd0;
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--ea-slate-light);
+            color: var(--ea-slate);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--ea-indigo);
+            border-color: var(--ea-indigo);
+            color: #fff;
+        }
+
+        .description-done-btn.is-done {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: #fff;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        /* Switch (Top Ad) */
+        .form-check-input:checked {
+            background-color: var(--ea-indigo);
+            border-color: var(--ea-indigo);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(95, 97, 230, 0.18);
+        }
+
+        /* Small helper text */
+        .text-muted {
+            color: var(--ea-slate) !important;
+        }
+
+        /* Footer action bar */
+        .ea-actions {
+            border-top: 1px solid var(--ea-border);
+            margin-top: 2rem !important;
+            padding-top: 1.25rem;
+        }
+
+        .ea-actions .btn-secondary {
+            background-color: #eef1f5;
+            border-color: #eef1f5;
+            color: #4a5568;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0.5rem 1.4rem;
+        }
+
+        .ea-actions .btn-secondary:hover {
+            background-color: #e1e6ec;
+            border-color: #e1e6ec;
+            color: #333;
+        }
+
+        /* Approve button kept as-is (bootstrap success) but slightly refined shape/spacing only */
+        .ea-actions .btn-success {
+            border-radius: 10px;
+            padding: 0.5rem 1.6rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 767px) {
+            .edit-card .card-body {
+                padding: 1.25rem;
+            }
+        }
     </style>
 
     <form action="{{ url('/advertisements/' . $ad->id . '/update') }}" method="POST" enctype="multipart/form-data">
@@ -72,11 +261,11 @@
                         <input type="file" name="nic_front_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                         <small class="text-muted">Accepted formats: JPG, JPEG, PNG (Max 5MB)</small>
                         @if(!empty($ad->nic_front_img_url))
-                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                            <div class="ea-file-box">
                                 <small class="text-muted d-block mb-1">
                                     <strong>📄 Current file:</strong> {{ basename($ad->nic_front_img_url) }}
                                 </small>
-                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                <div class="form-control mt-1" style="font-size: 0.875rem; word-break: break-all;">
                                     {{ $ad->nic_front_img_url }}
                                 </div>
                             </div>
@@ -87,11 +276,11 @@
                         <input type="file" name="nic_back_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                         <small class="text-muted">Accepted formats: JPG, JPEG, PNG (Max 5MB)</small>
                         @if(!empty($ad->nic_back_img_url))
-                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                            <div class="ea-file-box">
                                 <small class="text-muted d-block mb-1">
                                     <strong>📄 Current file:</strong> {{ basename($ad->nic_back_img_url) }}
                                 </small>
-                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                <div class="form-control mt-1" style="font-size: 0.875rem; word-break: break-all;">
                                     {{ $ad->nic_back_img_url }}
                                 </div>
                             </div>
@@ -273,6 +462,27 @@
                         </select>
                     </div>
 
+                    @php
+                        $isLahipitaAdvertisement =
+                            trim((string) ($ad->publication ?? '')) === 'lahipita';
+                    @endphp
+                        <div class="col-md-6">
+                            <label class="form-label"> Print on Hitad Paper </label>
+                    @if($isLahipitaAdvertisement)
+                    {{-- Only Lahipita advertisements can change this --}}
+                        <select name="web_combined_ad_hitadprint" class="form-select">
+                            <option value="0" {{ old( 'web_combined_ad_hitadprint', $ad->web_combined_ad_hitadprint ?? 0 ) == 0 ? 'selected' : '' }} > No </option>
+                            <option value="1" {{ old('web_combined_ad_hitadprint', $ad->web_combined_ad_hitadprint ?? 0) == 1 ? 'selected' : '' }} >Yes</option>
+                        </select>
+                            <small class="text-muted"> Select Yes if this Lahipita advertisement should also be printed on Hitad paper. </small>
+                    @else
+                    {{-- Hitad advertisements cannot change this --}}
+                        <select class="form-select" disabled>
+                            <option selected>No</option>
+                        </select><small class="text-muted">This option is only available for Lahipita advertisements.</small>
+                     @endif
+                </div>
+
                     @if($topAdSupported)
                     <div class="col-md-6">
                         <label class="form-label d-block" for="topAdToggle">Top Ad</label>
@@ -347,12 +557,12 @@
                                {{ empty($ad->payment_id) || !$canEditPaymentFields ? 'disabled' : '' }}>
                         <small class="text-muted">Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)</small>
                         @if(!empty($ad->payment_slip_file_path))
-                            <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                            <div class="ea-file-box">
                                 <small class="text-muted d-block mb-1">
                                     <strong>📄 File uploaded:</strong> {{ basename($ad->payment_slip_file_path) }}
                                 </small>
                                 <small class="text-muted d-block">Stored path:</small>
-                                <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                <div class="form-control mt-1" style="font-size: 0.875rem; word-break: break-all;">
                                     {{ $ad->payment_slip_file_path }}
                                 </div>
                             </div>
@@ -390,11 +600,11 @@
                                     <small class="text-muted d-block mt-1">Upload a new image to replace the current one.</small>
 
                                     @if(!empty($existing))
-                                        <div class="mt-2 p-2" style="background-color: #f0f8ff; border-radius: 6px; border-left: 3px solid #0d6efd;">
+                                        <div class="ea-file-box">
                                             <small class="text-muted d-block mb-1">
                                                 <strong>📄 Current file:</strong> {{ basename((string) $existing) }}
                                             </small>
-                                            <div class="form-control mt-1" style="font-size: 0.875rem; background-color: #fff; word-break: break-all;">
+                                            <div class="form-control mt-1" style="font-size: 0.875rem; word-break: break-all;">
                                                 {{ $existing }}
                                             </div>
                                         </div>
@@ -446,7 +656,7 @@
                     </div>
                 @endif
                 
-                <div class="d-flex justify-content-end gap-2 mt-4">
+                <div class="d-flex justify-content-end gap-2 mt-4 ea-actions">
                     <button
     type="submit"
     name="action"

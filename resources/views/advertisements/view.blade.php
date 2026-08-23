@@ -27,6 +27,7 @@
         <p><strong>Tint:</strong> {{ $ad->advertisement_tint_name ?: 'No Tint' }}</p>
         <p><strong>Top Ad:</strong> {{ ($ad->top_ad ?? false) ? 'Yes' : 'No' }}</p>
         <p><strong>Web Combined Ad:</strong> {{ (int)($ad->web_combined_ad_hitadlk ?? 0) === 1 ? 'Yes' : 'No' }}</p>
+        <p><strong>Print on Hitad Paper:</strong>{{ (int)($ad->web_combined_ad_hitadprint ?? 0) === 1 ? 'Yes' : 'No' }}</p>
 
         <hr>
 
@@ -60,41 +61,30 @@
                         <p class="mb-1"><strong>NIC Back</strong></p>
                         @if(!$approvedReadOnly)
 
-    <div class="mt-1">
-
-        <a
-            href="{{ $ad->nic_back_img_url }}"
-            download
-            class="btn btn-sm btn-outline-secondary"
-        >
-
-            <i class="bx bx-download"></i>
-            Download
-
-        </a>
-
-    </div>
-
-@endif
-                        <div class="mt-1">
-                            @if(!$approvedReadOnly)
-
-    <div class="mt-1">
-
-        <a
-            href="{{ $ad->nic_front_img_url }}"
-            download
-            class="btn btn-sm btn-outline-secondary"
-        >
-
-            <i class="bx bx-download"></i>
-            Download
-
-        </a>
-
-    </div>
-
-@endif
+                    <div class="mt-1">
+                        <a
+                            href="{{ $ad->nic_back_img_url }}"
+                            download
+                            class="btn btn-sm btn-outline-secondary"
+                        >
+                            <i class="bx bx-download"></i>
+                            Download
+                        </a>
+                    </div>
+                @endif
+                    <div class="mt-1">
+                @if(!$approvedReadOnly)
+                <div class="mt-1">
+                    <a
+                        href="{{ $ad->nic_front_img_url }}"
+                        download
+                        class="btn btn-sm btn-outline-secondary"
+                    >
+                        <i class="bx bx-download"></i>
+                        Download
+                    </a>
+                </div>
+                @endif
                         </div>
                     </div>
                 @endif
@@ -170,23 +160,17 @@
                                     <i class="bx bx-download"></i> Download
                                 </a> -->
                                 @if(!$approvedReadOnly)
-
-    <div class="mt-1">
-
-        <a
-            href="{{ $image->display_url }}"
-            download
-            class="btn btn-sm btn-outline-secondary"
-        >
-
-            <i class="bx bx-download"></i>
-            Download
-
-        </a>
-
-    </div>
-
-@endif
+                            <div class="mt-1">
+                                <a
+                                    href="{{ $image->display_url }}"
+                                    download
+                                    class="btn btn-sm btn-outline-secondary"
+                                >
+                                    <i class="bx bx-download"></i>
+                                    Download
+                                </a>
+                            </div>
+                        @endif
                             </div>
                         </div>
                     @endif
@@ -200,45 +184,31 @@
 </div>
 
 <div class="mt-3 d-flex gap-2">
-
     @if(!$approvedReadOnly)
-
         <a
             href="{{ url('/advertisements/' . $ad->id . '/download') }}"
             class="btn btn-success"
         >
-
             <i class="bx bx-download"></i>
             Download Advertisement
-
         </a>
-
-
         @if($ad->email)
-
             <form
                 method="POST"
                 action="{{ url('/advertisements/' . $ad->id . '/send-link-email') }}"
                 style="display:inline;"
             >
-
                 @csrf
-
                 <button
                     type="submit"
                     class="btn btn-primary"
                     onclick="return confirm('Send payment invoice to customer?');"
                 >
-
                     <i class="bx bx-send"></i>
                     Send Email to Customer
-
                 </button>
-
             </form>
-
         @endif
-
 
         <a
             href="{{ url('/advertisements') }}"
@@ -250,29 +220,33 @@
         </a>
 
 
-    @else
+@else
 
-        @php
+    @php
 
-            $approvedBackUrl = $ad->publication === 'lahipita'
-                ? url('/advertisements/lahipita/approved')
-                : url('/advertisements/hitad/approved');
+        $defaultBackUrl = $ad->publication === 'lahipita'
+            ? url('/advertisements/lahipita/approved')
+            : url('/advertisements/hitad/approved');
 
-        @endphp
+        $backUrl = $readOnlyBackUrl ?? $defaultBackUrl;
+
+        $backLabel = $readOnlyBackLabel ?? 'Back to Approved Ads';
+
+    @endphp
 
 
-        <a
-            href="{{ $approvedBackUrl }}"
-            class="btn btn-secondary"
-        >
+    <a
+        href="{{ $backUrl }}"
+        class="btn btn-secondary"
+    >
 
-            <i class="bx bx-arrow-back"></i>
+        <i class="bx bx-arrow-back"></i>
 
-            Back to Approved Ads
+        {{ $backLabel }}
 
-        </a>
+    </a>
 
-    @endif
+@endif
 
 </div>
 
