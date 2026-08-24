@@ -54,7 +54,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong>All Members</strong>
-            <span class="badge bg-primary">{{ $members->count() }} total</span>
+            <span class="badge bg-primary">{{ $members->total() }} total</span>
         </div>
 
         <div class="card-body table-responsive p-0">
@@ -74,7 +74,7 @@
                 <tbody>
                     @forelse ($members as $index => $member)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $members->firstItem() + $index }}</td>
                             <td>{{ $member->customer_name }}</td>
                             <td>{{ $member->address }}</td>
                             <td>{{ $member->telephone }}</td>
@@ -97,6 +97,10 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+     <div class="mt-3">
+        {{ $members->links() }}
     </div>
 </div>
 @endsection

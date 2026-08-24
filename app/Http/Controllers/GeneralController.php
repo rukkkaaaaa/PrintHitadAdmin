@@ -34,7 +34,9 @@ class GeneralController extends Controller
             });
         })
         ->orderBy('id', 'desc')
-        ->get();
+        ->paginate(10);
+
+    $members->appends($request->only('search'));
 
     return view('members.index', compact('members', 'search'));
 }
@@ -1130,7 +1132,10 @@ class GeneralController extends Controller
             'top_ad_rate_si' => 'required|numeric|min:0|max:999999.99',
             'web_combined_ad_rate_en_hitadlk' => 'required|numeric|min:0|max:999999.99',
             'web_combined_ad_rate_si_hitadlk' => 'required|numeric|min:0|max:999999.99',
-            'web_combined_ad_rate_si_hitadprint' => 'required|numeric|min:0|max:999999.99',
+            'web_combined_ad_rate_en_hitadlk_matrimonial' => 'required|numeric|min:0|max:999999.99',
+            'web_combined_ad_rate_si_hitadlk_matrimonial' => 'required|numeric|min:0|max:999999.99',
+            'print_combined_ad_rate_si_hitadprint' => 'required|numeric|min:0|max:999999.99',
+            'print_combined_ad_rate_si_hitadprint_matrimonial' => 'required|numeric|min:0|max:999999.99',
         ]);
 
         $allValues = [
@@ -1144,7 +1149,10 @@ class GeneralController extends Controller
             'top_ad_rate_si' => (float) $request->input('top_ad_rate_si'),
             'web_combined_ad_rate_en_hitadlk' => (float) $request->input('web_combined_ad_rate_en_hitadlk'),
             'web_combined_ad_rate_si_hitadlk' => (float) $request->input('web_combined_ad_rate_si_hitadlk'),
-            'web_combined_ad_rate_si_hitadprint' => (float) $request->input('web_combined_ad_rate_si_hitadprint'),
+            'web_combined_ad_rate_en_hitadlk_matrimonial' => (float) $request->input('web_combined_ad_rate_en_hitadlk_matrimonial'),
+            'web_combined_ad_rate_si_hitadlk_matrimonial' => (float) $request->input('web_combined_ad_rate_si_hitadlk_matrimonial'),
+            'print_combined_ad_rate_si_hitadprint' => (float) $request->input('print_combined_ad_rate_si_hitadprint'),
+            'print_combined_ad_rate_si_hitadprint_matrimonial' => (float) $request->input('print_combined_ad_rate_si_hitadprint_matrimonial'),
         ];
 
         $columnsToUpdate = collect(array_keys($allValues))
@@ -1342,7 +1350,10 @@ class GeneralController extends Controller
             'top_ad_rate_si' => 100.00,
             'web_combined_ad_rate_en_hitadlk' => 300.00,
             'web_combined_ad_rate_si_hitadlk' => 300.00,
-            'web_combined_ad_rate_si_hitadprint' => 300.00,
+            'web_combined_ad_rate_en_hitadlk_matrimonial' => 300.00,
+            'web_combined_ad_rate_si_hitadlk_matrimonial' => 300.00,
+            'print_combined_ad_rate_si_hitadprint' => 300.00,
+            'print_combined_ad_rate_si_hitadprint_matrimonial' => 300.00,
         ];
 
         if (!Schema::hasTable('general_settings')) {
@@ -1809,6 +1820,104 @@ class GeneralController extends Controller
         $suffix = trim($publication) === 'lahipita' ? 'si' : 'en';
 
         return max(0, (float) ($settings['top_ad_rate_' . $suffix] ?? 0));
+    }
+
+    /**
+    * Check whether the selected category is Matrimonial.
+    */
+    private function isMatrimonialCategory(int $categoryId): bool
+    {
+        $category = DB::table('categories')
+            ->select(
+                'category_name_en',
+                'category_name_si'
+            )
+            ->where('id', $categoryId)
+            ->first();
+
+        if (!$category) {
+            return false;
+        }
+
+        $englishName = mb_strtolower(
+            trim((string) ($category->category_name_en ?? '')),
+            'UTF-8'
+        );
+
+        $sinhalaName = trim(
+            (string) ($category->category_name_si ?? '')
+        );
+
+        return str_contains($englishName, 'matrimonial')
+            || str_contains($sinhalaName, 'මංගල යෝජනා');
+    }
+
+
+    /**
+    * Get Web Combined Ad price from general_settings.
+    */
+    private function resolveWebCombinedAdRate(
+        string $publication,
+        int $categoryId
+    ): float {
+        $settings = $this->fetchGeneralSettings();
+
+        $isLahipita = trim($publication) === 'lahipita';
+        $isMatrimonial = $this->isMatrimonialCategory($categoryId);
+
+        if ($isLahipita) {
+            $key = $isMatrimonial
+                ? 'web_combined_ad_rate_si_hitadlk_matrimonial'
+                : 'web_combined_ad_rate_si_hitadlk';
+        } else {
+            $key = $isMatrimonial
+                ? 'web_combined_ad_rate_en_hitadlk_matrimonial'
+                : 'web_combined_ad_rate_en_hitadlk';
+        }
+
+        return max(
+            0,
+            (float) ($settings[$key] ?? 0)
+        );
+    }
+
+
+    /**
+    * Get Print on Hitad Paper price from general_settings.
+    * This option is only used for Lahipita advertisements.
+    */
+    private function resolvePrintOnHitadPaperRate(
+        int $categoryId
+    ): float {
+        $settings = $this->fetchGeneralSettings();
+
+        $isMatrimonial = $this->isMatrimonialCategory($categoryId);
+
+        $key = $isMatrimonial
+            ? 'print_combined_ad_rate_si_hitadprint_matrimonial'
+            : 'print_combined_ad_rate_si_hitadprint';
+
+        return max(
+            0,
+            (float) ($settings[$key] ?? 0)
+        );
+    }
+
+
+    /**
+    * Tint price is stored in advertisement_tints.price.
+    */
+    private function resolveTintPrice(?int $tintId): float
+    {
+        if (empty($tintId)) {
+            return 0;
+        }
+
+        $price = DB::table('advertisement_tints')
+            ->where('id', $tintId)
+            ->value('price');
+
+        return max(0, (float) ($price ?? 0));
     }
 
     /**
@@ -3175,26 +3284,26 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $type = str_replace('_', '-', $type);
 
         $configs = [
-            'web-combined-hitad-paid' => [
-                'slug' => 'web_combined_hitad_paid',
+            'hitad-paid' => [
+                'slug' => 'hitad_paid',
                 'title' => 'Web Combined Hitad Paid Report',
                 'publication' => 'hitad_print',
                 'group' => 'paid',
             ],
-            'web-combined-hitad-unpaid' => [
-                'slug' => 'web_combined_hitad_unpaid',
+            'hitad-unpaid' => [
+                'slug' => 'hitad_unpaid',
                 'title' => 'Web Combined Hitad Unpaid Report',
                 'publication' => 'hitad_print',
                 'group' => 'unpaid',
             ],
-            'web-combined-lahipita-paid' => [
-                'slug' => 'web_combined_lahipita_paid',
+            'lahipita-paid' => [
+                'slug' => 'lahipita_paid',
                 'title' => 'Web Combined Lahipita Paid Report',
                 'publication' => 'lahipita',
                 'group' => 'paid',
             ],
-            'web-combined-lahipita-unpaid' => [
-                'slug' => 'web_combined_lahipita_unpaid',
+            'lahipita-unpaid' => [
+                'slug' => 'lahipita_unpaid',
                 'title' => 'Web Combined Lahipita Unpaid Report',
                 'publication' => 'lahipita',
                 'group' => 'unpaid',
@@ -3789,7 +3898,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ->select(
                 'advertisement_tints.id',
                 'advertisement_tints.advertisement_tint_en',
-                'advertisement_tints.advertisement_tint_si'
+                'advertisement_tints.advertisement_tint_si',
+                'advertisement_tints.price'
             )
             ->orderBy('advertisement_tints.advertisement_tint_en')
             ->orderBy('advertisement_tints.advertisement_tint_si')
@@ -3880,8 +3990,28 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             abort(404);
         }
         $generalSettings = $this->fetchGeneralSettings();
-        $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
-        return view('advertisements.edit', compact('ad', 'categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'criteriaValues', 'tints', 'generalSettings', 'topAdSupported'));
+
+    $topAdSupported = Schema::hasColumn(
+        'advertisements',
+        'top_ad'
+    );
+
+    $webCombinedRate = $this->resolveWebCombinedAdRate(
+        (string) $ad->publication,
+        (int) $ad->category_id
+    );
+
+    $printOnHitadPaperRate = $this->resolvePrintOnHitadPaperRate(
+        (int) $ad->category_id
+    );
+
+    $currentTintPrice = $this->resolveTintPrice(
+        !empty($ad->advertisement_tint_id)
+            ? (int) $ad->advertisement_tint_id
+            : null
+    );
+
+    return view('advertisements.edit', compact('ad','categories','districts','cities','criterias','criteriaOptions','criteriaValues','tints','generalSettings','topAdSupported','webCombinedRate','printOnHitadPaperRate','currentTintPrice'));
     }
 
     /**
@@ -3900,11 +4030,29 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $existingAd = DB::table('advertisements') ->where('id', $id) ->first();
             if (!$existingAd) {
                 abort(404); }
+                $isApprove = $request->input('action') === 'approve';
         $isLahipitaAdvertisement =
             trim((string) ($existingAd->publication ?? '')) === 'lahipita';
                 $this->ensureRetypedAdvertisementDescriptionColumnExists();
                 $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
                 $this->ensureReferenceNumberColumnExists();
+
+        $referenceNumberRules = [
+            $isApprove ? 'required' : 'nullable','string','max:255',
+            Rule::unique('advertisements', 'reference_number')->ignore($id),];
+
+        $retypedDescriptionRules = [
+            $isApprove ? 'required' : 'nullable','string',
+        function ($attribute, $value, $fail) use ($existingAd) {
+            if ($value === null || trim((string) $value) === '') {
+                return;
+            }
+            $this->validateDescriptionWordLimit(
+                (string) ($existingAd->publication ?? 'hitad_print'),
+                (string) $value,
+                $fail
+        );},
+        ];
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -3914,28 +4062,9 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'nic_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'nic_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'email' => 'nullable|email|max:255',
-            'reference_number' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('advertisements', 'reference_number')->ignore($id)
-            ],
-            'retyped_advertisement_description' => [
-                'required',
-                'string',
-                function ($attribute, $value, $fail) use ($id) {
-                    $ad = DB::table('advertisements')->where('id', $id)->first();
-                    if (!$ad) {
-                        return;
-                    }
-
-                    $this->validateDescriptionWordLimit(
-                        (string) ($ad->publication ?? 'hitad_print'),
-                        (string) $value,
-                        $fail
-                    );
-                },
-            ],
+            'action' => 'required|in:save,approve',
+            'reference_number' => $referenceNumberRules,
+            'retyped_advertisement_description' => $retypedDescriptionRules,
             'retyped_advertisement_description_done' => 'nullable|boolean',
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
@@ -4075,6 +4204,82 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
 
             if ($topAdSupported) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
+            }
+
+            /*Automatic price adjustment*/
+
+            $oldTintId = !empty($ad->advertisement_tint_id)
+                ? (int) $ad->advertisement_tint_id
+                : null;
+
+            $newTintId = $request->filled('advertisement_tint_id')
+                ? (int) $request->advertisement_tint_id
+                : null;
+
+            $oldWebCombined = (int) ($ad->web_combined_ad_hitadlk ?? 0) === 1;
+
+            $newWebCombined = $request->boolean('web_combined_ad_hitadlk');
+
+            $oldPrintOnHitadPaper = $isLahipita
+                && (int) ($ad->print_combined_ad_hitadprint ?? 0) === 1;
+
+            $newPrintOnHitadPaper = $isLahipita
+                && $request->boolean('print_combined_ad_hitadprint');
+
+            $oldTopAd = $topAdSupported
+                && (int) ($ad->top_ad ?? 0) === 1;
+
+            $newTopAd = $topAdSupported
+                && $request->boolean('top_ad');
+
+        $priceDelta = 0.00;
+
+
+        /*1. Tint changed*/
+
+        if ($oldTintId !== $newTintId) { $oldTintPrice = $this->resolveTintPrice($oldTintId);
+            $newTintPrice = $this->resolveTintPrice($newTintId);
+            $priceDelta += $newTintPrice - $oldTintPrice;}
+
+        /*2. Web Combined Ad changed*/
+        if ($oldWebCombined !== $newWebCombined) {
+
+            if ($newWebCombined) {
+            $priceDelta += $this->resolveWebCombinedAdRate(
+            (string) $ad->publication,
+            (int) $request->category_id);
+            } else {
+            $priceDelta -= $this->resolveWebCombinedAdRate((string) $ad->publication,(int) $ad->category_id);}
+            }
+
+        /*3. Print on Hitad Paper changed*/
+        if ($oldPrintOnHitadPaper !== $newPrintOnHitadPaper) {
+
+            if ($newPrintOnHitadPaper) {
+                $priceDelta += $this->resolvePrintOnHitadPaperRate(
+                (int) $request->category_id);
+            } else {
+            $priceDelta -= $this->resolvePrintOnHitadPaperRate(
+            (int) $ad->category_id);}
+            }
+            /*4. Top Ad changed*/
+            if ($oldTopAd !== $newTopAd) {
+            $topAdRate = $this->resolveTopAdRate(
+                (string) $ad->publication);
+            if ($newTopAd) {$priceDelta += $topAdRate;
+                } else {$priceDelta -= $topAdRate;}
+            }
+
+            /* Update payment amount*/
+            if (
+                $payment
+                && $payment->amount !== null
+                && abs($priceDelta) > 0.00001
+            ) { $newAmount = round(
+                    max( 0, (float) $payment->amount + $priceDelta),2);
+                DB::table('payments')
+                    ->where('id', $payment->id)
+                    ->update(['amount' => $newAmount, 'updated_at' => now(),]);
             }
 
             DB::table('advertisements')->where('id', $id)->update($advertisementData);
@@ -4274,15 +4479,6 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     }
                 return redirect('/advertisements')
                     ->with('success', 'Advertisement approved successfully!');
-                }
-                if (
-                    $publication === 'lahipita' &&
-                    $request->boolean('print_combined_ad_hitadprint')) {
-                        return redirect('/advertisements/lahipita/print-on-paper')
-                            ->with(
-                            'success',
-                            'Advertisement updated and added to the Print on Hitad Paper section!'
-                        );
                 }
                 return redirect('/advertisements')
                     ->with('success', 'Advertisement updated successfully!');

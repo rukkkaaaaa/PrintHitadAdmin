@@ -229,11 +229,11 @@
                     <div class="col-md-6">
                         <label class="form-label">Customer Name</label>
                         <input type="text"
-       name="customer_name"
-       class="form-control"
-       value="{{ mb_strtoupper(old('customer_name', $ad->customer_name), 'UTF-8') }}"
-       oninput="this.value = this.value.toUpperCase()"
-       required>
+                                name="customer_name"
+                                class="form-control"
+                                value="{{ mb_strtoupper(old('customer_name', $ad->customer_name), 'UTF-8') }}"
+                                oninput="this.value = this.value.toUpperCase()"
+                                required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">NIC / Passport</label>
@@ -250,11 +250,11 @@
                     <div class="col-12">
                         <label class="form-label">Address</label>
                         <input type="text"
-       name="address"
-       class="form-control"
-       value="{{ mb_strtoupper(old('address', $ad->address), 'UTF-8') }}"
-       oninput="this.value = this.value.toUpperCase()"
-       required>
+                                name="address"
+                                class="form-control"
+                                value="{{ mb_strtoupper(old('address', $ad->address), 'UTF-8') }}"
+                                oninput="this.value = this.value.toUpperCase()"
+                                required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">NIC Front Photo</label>
@@ -313,37 +313,28 @@
                             </button>
                         </div>
                     </div>
-                    <textarea name="retyped_advertisement_description"
-                              id="retypedDescriptionBox"
-                              class="form-control"
-                              rows="4"
-                              required
+                    <textarea name="retyped_advertisement_description" id="retypedDescriptionBox" class="form-control" rows="4"
                               {{ $retypedDone ? 'readonly' : '' }}>{{ old('retyped_advertisement_description', $ad->retyped_advertisement_description ?? '') }}</textarea>
-
-                    <div class="mt-3">
-    <label class="form-label" for="referenceNumberInput">
-        Reference Number
-    </label>
-
-    <input type="text"
-           name="reference_number"
-           id="referenceNumberInput"
-           class="form-control @error('reference_number') is-invalid @enderror"
-           value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
-           placeholder="Enter reference number">
-
-    @error('reference_number')
-        <div class="invalid-feedback">
-            {{ $message }}
-        </div>
-    @enderror
-</div>
+                        <div class="mt-3">
+                            <label class="form-label" for="referenceNumberInput">
+                                Reference Number
+                            </label>
+                        <input type="text" name="reference_number" id="referenceNumberInput"
+                                        class="form-control @error('reference_number') is-invalid @enderror"
+                                        value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
+                                        placeholder="Enter reference number">
+                                @error('reference_number')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
 
                     <input type="hidden" name="retyped_advertisement_description_done" id="retypedDescriptionDoneInput" value="{{ $retypedDone ? 1 : 0 }}">
                     @error('retyped_advertisement_description')
                         <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
                     @enderror
-                    <small class="text-muted d-block mt-2">Click Updtae after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
+                    <small class="text-muted d-block mt-2">Click Update after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
                 </div>
 
                 <div class="row g-3">
@@ -428,7 +419,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Tint</label>
-                        <select name="advertisement_tint_id" class="form-select">
+                        <select name="advertisement_tint_id" id="advertisementTintSelect" class="form-select">
                             <option value="">No Tint</option>
                             @foreach(($tints ?? collect()) as $tint)
                                 @php
@@ -443,7 +434,7 @@
                                     }
                                 @endphp
                                 @if($tintLabel !== '')
-                                    <option value="{{ $tint->id }}" {{ old('advertisement_tint_id', $ad->advertisement_tint_id) == $tint->id ? 'selected' : '' }}>
+                                    <option value="{{ $tint->id }}" data-price="{{ (float) ($tint->price ?? 0) }}" {{ old('advertisement_tint_id', $ad->advertisement_tint_id) == $tint->id ? 'selected' : '' }}>
                                         {{ $tintLabel }}
                                     </option>
                                 @endif
@@ -456,7 +447,7 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Web Combined Ad</label>
-                        <select name="web_combined_ad_hitadlk" class="form-select">
+                        <select name="web_combined_ad_hitadlk" id="webCombinedSelect" class="form-select">
                             <option value="0" {{ old('web_combined_ad_hitadlk', $ad->web_combined_ad_hitadlk) == 0 ? 'selected' : '' }}>No</option>
                             <option value="1" {{ old('web_combined_ad_hitadlk', $ad->web_combined_ad_hitadlk) == 1 ? 'selected' : '' }}>Yes</option>
                         </select>
@@ -470,7 +461,7 @@
                             <label class="form-label"> Print on Hitad Paper </label>
                     @if($isLahipitaAdvertisement)
                     {{-- Only Lahipita advertisements can change this --}}
-                        <select name="print_combined_ad_hitadprint" class="form-select">
+                        <select name="print_combined_ad_hitadprint" id="printOnHitadPaperSelect" class="form-select">
                             <option value="0" {{ old( 'print_combined_ad_hitadprint', $ad->print_combined_ad_hitadprint ?? 0 ) == 0 ? 'selected' : '' }} > No </option>
                             <option value="1" {{ old('print_combined_ad_hitadprint', $ad->print_combined_ad_hitadprint ?? 0) == 1 ? 'selected' : '' }} >Yes</option>
                         </select>
@@ -524,7 +515,7 @@
                 <div class="row g-3 mt-1">
                     <div class="col-md-6">
                         <label class="form-label">Amount</label>
-                        <input type="text" class="form-control" value="{{ isset($ad->amount) ? 'Rs. ' . number_format($ad->amount, 2) : '—' }}" disabled>
+                        <input type="text" class="form-control" id="amountPreview" value="{{ isset($ad->amount) ? 'Rs. ' . number_format($ad->amount, 2) : '—' }}" readonly>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Payment Date</label>
@@ -657,28 +648,134 @@
                 @endif
                 
                 <div class="d-flex justify-content-end gap-2 mt-4 ea-actions">
-                    <button
-    type="submit"
-    name="action"
-    value="approve"
-    class="btn btn-success">
-    <i class="bx bx-check-circle"></i> Approved
-</button>
-                    <a href="{{ url('/advertisements') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" name="action" value="save" class="btn btn-primary">
+                    <i class="bx bx-save"></i>
+                        Save
+                    </button>
+                    <button type="submit" name="action" value="approve" id="approveButton" class="btn btn-success" disabled >
+                        <i class="bx bx-check-circle"></i>
+                            Approve
+                    </button>
+                    <a href="{{ url('/advertisements') }}" class="btn btn-secondary" >
+                        Cancel
+                    </a>
                 </div>
             </div>
         </div>
     </form>
-                </div>
+</div>
 
                 <script>
                 document.addEventListener('DOMContentLoaded', function () {
+
+                var tintSelect = document.getElementById('advertisementTintSelect');
+                var webCombinedSelect = document.getElementById('webCombinedSelect');
+                var printOnHitadPaperSelect = document.getElementById('printOnHitadPaperSelect');
+                var topAdToggle = document.getElementById('topAdToggle');
+                var amountPreview = document.getElementById('amountPreview');
+
+                var hasPayment = @json(!empty($ad->payment_id));
+                var initialAmount = Number(@json((float) ($ad->amount ?? 0)));
+                var initialTintId = String(@json((string) ($ad->advertisement_tint_id ?? '')));
+                var initialTintPrice = Number(@json((float) ($currentTintPrice ?? 0)));
+                var initialWebCombined = Number(@json((int) ($ad->web_combined_ad_hitadlk ?? 0)));
+                var initialPrintOnHitadPaper = Number(@json((int) ($ad->print_combined_ad_hitadprint ?? 0)));
+                var initialTopAd = Number(@json((int) ($ad->top_ad ?? 0)));
+
+                var webCombinedRate = Number(@json((float) ($webCombinedRate ?? 0)));
+                var printOnHitadPaperRate = Number(@json((float) ($printOnHitadPaperRate ?? 0)));
+                var topAdRate = Number(@json((float) ($topAdRate ?? 0)));
+
+                function currentTintPrice() {
+                    if (!tintSelect || !tintSelect.value) return 0;
+                    var selectedOption = tintSelect.options[tintSelect.selectedIndex];
+                    if (!selectedOption) return 0;
+                    return Number(selectedOption.dataset.price || 0);
+                }
+
+                function refreshAmountPreview() {
+                    if (!hasPayment || !amountPreview) return;
+                    var delta = 0;
+                    var currentTintId = tintSelect
+                        ? String(tintSelect.value || '')
+                        : initialTintId;
+                    if (currentTintId !== initialTintId) {
+                        delta += currentTintPrice() - initialTintPrice;
+                    }
+                    var currentWebCombined = webCombinedSelect
+                        ? Number(webCombinedSelect.value || 0)
+                        : initialWebCombined;
+                    if (currentWebCombined !== initialWebCombined) {
+                        delta += currentWebCombined === 1
+                            ? webCombinedRate
+                            : -webCombinedRate;
+                    }
+                    var currentPrintOnHitadPaper = printOnHitadPaperSelect
+                        ? Number(printOnHitadPaperSelect.value || 0)
+                        : initialPrintOnHitadPaper;
+                    if (currentPrintOnHitadPaper !== initialPrintOnHitadPaper) {
+                        delta += currentPrintOnHitadPaper === 1
+                            ? printOnHitadPaperRate
+                            : -printOnHitadPaperRate;
+                    }
+                    var currentTopAd = topAdToggle && topAdToggle.checked ? 1 : 0;
+                    if (currentTopAd !== initialTopAd) {
+                        delta += currentTopAd === 1
+                            ? topAdRate
+                            : -topAdRate;
+                    }
+                    var newAmount = Math.max(0, initialAmount + delta);
+                    amountPreview.value = 'Rs. ' + newAmount.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+                if (tintSelect) {
+                    tintSelect.addEventListener('change', refreshAmountPreview);
+                }
+                if (webCombinedSelect) {
+                    webCombinedSelect.addEventListener('change', refreshAmountPreview);
+                }
+                if (printOnHitadPaperSelect) {
+                    printOnHitadPaperSelect.addEventListener('change', refreshAmountPreview);
+                }
+                if (topAdToggle) {
+                    topAdToggle.addEventListener('change', refreshAmountPreview);
+                }
+
+                    refreshAmountPreview();
+
                     var copyBtn = document.getElementById('copyCurrentDescriptionBtn');
                     var currentDescriptionBox = document.getElementById('currentDescriptionBox');
                     var copyRetypedBtn = document.getElementById('copyRetypedDescriptionBtn');
                     var retypedDoneBtn = document.getElementById('retypedDescriptionDoneBtn');
                     var retypedDescriptionBox = document.getElementById('retypedDescriptionBox');
                     var retypedDoneInput = document.getElementById('retypedDescriptionDoneInput');
+                    var approveButton = document.getElementById('approveButton');
+                    var referenceNumberInput = document.getElementById('referenceNumberInput');
+
+                    function refreshApproveButton() {
+                        if (
+                            !approveButton ||
+                            !retypedDescriptionBox ||
+                            !referenceNumberInput ) { return;
+                        }
+                    var hasDescription = (retypedDescriptionBox.value || '').trim() !== '';
+                    var hasReference = (referenceNumberInput.value || '').trim() !== '';
+                    approveButton.disabled = !(hasDescription && hasReference);
+                   }
+                    if (retypedDescriptionBox) {
+    	                retypedDescriptionBox.addEventListener(
+                        'input',
+                        refreshApproveButton);
+                    }
+                    if (referenceNumberInput) {
+    	                referenceNumberInput.addEventListener(
+                        'input',
+                        refreshApproveButton);
+                    }
+
+                refreshApproveButton();
 
                     if (copyBtn && currentDescriptionBox) {
                         copyBtn.addEventListener('click', function () {
@@ -757,7 +854,15 @@
                         }
 
                         retypedDoneBtn.addEventListener('click', function () {
+                             if (
+                                !retypedDescriptionBox.value ||
+                                !retypedDescriptionBox.value.trim()
+                            ) {
+                                retypedDescriptionBox.focus();
+                                return;
+                                }
                             lockRetypedDescription();
+                            refreshApproveButton();
                         });
                     }
 
