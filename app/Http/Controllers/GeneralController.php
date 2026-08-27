@@ -2185,7 +2185,12 @@ class GeneralController extends Controller
             DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
             DB::raw('COALESCE(districts.district_name, districts.district_name) as district_name'),
             DB::raw('COALESCE(cities.city_name, cities.city_name) as city_name'),
-            DB::raw("COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name"),
+            DB::raw(" CASE
+                WHEN advertisements.publication = 'lahipita' THEN
+                    COALESCE(NULLIF(TRIM(advertisement_tints.advertisement_tint_si), ''), NULLIF(TRIM(advertisement_tints.advertisement_tint_en), ''))
+            ELSE
+                COALESCE(NULLIF(TRIM(advertisement_tints.advertisement_tint_en), ''), NULLIF(TRIM(advertisement_tints.advertisement_tint_si), ''))
+            END as advertisement_tint_name "),
             DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as advertisement_type_name'),
             DB::raw('COALESCE(advertisement_sizes.advertisement_size_en, advertisement_sizes.advertisement_size_si) as advertisement_size_name'),
 
@@ -3161,23 +3166,43 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             $monthInput = $month->format('Y-m');
         }
 
-        $reportSections = [
-            'hitad_paid' => $this->buildMonthlyAdvertisementReport('hitad_print', 'paid', $month),
-            'hitad_unpaid' => $this->buildMonthlyAdvertisementReport('hitad_print', 'unpaid', $month),
-            'lahipita_paid' => $this->buildMonthlyAdvertisementReport('lahipita', 'paid', $month),
-            'lahipita_unpaid' => $this->buildMonthlyAdvertisementReport('lahipita', 'unpaid', $month),
-        ];
-
-        $webCombinedReportSections = [
-            'hitad_paid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'paid', $month),
-            'hitad_unpaid' => $this->buildWebCombinedAdvertisementReport('hitad_print', 'unpaid', $month),
-            'lahipita_paid' => $this->buildWebCombinedAdvertisementReport('lahipita', 'paid', $month),
-            'lahipita_unpaid' => $this->buildWebCombinedAdvertisementReport('lahipita', 'unpaid', $month),
-        ];
+        $ads = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->join('districts', 'advertisements.district_id', '=', 'districts.id')
+            ->leftJoin('cities', 'advertisements.city_id', '=', 'cities.id')
+            ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
+            ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
+            ->where('categories.is_active', 1)
+            ->where('districts.is_active', 1)
+            ->where(function ($q) {
+                $q->whereNull('cities.id')->orWhere('cities.is_active', 1);
+            })
+            ->whereBetween('advertisements.publish_date', [
+                $month->copy()->startOfMonth()->toDateString(),
+                $month->copy()->endOfMonth()->toDateString(),
+            ])
+                ->select(
+                'advertisements.id',
+                'advertisements.publication',
+                'advertisements.web_combined_ad_hitadlk',
+                'advertisements.publish_date',
+                'customers.customer_name',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name'),
+                'districts.district_name',
+                'cities.city_name',
+                'payments.amount',
+                'payments.payment_status',
+                'payments.payment_date',
+                'payment_methods.payment_method_name as payment_method'
+            )
+            ->orderBy('advertisements.id', 'desc')
+            ->paginate(20)
+            ->withQueryString();
 
         $monthLabel = $month->format('F Y');
 
-        return view('reports', compact('monthInput', 'monthLabel', 'reportSections', 'webCombinedReportSections'));
+        return view('reports', compact('monthInput', 'monthLabel', 'ads'));
     }
 
     /**
@@ -3466,7 +3491,12 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         'payment_methods.payment_method_name as payment_method',
         DB::raw('COALESCE(advertisement_types.advertisement_type_en, advertisement_types.advertisement_type_si) as advertisement_type_name'),
         DB::raw('COALESCE(advertisement_sizes.advertisement_size_en, advertisement_sizes.advertisement_size_si) as advertisement_size_name'),
-        DB::raw('COALESCE(advertisement_tints.advertisement_tint_en, advertisement_tints.advertisement_tint_si) as advertisement_tint_name')
+        DB::raw("CASE
+            WHEN advertisements.publication = 'lahipita' THEN
+                COALESCE(NULLIF(TRIM(advertisement_tints.advertisement_tint_si), ''), NULLIF(TRIM(advertisement_tints.advertisement_tint_en), ''))
+            ELSE
+                COALESCE(NULLIF(TRIM(advertisement_tints.advertisement_tint_en), ''), NULLIF(TRIM(advertisement_tints.advertisement_tint_si), ''))
+            END as advertisement_tint_name")
     )
     ->first();
 

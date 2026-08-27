@@ -125,7 +125,7 @@
 
         <tr>
             <td class="label">Advertisement Tint</td>
-            <td>{{ $ad->advertisement_tint_name ?? '-' }}</td>
+            <td>{{ $ad->advertisement_tint_name ?: 'No Tint' }}</td>
         </tr>
 
         <tr>
