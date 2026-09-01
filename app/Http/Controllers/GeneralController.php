@@ -1765,6 +1765,18 @@ class GeneralController extends Controller
             }
         }
 
+        if ($request->boolean('web_combined_ad_hitadlk')) {
+            $categoryId = (int) $request->input('category_id', 0);
+            $webCombinedRate = $this->resolveWebCombinedAdRate($publication, $categoryId);
+
+            if ($webCombinedRate > 0) {
+                $items[] = [
+                    'label' => 'Web Combined Ad',
+                    'amount' => $webCombinedRate,
+                ];
+            }
+        }
+
         return $items;
     }
 
@@ -3229,12 +3241,25 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $report = $this->buildMonthlyAdvertisementReport($config['publication'], $config['group'], $month);
         $filename = sprintf('%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
 
-        return Pdf::loadView('reports.pdf', [
-            'title' => $config['title'],
-            'monthLabel' => $month->format('F Y'),
-            'monthInput' => $monthInput,
-            'report' => $report,
-        ])->download($filename);
+        $html = view('reports.pdf', [
+        'title' => $config['title'],
+        'monthLabel' => $month->format('F Y'),
+        'monthInput' => $monthInput,
+        'report' => $report,
+        ])->render();
+
+    $pdfBytes = Browsershot::html($html)
+        ->setNodeBinary('/usr/bin/node')
+        ->setNpmBinary('/usr/bin/npm')
+        ->setChromePath('/var/www/betaprint_hitad_admin/storage/puppeteer-cache/chrome/linux-152.0.7977.42/chrome-linux64/chrome')
+        ->noSandbox()
+        ->format('A4')
+        ->showBackground()
+        ->waitUntilNetworkIdle()
+        ->pdf();
+
+    return response($pdfBytes, 200, [ 'Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+    ]);
     }
 
     
@@ -3255,12 +3280,25 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $report = $this->buildWebCombinedAdvertisementReport($config['publication'], $config['group'], $month);
         $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
 
-        return Pdf::loadView('reports.pdf', [
+        $html = view('reports.pdf', [
             'title' => $config['title'],
             'monthLabel' => $month->format('F Y'),
             'monthInput' => $monthInput,
             'report' => $report,
-        ])->download($filename);
+        ])->render();
+
+        $pdfBytes = Browsershot::html($html)
+            ->setNodeBinary('/usr/bin/node')
+            ->setNpmBinary('/usr/bin/npm')
+            ->setChromePath('/var/www/betaprint_hitad_admin/storage/puppeteer-cache/chrome/linux-152.0.7977.42/chrome-linux64/chrome')
+            ->noSandbox()
+            ->format('A4')
+            ->showBackground()
+            ->waitUntilNetworkIdle()
+            ->pdf();
+
+        return response($pdfBytes, 200, [ 'Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
@@ -3423,6 +3461,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ])
             ->select(
                 'advertisements.id',
+                'advertisements.category_id',
                 'advertisements.publication',
                 'advertisements.advertisement_description',
                 'advertisements.publish_date',
@@ -3452,9 +3491,16 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             return is_numeric($ad->amount) ? (float) $ad->amount : 0.0;
         });
 
+        // Calculate total web combined ad charge
+        $totalWebCombinedCharge = (float) $ads->sum(function ($ad) {
+            $rate = $this->resolveWebCombinedAdRate($ad->publication, (int) $ad->category_id);
+            return $rate;
+        });
+
         return [
             'count' => $ads->count(),
             'total_amount' => $totalAmount,
+            'total_web_combined_charge' => $totalWebCombinedCharge,
             'ads' => $ads,
         ];
     }

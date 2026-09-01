@@ -1,10 +1,38 @@
+@php
+    $sinhalaFontPath = storage_path('fonts/NotoSansSinhala-VariableFont_wdth,wght.ttf');
+    $sinhalaFont = file_exists($sinhalaFontPath)
+        ? base64_encode(file_get_contents($sinhalaFontPath))
+        : null;
+@endphp
+
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>{{ $title }}</title>
+
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #222; }
+        @if($sinhalaFont)
+        @font-face {
+            font-family: 'NotoSinhala';
+            src: url("data:font/ttf;base64,{{ $sinhalaFont }}") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+        }
+        @endif
+
+        html,
+        body,
+        table,
+        thead,
+        tbody,
+        tr,
+        th,
+        td,
+        div,
+        span,
+        p { font-family: 'NotoSinhala', Arial, sans-serif !important; }
+        body { font-size: 11px; color: #222; }
         h2 { margin: 0 0 4px; font-size: 18px; text-align: center; }
         .sub { text-align: center; color: #666; margin-bottom: 16px; }
         .meta { margin-bottom: 14px; }
@@ -24,6 +52,7 @@
 
     <div class="meta">
         <div><strong>Month:</strong> {{ $monthInput }}</div>
+        <div><strong>Total Web Combined Charge:</strong> Rs. {{ number_format($report['total_web_combined_charge'] ?? 0, 2) }}</div>
         <div><strong>Total Amount:</strong> Rs. {{ number_format($report['total_amount'] ?? 0, 2) }}</div>
         <div><strong>Total Records:</strong> {{ $report['count'] }}</div>
     </div>
