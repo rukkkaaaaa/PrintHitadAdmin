@@ -6,7 +6,39 @@
     $approvedReadOnly = $approvedReadOnly ?? false;
 @endphp
 
-<div class="container mt-4">
+@push('styles')
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        .advertisement-print-area,
+        .advertisement-print-area * {
+            visibility: visible;
+        }
+
+        .advertisement-print-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            margin: 0;
+        }
+
+        .advertisement-print-area .card {
+            border: 0;
+            box-shadow: none;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+    }
+</style>
+@endpush
+
+<div class="container mt-4 advertisement-print-area">
     <h2>Advertisement Details</h2>
 
 
@@ -48,44 +80,34 @@
                         <a href="{{ $ad->nic_front_img_url }}" target="_blank">
                             <img src="{{ $ad->nic_front_img_url }}" alt="NIC Front" class="img-fluid rounded border" style="max-height: 200px;">
                         </a>
+                        @if(!$approvedReadOnly)
                         <div class="mt-1">
-                            <a href="{{ $ad->nic_front_img_url }}" download class="btn btn-sm btn-outline-secondary">
+                            <a href="{{ $ad->nic_front_img_url }}" download class="btn btn-sm btn-outline-secondary no-print">
                                 <i class="bx bx-download"></i> Download
                             </a>
                         </div>
+                        @endif
                     </div>
                 @endif
 
                 @if($ad->nic_back_img_url)
                     <div class="col-md-4 mb-3">
                         <p class="mb-1"><strong>NIC Back</strong></p>
-                        @if(!$approvedReadOnly)
-
-                    <div class="mt-1">
-                        <a
-                            href="{{ $ad->nic_back_img_url }}"
-                            download
-                            class="btn btn-sm btn-outline-secondary"
-                        >
-                            <i class="bx bx-download"></i>
-                            Download
+                        <a href="{{ $ad->nic_back_img_url }}" target="_blank">
+                            <img src="{{ $ad->nic_back_img_url }}" alt="NIC Back" class="img-fluid rounded border" style="max-height: 200px;">
                         </a>
-                    </div>
-                @endif
-                    <div class="mt-1">
-                @if(!$approvedReadOnly)
-                <div class="mt-1">
-                    <a
-                        href="{{ $ad->nic_front_img_url }}"
-                        download
-                        class="btn btn-sm btn-outline-secondary"
-                    >
-                        <i class="bx bx-download"></i>
-                        Download
-                    </a>
-                </div>
-                @endif
+                        @if(!$approvedReadOnly)
+                        <div class="mt-1">
+                            <a
+                                href="{{ $ad->nic_back_img_url }}"
+                                download
+                                class="btn btn-sm btn-outline-secondary no-print"
+                            >
+                                <i class="bx bx-download"></i>
+                                Download
+                            </a>
                         </div>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -164,7 +186,7 @@
                                 <a
                                     href="{{ $image->display_url }}"
                                     download
-                                    class="btn btn-sm btn-outline-secondary"
+                                    class="btn btn-sm btn-outline-secondary no-print"
                                 >
                                     <i class="bx bx-download"></i>
                                     Download
@@ -183,7 +205,16 @@
     </div>
 </div>
 
-<div class="mt-3 d-flex gap-2">
+<div class="mt-3 d-flex gap-2 no-print">
+    <button
+        type="button"
+        class="btn btn-info"
+        onclick="window.print();"
+    >
+        <i class="bx bx-printer"></i>
+        Print Advertisement
+    </button>
+
     @if(!$approvedReadOnly)
         <a
             href="{{ url('/advertisements/' . $ad->id . '/download') }}"

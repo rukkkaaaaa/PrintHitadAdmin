@@ -14,7 +14,7 @@
 
     @php
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        $canEditPaymentFields = $currentRole === 'super admin';
+        $canEditPaymentFields = in_array($currentRole, ['administrative level', 'super admin'], true);
         $topAdSupported = $topAdSupported ?? false;
         $generalSettings = $generalSettings ?? [];
         $retypedDone = (bool) ($ad->retyped_advertisement_description_done ?? false);
@@ -507,7 +507,7 @@
                         @if(empty($ad->payment_id))
                             <small class="text-muted">No payment record found for this advertisement.</small>
                         @elseif(!$canEditPaymentFields)
-                            <small class="text-muted">Only super admin can edit payment status.</small>
+                            <small class="text-muted">Only administrative level users can edit payment status.</small>
                         @endif
                     </div>
                 </div>
@@ -525,7 +525,7 @@
                         @if(empty($ad->payment_id))
                             <small class="text-muted">No payment record found for this advertisement.</small>
                         @elseif(!$canEditPaymentFields)
-                            <small class="text-muted">Only super admin can edit payment date.</small>
+                            <small class="text-muted">Only administrative level users can edit payment date.</small>
                         @endif
                     </div>
 
@@ -538,7 +538,7 @@
                         @if(empty($ad->payment_id))
                             <small class="text-muted">No payment record found for this advertisement.</small>
                         @elseif(!$canEditPaymentFields)
-                            <small class="text-muted">Only super admin can edit receipt number.</small>
+                            <small class="text-muted">Only administrative level users can edit receipt number.</small>
                         @endif
                     </div>
 
