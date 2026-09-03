@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
+use App\Models\Log;
 
 class AuthController extends Controller
 {
@@ -149,6 +150,9 @@ class AuthController extends Controller
             $timestamp
         ]);
 
+        $newAdminId = DB::getPdo()->lastInsertId();
+        Log::record((int) $newAdminId, 'Registered a new account');
+
         return redirect('/login')->with('error', 'Registered successfully. Please login.');
     }
 
@@ -178,6 +182,8 @@ class AuthController extends Controller
         ]);
 
         $loggedInRole = $this->normalizeRoleName($user[0]->role ?? null);
+        Log::record((int) $user[0]->id, 'Logged in');
+
             return match ($loggedInRole) {
             'team chandana' =>
                 redirect('/advertisements/lahipita/approved'),
@@ -199,6 +205,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $adminId = data_get(session('user'), 'id');
+        if ($adminId) {
+            Log::record((int) $adminId, 'Logged out');
+        }
+
         session()->flush(); // clear all session
         session()->invalidate(); // invalidate session
         session()->regenerateToken(); // security
