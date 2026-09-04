@@ -1601,7 +1601,7 @@ class GeneralController extends Controller
             'email' => 'nullable|email|max:255',
             'confirm_email' => 'nullable|email|max:255|same:email',
             'advertisement_type_id' => 'required|exists:advertisement_types,id',
-            'advertisement_size_id' => 'required|exists:advertisement_sizes,id',
+            'advertisement_size_id' => 'nullable|exists:advertisement_sizes,id',
             'advertisement_description' => [
                 'required',
                 'string',
@@ -1624,6 +1624,7 @@ class GeneralController extends Controller
                 },
             ],
             'web_combined_ad_hitadlk' => 'nullable|boolean',
+            'print_combined_ad_hitadprint' => 'nullable|boolean',
             'top_ad' => 'nullable|boolean',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
@@ -1721,7 +1722,9 @@ class GeneralController extends Controller
             }
 
             if (Schema::hasColumn('advertisements', 'advertisement_size_id')) {
-                $advertisementData['advertisement_size_id'] = (int) $request->advertisement_size_id;
+                $advertisementData['advertisement_size_id'] = $request->filled('advertisement_size_id')
+                    ? (int) $request->advertisement_size_id
+                    : null;
             }
 
             if (Schema::hasColumn('advertisements', 'advertisement_tint_id')) {
@@ -1730,6 +1733,12 @@ class GeneralController extends Controller
 
             if (Schema::hasColumn('advertisements', 'top_ad')) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
+            }
+
+            if (Schema::hasColumn('advertisements', 'print_combined_ad_hitadprint')) {
+                $advertisementData['print_combined_ad_hitadprint'] = $request->input('publication') === 'lahipita'
+                    ? $request->boolean('print_combined_ad_hitadprint')
+                    : false;
             }
 
             $adId = DB::table('advertisements')->insertGetId($advertisementData);
@@ -1922,6 +1931,17 @@ class GeneralController extends Controller
                 $items[] = [
                     'label' => 'Web Combined Ad',
                     'amount' => $webCombinedRate,
+                ];
+            }
+        }
+
+        if ($publication === 'lahipita' && $request->boolean('print_combined_ad_hitadprint')) {
+            $printPaperRate = $this->resolvePrintOnHitadPaperRate((int) $request->input('category_id', 0));
+
+            if ($printPaperRate > 0) {
+                $items[] = [
+                    'label' => 'Print on HitAd Paper',
+                    'amount' => $printPaperRate,
                 ];
             }
         }

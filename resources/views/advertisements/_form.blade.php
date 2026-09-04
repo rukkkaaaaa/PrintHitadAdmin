@@ -207,6 +207,13 @@
                     <small class="help-note d-block mt-1" id="topAdHint"></small>
                 </div>
                 @endif
+                <div class="col-md-6" id="printOnHitadPaperWrap" style="display:none">
+                    <label class="form-label d-block">Print on HitAd Paper</label>
+                    <select name="print_combined_ad_hitadprint" id="printOnHitadPaperSelect" class="form-select">
+                        <option value="0" {{ old('print_combined_ad_hitadprint', 0) == 0 ? 'selected' : '' }}>No</option>
+                        <option value="1" {{ old('print_combined_ad_hitadprint') == 1 ? 'selected' : '' }}>Yes</option>
+                    </select>
+                </div>
                 <div class="col-md-6" id="tintFieldWrap" style="display:none">
                     <label class="form-label">Tint</label>
                     <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
@@ -336,7 +343,8 @@
                 <div class="col-md-6">
                     <label class="form-label">Amount (LKR)</label>
                     <input type="number" name="payment_amount" class="form-control" min="0" step="0.01"
-                           value="{{ old('payment_amount') }}" placeholder="0.00" required>
+                           value="{{ old('payment_amount') }}" placeholder="0.00" required readonly>
+                    <small class="help-note">Auto-calculated from the selected ad options.</small>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Payment Date</label>
@@ -597,6 +605,8 @@
     const topAdToggle    = form.querySelector('#topAdToggle');
     const topAdHint      = form.querySelector('#topAdHint');
     const tintFieldWrap  = form.querySelector('#tintFieldWrap');
+    const printPaperWrap = form.querySelector('#printOnHitadPaperWrap');
+    const printPaperSel  = form.querySelector('#printOnHitadPaperSelect');
     const nicFrontWrap   = form.querySelector('#nicFrontFieldWrap');
     const nicBackWrap    = form.querySelector('#nicBackFieldWrap');
     const nicFrontInput  = form.querySelector('input[name="nic_front_image"]');
@@ -705,6 +715,17 @@
         }
 
         updateTopAdHint();
+    }
+
+    function togglePrintOnHitadPaperField() {
+        var isLahipita = pubSel && pubSel.value === 'lahipita';
+
+        if (printPaperWrap) {
+            printPaperWrap.style.display = isLahipita ? '' : 'none';
+        }
+        if (!isLahipita && printPaperSel) {
+            printPaperSel.value = '0';
+        }
     }
 
     function toggleMetromonialFields() {
@@ -1205,6 +1226,17 @@
 
         if (!typeId) return;
 
+        // Classified ads have no size options — skip the size step entirely.
+        if (isClassifiedTypeSelected()) {
+            sizeSel.required = false;
+            revealFromSize(true);
+            updateLocationLabels();
+            filterCities();
+            return;
+        }
+
+        sizeSel.required = true;
+
         var l = lang();
         fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -1242,6 +1274,7 @@
         refreshPublishDateConstraints();
         updateCategoryLabels();
         toggleMetromonialFields();
+        togglePrintOnHitadPaperField();
         updateLocationLabels();
         updateWordCount();
         updateTopAdHint();
@@ -1290,7 +1323,7 @@
                 .catch(function () {});
         }
 
-        if (typeId) {
+        if (typeId && !isClassifiedTypeSelected()) {
             var curSize = sizeSel.value;
             fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -1338,6 +1371,7 @@
         updateTopAdHint();
         calculateAndUpdatePrice();
     });
+    printPaperSel && printPaperSel.addEventListener('change', calculateAndUpdatePrice);
     form.querySelectorAll('input, select, textarea').forEach(function (el) {
         el.addEventListener('input', function () { clearFieldInvalid(el); });
         el.addEventListener('change', function () { clearFieldInvalid(el); });
@@ -1377,6 +1411,7 @@
     updateCategoryLabels();
     toggleMetromonialFields();
     toggleClassifiedFields();
+    togglePrintOnHitadPaperField();
     updateWordCount();
     updateTopAdHint();
 
