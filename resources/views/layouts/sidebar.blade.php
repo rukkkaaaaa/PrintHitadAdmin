@@ -159,12 +159,12 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
       <a href="{{ url('/advertisements/create') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-plus-circle"></i>
         <div>Add Advertisement</div>
       </a>
-    </li>
+    </li> -->
 
     <li class="menu-item {{ request()->is('all-print-ads') ? 'active' : '' }}">
       <a href="{{ url('/all-print-ads') }}" class="menu-link">
@@ -364,12 +364,12 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
       <a href="{{ url('/advertisements/create') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-plus-circle"></i>
         <div>Add Advertisement</div>
       </a>
-    </li>
+    </li> -->
 
     <!-- ================= HITAD PRINT ================= -->
     <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">

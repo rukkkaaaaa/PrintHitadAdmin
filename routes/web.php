@@ -49,18 +49,18 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 // Users management
 Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 Route::post('/users/{id}/update', [AuthController::class, 'updateUser'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 Route::post('/users/{id}/delete', [AuthController::class, 'deleteUser'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
+Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity'])->group(function () {
 
     Route::get('/dashboard', function () {
         $user = session('user');

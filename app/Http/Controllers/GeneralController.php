@@ -1251,47 +1251,50 @@ class GeneralController extends Controller
      * @return \Illuminate\Http\RedirectResponse
      */
     public function updatePublicationDeadlines(Request $request)
-    {
-        if (!Schema::hasTable('publication_deadlines')) {
-            return redirect()->back()->with('error', 'Publication deadlines table is missing. Please run migrations first.');
-        }
-
-        $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
-            abort(403);
-        }
-
-        $request->validate([
-            'hitad_cutoff_day_of_week' => 'required|integer|min:0|max:6',
-            'hitad_cutoff_time' => 'required|date_format:H:i',
-            'lahipita_cutoff_day_of_week' => 'required|integer|min:0|max:6',
-            'lahipita_cutoff_time' => 'required|date_format:H:i',
-        ]);
-
-        DB::transaction(function () use ($request) {
-            DB::table('publication_deadlines')->updateOrInsert(
-                ['publication' => 'hitad_print'],
-                [
-                    'cutoff_day_of_week' => (int) $request->input('hitad_cutoff_day_of_week'),
-                    'cutoff_time' => $request->input('hitad_cutoff_time') . ':00',
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]
-            );
-
-            DB::table('publication_deadlines')->updateOrInsert(
-                ['publication' => 'lahipita'],
-                [
-                    'cutoff_day_of_week' => (int) $request->input('lahipita_cutoff_day_of_week'),
-                    'cutoff_time' => $request->input('lahipita_cutoff_time') . ':00',
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]
-            );
-        });
-
-        return redirect()->back()->with('success', 'Publication cutoffs updated successfully.');
+{
+    if (!Schema::hasTable('publication_deadlines')) {
+        return redirect()->back()
+            ->with('error', 'Publication deadlines table is missing.');
     }
+
+    $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
+
+    if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+        abort(403);
+    }
+
+    $request->validate([
+        'hitad_cutoff_day_of_week' => 'required|integer|min:0|max:6',
+        'hitad_cutoff_time' => 'required|date_format:H:i',
+        'lahipita_cutoff_day_of_week' => 'required|integer|min:0|max:6',
+        'lahipita_cutoff_time' => 'required|date_format:H:i',
+    ]);
+
+    $row = DB::table('publication_deadlines')
+        ->orderBy('id')
+        ->first();
+
+    $data = [
+        'cutoff_day_of_week_en' => (int) $request->hitad_cutoff_day_of_week,
+        'cutoff_time_en' => $request->hitad_cutoff_time . ':00',
+        'cutoff_day_of_week_si' => (int) $request->lahipita_cutoff_day_of_week,
+        'cutoff_time_si' => $request->lahipita_cutoff_time . ':00',
+        'updated_at' => now(),
+    ];
+
+    if ($row) {
+        DB::table('publication_deadlines')
+            ->where('id', $row->id)
+            ->update($data);
+    } else {
+        $data['created_at'] = now();
+
+        DB::table('publication_deadlines')->insert($data);
+    }
+
+    return redirect()->back()
+        ->with('success', 'Publication cutoffs updated successfully.');
+}
 
     /**
      * Fetch publication cutoff rules from DB, with defaults.
@@ -1299,44 +1302,52 @@ class GeneralController extends Controller
      * @return array<string, array<string, mixed>>
      */
     private function fetchPublicationDeadlines(): array
-    {
-        $defaults = [
-            'hitad_print' => [
-                'publication' => 'hitad_print',
-                'label' => 'HitAd',
-                'cutoff_day_of_week' => 5,
-                'cutoff_time' => '18:00:00',
-            ],
-            'lahipita' => [
-                'publication' => 'lahipita',
-                'label' => 'Lahipita',
-                'cutoff_day_of_week' => 2,
-                'cutoff_time' => '18:00:00',
-            ],
-        ];
+{
+    $defaults = [
+        'hitad_print' => [
+            'publication' => 'hitad_print',
+            'label' => 'HitAd',
+            'cutoff_day_of_week' => 5,
+            'cutoff_time' => '18:00:00',
+        ],
+        'lahipita' => [
+            'publication' => 'lahipita',
+            'label' => 'Lahipita',
+            'cutoff_day_of_week' => 4,
+            'cutoff_time' => '18:00:00',
+        ],
+    ];
 
-        if (!Schema::hasTable('publication_deadlines')) {
-            return $defaults;
-        }
-
-        $rows = DB::table('publication_deadlines')
-            ->whereIn('publication', array_keys($defaults))
-            ->get();
-
-        foreach ($rows as $row) {
-            $publication = (string) ($row->publication ?? '');
-            if (!isset($defaults[$publication])) {
-                continue;
-            }
-
-            $defaults[$publication]['cutoff_day_of_week'] = max(0, min(6, (int) ($row->cutoff_day_of_week ?? $defaults[$publication]['cutoff_day_of_week'])));
-            $defaults[$publication]['cutoff_time'] = trim((string) ($row->cutoff_time ?? $defaults[$publication]['cutoff_time'])) !== ''
-                ? (string) $row->cutoff_time
-                : $defaults[$publication]['cutoff_time'];
-        }
-
+    if (!Schema::hasTable('publication_deadlines')) {
         return $defaults;
     }
+
+    $row = DB::table('publication_deadlines')
+        ->orderBy('id')
+        ->first();
+
+    if (!$row) {
+        return $defaults;
+    }
+
+    $defaults['hitad_print']['cutoff_day_of_week'] =
+        (int) ($row->cutoff_day_of_week_en ?? 5);
+
+    $defaults['hitad_print']['cutoff_time'] =
+        !empty($row->cutoff_time_en)
+            ? $row->cutoff_time_en
+            : '18:00:00';
+
+    $defaults['lahipita']['cutoff_day_of_week'] =
+        (int) ($row->cutoff_day_of_week_si ?? 4);
+
+    $defaults['lahipita']['cutoff_time'] =
+        !empty($row->cutoff_time_si)
+            ? $row->cutoff_time_si
+            : '18:00:00';
+
+    return $defaults;
+}
 
 
     /**
@@ -1756,7 +1767,7 @@ class GeneralController extends Controller
 
         if ($extraWords > 0 && $additionalRate > 0) {
             $items[] = [
-                'label' => 'Additional words (' . $extraWords . ' ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
+                'label' => 'Additional words (' . $extraWords . ' ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¿Ãƒâ€šÃ‚Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
                 'amount' => round($extraWords * $additionalRate, 2),
             ];
         }
@@ -1868,7 +1879,7 @@ class GeneralController extends Controller
         );
 
         return str_contains($englishName, 'matrimonial')
-            || str_contains($sinhalaName, 'à¶¸à¶‚à¶œà¶½ à¶ºà·à¶¢à¶±à·');
+            || str_contains($sinhalaName, 'මංගල යෝජනා');
     }
 
 
@@ -2100,7 +2111,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ PAYMENTS
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->where('categories.is_active', 1)
@@ -2118,7 +2129,7 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
         // free-text search
@@ -2328,10 +2339,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY HITAD PRINT ADS
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY PAID
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2404,10 +2415,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY HITAD PRINT ADS
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
     //         ->where('advertisements.publication', 'hitad_print')
 
-    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ UNPAID LOGIC
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id') // no payment
     //                 ->orWhere('payments.payment_status', 'pending') // pending
@@ -2502,10 +2513,10 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ MAIN FILTER
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ MAIN FILTER
             ->where('advertisements.publication', 'lahipita');
 
-        // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â search (same as your existing)
+        // ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â search (same as your existing)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2677,10 +2688,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY LAHIPITA ADS
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY LAHIPITA ADS
     //         ->where('advertisements.publication', 'lahipita')
 
-    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ UNPAID LOGIC (IMPORTANT)
+    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC (IMPORTANT)
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id')
     //                 ->orWhere('payments.payment_status', 'pending')
@@ -3908,7 +3919,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     ->html($resolvedHtmlBody);
             });
 
-            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ SAVE TO DATABASE
+            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE TO DATABASE
             // AdvertisementEmail::create([
             //     'advertisement_id' => $ad->id,
             //     'customer_email' => $ad->email,
@@ -3920,7 +3931,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
         } 
         // catch (\Exception $e) {
-        //     // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ SAVE FAILED EMAIL TO DATABASE
+        //     // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE FAILED EMAIL TO DATABASE
         //     AdvertisementEmail::create([
         //         'advertisement_id' => $ad->id,
         //         'customer_email' => $ad->email,
@@ -3941,7 +3952,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     }
 
     /**
-     * GET: Load advertisement for editing ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * GET: Load advertisement for editing ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
      *
      * @param int $id
