@@ -160,6 +160,7 @@
                 {{-- Pagination --}}
                 @if(method_exists($ads, 'links'))
                 <div class="mt-3 px-3">
+                    @include('advertisements._pagination_count', ['ads' => $ads])
                     {{ $ads->links() }}
                 </div>
                 @endif

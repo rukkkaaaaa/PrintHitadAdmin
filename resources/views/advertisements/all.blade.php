@@ -51,8 +51,13 @@
                     </div>
 
                     <div class="col-md-2">
-                        <input type="date" name="publish_date" class="form-control" placeholder="Publish date"
-                               value="{{ request('publish_date') }}">
+                        <input type="date" name="publish_date_from" class="form-control" title="Publish date from"
+                               value="{{ request('publish_date_from', request('publish_date')) }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="date" name="publish_date_to" class="form-control" title="Publish date to"
+                               value="{{ request('publish_date_to') }}">
                     </div>
 
                     <div class="col-md-3">
@@ -61,18 +66,21 @@
                     </div>
 
                     <div class="col-md-2">
+                        <button class="btn btn-primary w-100" type="submit">Search</button>
+                    </div>
+                </div>
+
+                <div class="row g-2 mt-2 align-items-center">
+                    <div class="col-md-2">
                         <input type="text" name="phone" class="form-control" placeholder="Phone"
                                value="{{ request('phone') }}">
                     </div>
 
-                    <div class="col-md-2 d-flex">
-                        <input type="text" name="email" class="form-control me-2" placeholder="Email"
+                    <div class="col-md-3">
+                        <input type="text" name="email" class="form-control" placeholder="Email"
                                value="{{ request('email') }}">
-                        <button class="btn btn-primary" type="submit">Search</button>
                     </div>
-                </div>
 
-                <div class="row g-2 mt-2">
                     <div class="col-md-4">
                         <input type="text" name="category" class="form-control" placeholder="Category name"
                                value="{{ request('category') }}">
@@ -187,6 +195,7 @@
         </table>
 
         <div class="mt-3 px-3">
+            @include('advertisements._pagination_count', ['ads' => $ads])
             {{ $ads->links() }}
         </div>
 

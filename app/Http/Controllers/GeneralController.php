@@ -28,6 +28,137 @@ class GeneralController extends Controller
         return in_array($normalizedRole, ['administrative level', 'super admin'], true);
     }
 
+    private function normalizedAdvertisementDate(Request $request, string $key): ?string
+    {
+        if (!$request->filled($key)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse((string) $request->input($key))->toDateString();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function applyAdvertisementPublishDateFilters($query, Request $request, string $column = 'advertisements.publish_date')
+    {
+        $from = $this->normalizedAdvertisementDate($request, 'publish_date_from');
+        $to = $this->normalizedAdvertisementDate($request, 'publish_date_to');
+
+        if ($from && $to && $from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
+        if ($from && $to) {
+            return $query->whereBetween($column, [$from, $to]);
+        }
+
+        if ($from) {
+            return $query->whereDate($column, $from);
+        }
+
+        if ($to) {
+            return $query->whereDate($column, '<=', $to);
+        }
+
+        $exactDate = $this->normalizedAdvertisementDate($request, 'publish_date');
+        if ($exactDate) {
+            return $query->whereDate($column, $exactDate);
+        }
+
+        return $query;
+    }
+
+    private function advertisementFilterParameters(Request $request): array
+    {
+        return $request->only([
+            'search',
+            'category',
+            'publish_date',
+            'publish_date_from',
+            'publish_date_to',
+            'customer_name',
+            'title',
+            'phone',
+            'email',
+        ]);
+    }
+
+    private function applyAdvertisementTitleFilter($query, Request $request, string $descriptionColumn = 'advertisements.advertisement_description')
+    {
+        if (!$request->filled('title')) {
+            return $query;
+        }
+
+        $title = trim((string) $request->input('title'));
+
+        return $query->where(function ($q) use ($title, $descriptionColumn) {
+            $q->where($descriptionColumn, 'LIKE', "%{$title}%");
+
+            if (Schema::hasColumn('advertisements', 'ad_title')) {
+                $q->orWhere('advertisements.ad_title', 'LIKE', "%{$title}%");
+            }
+        });
+    }
+
+    private function applyEloquentAdvertisementFilters($query, Request $request)
+    {
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('advertisement_description', 'LIKE', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where('customer_name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('category')) {
+            $cat = $request->category;
+            $query->whereHas('category', function ($q) use ($cat) {
+                $q->where('category_name_en', 'LIKE', "%{$cat}%")
+                    ->orWhere('category_name_si', 'LIKE', "%{$cat}%");
+            });
+        }
+
+        if ($request->filled('title')) {
+            $title = trim((string) $request->input('title'));
+            $query->where(function ($q) use ($title) {
+                $q->where('advertisement_description', 'LIKE', "%{$title}%");
+
+                if (Schema::hasColumn('advertisements', 'ad_title')) {
+                    $q->orWhere('ad_title', 'LIKE', "%{$title}%");
+                }
+            });
+        }
+
+        $this->applyAdvertisementPublishDateFilters($query, $request, 'publish_date');
+
+        if ($request->filled('customer_name')) {
+            $customerName = $request->customer_name;
+            $query->whereHas('customer', function ($q) use ($customerName) {
+                $q->where('customer_name', 'LIKE', "%{$customerName}%");
+            });
+        }
+
+        if ($request->filled('phone')) {
+            $phone = $request->phone;
+            $query->whereHas('customer', function ($q) use ($phone) {
+                $q->where('telephone', 'LIKE', "%{$phone}%");
+            });
+        }
+
+        if ($request->filled('email')) {
+            $email = $request->email;
+            $query->whereHas('customer', function ($q) use ($email) {
+                $q->where('email', 'LIKE', "%{$email}%");
+            });
+        }
+
+        return $query;
+    }
+
     public function getMembers(Request $request)
 {
     $search = trim($request->input('search', ''));
@@ -1101,7 +1232,7 @@ class GeneralController extends Controller
     public function getGeneralSettings()
     {
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+        if (!in_array($currentRole, ['administrative level', 'super admin', 'site admin'], true)) {
             abort(403);
         }
 
@@ -1124,7 +1255,7 @@ class GeneralController extends Controller
         }
 
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+        if (!in_array($currentRole, ['administrative level', 'super admin', 'site admin'], true)) {
             abort(403);
         }
 
@@ -1225,7 +1356,7 @@ class GeneralController extends Controller
     public function getPublicationDeadlines()
     {
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+        if (!in_array($currentRole, ['administrative level', 'super admin', 'site admin'], true)) {
             abort(403);
         }
 
@@ -1259,7 +1390,7 @@ class GeneralController extends Controller
 
     $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
 
-    if (!in_array($currentRole, ['super admin', 'site admin'], true)) {
+    if (!in_array($currentRole, ['administrative level', 'super admin', 'site admin'], true)) {
         abort(403);
     }
 
@@ -2068,9 +2199,9 @@ class GeneralController extends Controller
             });
         }
 
-        if ($request->filled('publish_date')) {
-            $query->whereDate('advertisements.publish_date', $request->publish_date);
-        }
+        $this->applyAdvertisementTitleFilter($query, $request);
+
+        $this->applyAdvertisementPublishDateFilters($query, $request);
 
         if ($request->filled('customer_name')) {
             $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
@@ -2085,7 +2216,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
-        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
+        $ads->appends($this->advertisementFilterParameters($request));
 
         return view('advertisements.all', compact('ads'));
     }
@@ -2150,9 +2281,9 @@ class GeneralController extends Controller
             });
         }
 
-        if ($request->filled('publish_date')) {
-            $query->whereDate('advertisements.publish_date', $request->publish_date);
-        }
+        $this->applyAdvertisementTitleFilter($query, $request);
+
+        $this->applyAdvertisementPublishDateFilters($query, $request);
 
         if ($request->filled('customer_name')) {
             $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
@@ -2167,7 +2298,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
-        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
+        $ads->appends($this->advertisementFilterParameters($request));
 
         return view('advertisements.index', compact('ads'));
     }
@@ -2376,9 +2507,9 @@ class GeneralController extends Controller
             });
         }
 
-        if ($request->filled('publish_date')) {
-            $query->whereDate('advertisements.publish_date', $request->publish_date);
-        }
+        $this->applyAdvertisementTitleFilter($query, $request);
+
+        $this->applyAdvertisementPublishDateFilters($query, $request);
 
         if ($request->filled('customer_name')) {
             $query->where('customers.customer_name', 'LIKE', "%{$request->customer_name}%");
@@ -2393,7 +2524,7 @@ class GeneralController extends Controller
         }
 
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
-        $ads->appends($request->only(['search', 'category', 'publish_date', 'customer_name', 'phone', 'email']));
+        $ads->appends($this->advertisementFilterParameters($request));
 
         return view('advertisements.paid', compact('ads'));
     }
@@ -2616,13 +2747,9 @@ class GeneralController extends Controller
         });
     }
 
-    // PUBLISH DATE
-    if ($request->filled('publish_date')) {
-        $query->whereDate(
-            'advertisements.publish_date',
-            $request->publish_date
-        );
-    }
+    $this->applyAdvertisementTitleFilter($query, $request);
+
+    $this->applyAdvertisementPublishDateFilters($query, $request);
 
     // CUSTOMER
     if ($request->filled('customer_name')) {
@@ -2656,14 +2783,7 @@ class GeneralController extends Controller
         ->paginate(30);
 
     $ads->appends(
-        $request->only([
-            'search',
-            'category',
-            'publish_date',
-            'customer_name',
-            'phone',
-            'email'
-        ])
+        $this->advertisementFilterParameters($request)
     );
 
     return view('advertisements.lahipita_paid', compact('ads'));
@@ -4580,7 +4700,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
 
 public function getHitadPrintUnpaidAdvertisements(Request $request)
 {
-    $ads = Advertisement::with([
+    $query = Advertisement::with([
             'customer',
             'category',
             'latestPayment'
@@ -4588,22 +4708,28 @@ public function getHitadPrintUnpaidAdvertisements(Request $request)
         ->where('publication', 'hitad_print')
         ->whereHas('payments', function ($q) {
             $q->where('is_success', 'false');
-        })
-        ->orderByDesc('id')
-        ->paginate(30);
+        });
+
+    $this->applyEloquentAdvertisementFilters($query, $request);
+
+    $ads = $query->orderByDesc('id')->paginate(30);
+    $ads->appends($this->advertisementFilterParameters($request));
 
     return view('advertisements.hitadprint-unpaid', compact('ads'));
 }
 
     public function getLahipitaUnpaidAdvertisements(Request $request)
     {
-        $ads = Advertisement::with(['customer', 'category', 'latestPayment'])
+        $query = Advertisement::with(['customer', 'category', 'latestPayment'])
             ->where('publication', 'lahipita')
             ->whereHas('payments', function ($q) {
             $q->where('is_success', 'false');
-            })
-            ->orderByDesc('id')
-            ->paginate(30);
+            });
+
+        $this->applyEloquentAdvertisementFilters($query, $request);
+
+        $ads = $query->orderByDesc('id')->paginate(30);
+        $ads->appends($this->advertisementFilterParameters($request));
 
         return view('advertisements.lahipita-unpaid', compact('ads'));
     }

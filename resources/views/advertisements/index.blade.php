@@ -142,6 +142,7 @@
 
     {{-- Pagination --}}
     <div class="mt-3">
+        @include('advertisements._pagination_count', ['ads' => $ads])
         {{ $ads->links() }}
     </div>
 
