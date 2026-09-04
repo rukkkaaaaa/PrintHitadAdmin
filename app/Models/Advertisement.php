@@ -17,6 +17,8 @@ class Advertisement extends Model
         'category_id',
         'district_id',
         'city_id',
+        'promo_code_id',
+        'discount_amount',
         'order_ref',
         'price',
         'ad_title',
@@ -34,6 +36,7 @@ class Advertisement extends Model
         'web_combined_ad_hitadlk' => 'boolean',
         'print_combined_ad_hitadprint' => 'boolean',
         'price' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo

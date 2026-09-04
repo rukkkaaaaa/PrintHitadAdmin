@@ -180,6 +180,168 @@ class GeneralController extends Controller
 }
 
     /**
+     * Return all active and currently-valid promo codes that can be selected on advertisement forms.
+     */
+    private function fetchSelectablePromoCodes()
+    {
+        if (!Schema::hasTable('promo_codes')) {
+            return collect();
+        }
+
+        $today = Carbon::today()->toDateString();
+        $query = DB::table('promo_codes')
+            ->leftJoin('categories', 'promo_codes.category_id', '=', 'categories.id')
+            ->select(
+                'promo_codes.*',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
+            )
+            ->where('promo_codes.is_active', 1);
+
+        if (Schema::hasColumn('promo_codes', 'valid_from')) {
+            $query->whereDate('promo_codes.valid_from', '<=', $today);
+        }
+
+        if (Schema::hasColumn('promo_codes', 'valid_until')) {
+            $query->whereDate('promo_codes.valid_until', '>=', $today);
+        }
+
+        return $query
+            ->orderBy('promo_codes.category_id')
+            ->orderBy('promo_codes.code')
+            ->get();
+    }
+
+    /**
+     * Get an active promo code for a category, constrained to its valid date range.
+     */
+    private function findApplicablePromoCode(?int $promoCodeId, int $categoryId): ?object
+    {
+        if (empty($promoCodeId) || !Schema::hasTable('promo_codes')) {
+            return null;
+        }
+
+        $today = Carbon::today()->toDateString();
+        $query = DB::table('promo_codes')
+            ->where('id', $promoCodeId)
+            ->where('category_id', $categoryId)
+            ->where('is_active', 1);
+
+        if (Schema::hasColumn('promo_codes', 'valid_from')) {
+            $query->whereDate('valid_from', '<=', $today);
+        }
+
+        if (Schema::hasColumn('promo_codes', 'valid_until')) {
+            $query->whereDate('valid_until', '>=', $today);
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Customer-entered discount amount saved on advertisements.discount_amount.
+     */
+    private function customerDiscountAmountFromRequest(Request $request): float
+    {
+        return round(max(0, (float) $request->input('discount_amount', 0)), 2);
+    }
+
+    /**
+     * Show category-level promo code management.
+     */
+    public function getPromoCodes()
+    {
+        if (!Schema::hasTable('promo_codes')) {
+            return view('promo_codes.index', [
+                'promoCodes' => collect(),
+                'categories' => DB::table('categories')->where('is_active', 1)->orderBy('category_name_en')->get(),
+                'schemaMissing' => true,
+            ]);
+        }
+
+        $promoCodes = DB::table('promo_codes')
+            ->leftJoin('categories', 'promo_codes.category_id', '=', 'categories.id')
+            ->select(
+                'promo_codes.*',
+                DB::raw('COALESCE(categories.category_name_en, categories.category_name_si) as category_name')
+            )
+            ->orderBy('promo_codes.id', 'desc')
+            ->get();
+
+        $categories = DB::table('categories')
+            ->where('is_active', 1)
+            ->orderBy('category_name_en')
+            ->orderBy('category_name_si')
+            ->get();
+
+        return view('promo_codes.index', compact('promoCodes', 'categories') + ['schemaMissing' => false]);
+    }
+
+    /**
+     * Add one promo code for one category.
+     */
+    public function addPromoCode(Request $request)
+    {
+        if (!Schema::hasTable('promo_codes')) {
+            return redirect()->back()->with('error', 'Promo codes table is missing. Please run migrations first.');
+        }
+
+        $request->validate([
+            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'discount_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'valid_from' => ['required', 'date'],
+            'valid_until' => ['required', 'date', 'after_or_equal:valid_from'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        DB::table('promo_codes')->insert([
+            'code' => Str::upper(trim((string) $request->input('code'))),
+            'category_id' => (int) $request->input('category_id'),
+            'discount_percentage' => (float) $request->input('discount_percentage'),
+            'valid_from' => Carbon::parse($request->input('valid_from'))->toDateString(),
+            'valid_until' => Carbon::parse($request->input('valid_until'))->toDateString(),
+            'is_active' => $request->boolean('is_active'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Promo code added successfully.');
+    }
+
+    /**
+     * Update one promo code for one category.
+     */
+    public function updatePromoCode(Request $request, $id)
+    {
+        if (!Schema::hasTable('promo_codes')) {
+            return redirect()->back()->with('error', 'Promo codes table is missing. Please run migrations first.');
+        }
+
+        $request->validate([
+            'code' => ['required', 'string', 'max:50', Rule::unique('promo_codes', 'code')->ignore($id)],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'discount_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'valid_from' => ['required', 'date'],
+            'valid_until' => ['required', 'date', 'after_or_equal:valid_from'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        DB::table('promo_codes')
+            ->where('id', $id)
+            ->update([
+                'code' => Str::upper(trim((string) $request->input('code'))),
+                'category_id' => (int) $request->input('category_id'),
+                'discount_percentage' => (float) $request->input('discount_percentage'),
+                'valid_from' => Carbon::parse($request->input('valid_from'))->toDateString(),
+                'valid_until' => Carbon::parse($request->input('valid_until'))->toDateString(),
+                'is_active' => $request->boolean('is_active'),
+                'updated_at' => now(),
+            ]);
+
+        return redirect()->back()->with('success', 'Promo code updated successfully.');
+    }
+
+    /**
      * Return list of categories and render the categories.index view.
      *
      * @return \Illuminate\View\View
@@ -1221,7 +1383,9 @@ class GeneralController extends Controller
 
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
 
-        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings', 'topAdSupported'));
+        $promoCodes = $this->fetchSelectablePromoCodes();
+
+        return view('advertisements.create', compact('categories', 'districts', 'cities', 'criterias', 'criteriaOptions', 'paymentMethods', 'publicationDeadlines', 'generalSettings', 'topAdSupported', 'promoCodes'));
     }
 
     /**
@@ -1626,6 +1790,8 @@ class GeneralController extends Controller
             'web_combined_ad_hitadlk' => 'nullable|boolean',
             'print_combined_ad_hitadprint' => 'nullable|boolean',
             'top_ad' => 'nullable|boolean',
+            'promo_code_id' => 'nullable|integer|exists:promo_codes,id',
+            'discount_amount' => 'nullable|numeric|min:0',
             'images' => 'nullable|array',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
             'criteria' => 'nullable|array',
@@ -1666,7 +1832,18 @@ class GeneralController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request) {
+        $selectedPromoCode = $this->findApplicablePromoCode(
+            $request->filled('promo_code_id') ? (int) $request->input('promo_code_id') : null,
+            (int) $request->input('category_id')
+        );
+
+        if ($request->filled('promo_code_id') && !$selectedPromoCode) {
+            return redirect()->back()
+                ->withErrors(['promo_code_id' => 'The selected promo code is not active, expired, or not valid for this category.'])
+                ->withInput();
+        }
+
+        DB::transaction(function () use ($request, $selectedPromoCode) {
             $customer = DB::table('customers')->where('nic_passport', $request->nic_passport)->first();
 
             $nicFrontImagePath = $customer->nic_front_img_url ?? null;
@@ -1741,6 +1918,17 @@ class GeneralController extends Controller
                     : false;
             }
 
+            $priceBreakdown = $this->buildAdvertisementPriceBreakdown($request);
+            $discountAmount = $this->customerDiscountAmountFromRequest($request);
+
+            if (Schema::hasColumn('advertisements', 'promo_code_id')) {
+                $advertisementData['promo_code_id'] = $selectedPromoCode->id ?? null;
+            }
+
+            if (Schema::hasColumn('advertisements', 'discount_amount')) {
+                $advertisementData['discount_amount'] = $discountAmount;
+            }
+
             $adId = DB::table('advertisements')->insertGetId($advertisementData);
 
 
@@ -1806,10 +1994,9 @@ class GeneralController extends Controller
                 || $request->filled('payment_status')
                 || $request->filled('payment_date')
             ) {
-                $priceBreakdown = $this->buildAdvertisementPriceBreakdown($request);
                 $paymentAmount = $request->filled('payment_amount')
                     ? (float) $request->payment_amount
-                    : (float) collect($priceBreakdown)->sum('amount');
+                    : max(0, (float) collect($priceBreakdown)->sum('amount'));
 
                 $paymentSlipPath = null;
                 if ($request->hasFile('payment_slip')) {
@@ -1944,6 +2131,14 @@ class GeneralController extends Controller
                     'amount' => $printPaperRate,
                 ];
             }
+        }
+
+        $discountAmount = $this->customerDiscountAmountFromRequest($request);
+        if ($discountAmount > 0) {
+            $items[] = [
+                'label' => 'Customer discount',
+                'amount' => -$discountAmount,
+            ];
         }
 
         return $items;
@@ -2152,7 +2347,7 @@ class GeneralController extends Controller
     public function calculateAdvertisementPrice(Request $request)
     {
         $breakdown = $this->buildAdvertisementPriceBreakdown($request);
-        $total = collect($breakdown)->sum('amount');
+        $total = max(0, (float) collect($breakdown)->sum('amount'));
 
         return response()->json([
             'items' => $breakdown,
@@ -4225,6 +4420,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         }
         $generalSettings = $this->fetchGeneralSettings();
 
+    $promoCodes = $this->fetchSelectablePromoCodes();
+
     $topAdSupported = Schema::hasColumn(
         'advertisements',
         'top_ad'
@@ -4245,7 +4442,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             : null
     );
 
-    return view('advertisements.edit', compact('ad','categories','districts','cities','criterias','criteriaOptions','criteriaValues','tints','generalSettings','topAdSupported','webCombinedRate','printOnHitadPaperRate','currentTintPrice'));
+    return view('advertisements.edit', compact('ad','categories','districts','cities','criterias','criteriaOptions','criteriaValues','tints','generalSettings','topAdSupported','webCombinedRate','printOnHitadPaperRate','currentTintPrice','promoCodes'));
     }
 
     /**
@@ -4326,6 +4523,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 },
             ],
             'advertisement_tint_id' => 'nullable|integer|exists:advertisement_tints,id',
+            'promo_code_id' => 'nullable|integer|exists:promo_codes,id',
+            'discount_amount' => 'nullable|numeric|min:0',
             'web_combined_ad_hitadlk' => 'required|boolean',
             'print_combined_ad_hitadprint' => $isLahipitaAdvertisement
                 ? ['nullable', 'boolean']
@@ -4362,7 +4561,18 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             }
         }
 
-        DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported) {
+        $selectedPromoCode = $this->findApplicablePromoCode(
+            $request->filled('promo_code_id') ? (int) $request->input('promo_code_id') : null,
+            (int) $request->input('category_id')
+        );
+
+        if ($request->filled('promo_code_id') && !$selectedPromoCode) {
+            return redirect()->back()
+                ->withErrors(['promo_code_id' => 'The selected promo code is not active, expired, or not valid for this category.'])
+                ->withInput();
+        }
+
+        DB::transaction(function () use ($request, $id, $canEditPaymentFields, $topAdSupported, $selectedPromoCode) {
             $ad = DB::table('advertisements')->where('id', $id)->first();
             $payment = DB::table('payments')->where('advertisement_id', $id)->first();
 
@@ -4440,6 +4650,10 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
             }
 
+            if (Schema::hasColumn('advertisements', 'promo_code_id')) {
+                $advertisementData['promo_code_id'] = $selectedPromoCode->id ?? null;
+            }
+
             /*Automatic price adjustment*/
 
             $oldTintId = !empty($ad->advertisement_tint_id)
@@ -4502,6 +4716,14 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 (string) $ad->publication);
             if ($newTopAd) {$priceDelta += $topAdRate;
                 } else {$priceDelta -= $topAdRate;}
+            }
+
+            $oldDiscountAmount = max(0, (float) ($ad->discount_amount ?? 0));
+            $newDiscountAmount = $this->customerDiscountAmountFromRequest($request);
+            $priceDelta += $oldDiscountAmount - $newDiscountAmount;
+
+            if (Schema::hasColumn('advertisements', 'discount_amount')) {
+                $advertisementData['discount_amount'] = $newDiscountAmount;
             }
 
             /* Update payment amount*/

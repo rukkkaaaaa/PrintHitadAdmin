@@ -493,6 +493,35 @@
                     @endif
 
                     <div class="col-md-6">
+                        <label class="form-label">Promo Code</label>
+                        <select name="promo_code_id" id="promoCodeSelect" class="form-select">
+                            <option value="" data-discount="0">No Promo Code</option>
+                            @foreach(($promoCodes ?? collect()) as $promo)
+                                @if((int) $promo->category_id === (int) $ad->category_id)
+                                    <option value="{{ $promo->id }}"
+                                            data-discount="{{ (float) ($promo->discount_percentage ?? 0) }}"
+                                            {{ old('promo_code_id', $ad->promo_code_id ?? '') == $promo->id ? 'selected' : '' }}>
+                                        {{ $promo->code }} - {{ number_format((float) ($promo->discount_percentage ?? 0), 2) }}% off
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Only active promo codes for this category are available.</small>
+                        @error('promo_code_id')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Customer Discount Amount (LKR)</label>
+                        <input type="number" name="discount_amount" id="discountAmountInput" class="form-control" min="0" step="0.01" value="{{ old('discount_amount', $ad->discount_amount ?? 0) }}" placeholder="0.00">
+                        <small class="text-muted">Enter the discount amount given by the customer.</small>
+                        @error('discount_amount')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
                         {{-- Status removed: advertisement-level status removed from model/table --}}
                     </div>
 
@@ -672,10 +701,13 @@
                 var webCombinedSelect = document.getElementById('webCombinedSelect');
                 var printOnHitadPaperSelect = document.getElementById('printOnHitadPaperSelect');
                 var topAdToggle = document.getElementById('topAdToggle');
+                var promoCodeSelect = document.getElementById('promoCodeSelect');
+                var discountAmountInput = document.getElementById('discountAmountInput');
                 var amountPreview = document.getElementById('amountPreview');
 
                 var hasPayment = @json(!empty($ad->payment_id));
                 var initialAmount = Number(@json((float) ($ad->amount ?? 0)));
+                var initialDiscountAmount = Number(@json((float) ($ad->discount_amount ?? 0)));
                 var initialTintId = String(@json((string) ($ad->advertisement_tint_id ?? '')));
                 var initialTintPrice = Number(@json((float) ($currentTintPrice ?? 0)));
                 var initialWebCombined = Number(@json((int) ($ad->web_combined_ad_hitadlk ?? 0)));
@@ -685,6 +717,11 @@
                 var webCombinedRate = Number(@json((float) ($webCombinedRate ?? 0)));
                 var printOnHitadPaperRate = Number(@json((float) ($printOnHitadPaperRate ?? 0)));
                 var topAdRate = Number(@json((float) ($topAdRate ?? 0)));
+
+                function currentCustomerDiscountAmount() {
+                    if (!discountAmountInput) return 0;
+                    return Math.max(0, Number(discountAmountInput.value || 0));
+                }
 
                 function currentTintPrice() {
                     if (!tintSelect || !tintSelect.value) return 0;
@@ -724,7 +761,10 @@
                             ? topAdRate
                             : -topAdRate;
                     }
-                    var newAmount = Math.max(0, initialAmount + delta);
+                    var subtotalBeforeOldDiscount = Math.max(0, initialAmount + initialDiscountAmount);
+                    var newSubtotal = Math.max(0, subtotalBeforeOldDiscount + delta);
+                    var newDiscount = currentCustomerDiscountAmount();
+                    var newAmount = Math.max(0, newSubtotal - newDiscount);
                     amountPreview.value = 'Rs. ' + newAmount.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -741,6 +781,12 @@
                 }
                 if (topAdToggle) {
                     topAdToggle.addEventListener('change', refreshAmountPreview);
+                }
+                if (promoCodeSelect) {
+                    promoCodeSelect.addEventListener('change', refreshAmountPreview);
+                }
+                if (discountAmountInput) {
+                    discountAmountInput.addEventListener('input', refreshAmountPreview);
                 }
 
                     refreshAmountPreview();

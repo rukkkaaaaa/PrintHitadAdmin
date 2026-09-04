@@ -9,6 +9,7 @@
     $districts = $districts ?? collect();
     $cities = $cities ?? collect();
     $paymentMethods = $paymentMethods ?? collect();
+    $promoCodes = $promoCodes ?? collect();
     $publicationDeadlines = $publicationDeadlines ?? [];
     $topAdSupported = $topAdSupported ?? false;
     $generalSettings = $generalSettings ?? [
@@ -213,6 +214,26 @@
                         <option value="0" {{ old('print_combined_ad_hitadprint', 0) == 0 ? 'selected' : '' }}>No</option>
                         <option value="1" {{ old('print_combined_ad_hitadprint') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
+                </div>
+                <div class="col-md-6" id="promoCodeWrap" style="display:none">
+                    <label class="form-label">Promo Code</label>
+                    <select name="promo_code_id" id="promoCodeSel" class="form-select">
+                        <option value="">No Promo Code</option>
+                        @foreach($promoCodes as $promo)
+                            <option value="{{ $promo->id }}"
+                                    data-category="{{ $promo->category_id }}"
+                                    data-discount="{{ (float) ($promo->discount_percentage ?? 0) }}"
+                                    {{ old('promo_code_id') == $promo->id ? 'selected' : '' }}>
+                                {{ $promo->code }} - {{ number_format((float) ($promo->discount_percentage ?? 0), 2) }}% off
+                            </option>
+                        @endforeach
+                    </select>
+                    <small class="help-note">Only active promo codes for the selected category are shown.</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Customer Discount Amount (LKR)</label>
+                    <input type="number" name="discount_amount" id="discountAmountInput" class="form-control" min="0" step="0.01" value="{{ old('discount_amount', 0) }}" placeholder="0.00">
+                    <small class="help-note">Enter the discount amount given by the customer.</small>
                 </div>
                 <div class="col-md-6" id="tintFieldWrap" style="display:none">
                     <label class="form-label">Tint</label>
@@ -607,6 +628,9 @@
     const tintFieldWrap  = form.querySelector('#tintFieldWrap');
     const printPaperWrap = form.querySelector('#printOnHitadPaperWrap');
     const printPaperSel  = form.querySelector('#printOnHitadPaperSelect');
+    const promoCodeWrap  = form.querySelector('#promoCodeWrap');
+    const promoCodeSel   = form.querySelector('#promoCodeSel');
+    const discountAmountInput = form.querySelector('#discountAmountInput');
     const nicFrontWrap   = form.querySelector('#nicFrontFieldWrap');
     const nicBackWrap    = form.querySelector('#nicBackFieldWrap');
     const nicFrontInput  = form.querySelector('input[name="nic_front_image"]');
@@ -725,6 +749,33 @@
         }
         if (!isLahipita && printPaperSel) {
             printPaperSel.value = '0';
+        }
+    }
+
+    function filterPromoCodes() {
+        if (!promoCodeSel || !promoCodeWrap) return;
+
+        var categoryId = catSel ? String(catSel.value || '') : '';
+        var visibleCount = 0;
+
+        promoCodeSel.querySelectorAll('option[data-category]').forEach(function (opt) {
+            var allowed = categoryId !== '' && String(opt.dataset.category || '') === categoryId;
+            opt.hidden = !allowed;
+            opt.disabled = !allowed;
+            if (allowed) visibleCount += 1;
+        });
+
+        if (promoCodeSel.value) {
+            var selected = promoCodeSel.options[promoCodeSel.selectedIndex];
+            if (selected && selected.disabled) {
+                promoCodeSel.value = '';
+            }
+        }
+
+        promoCodeWrap.style.display = visibleCount > 0 ? '' : 'none';
+
+        if (visibleCount === 0) {
+            promoCodeSel.value = '';
         }
     }
 
@@ -1150,6 +1201,7 @@
 
         toggleMetromonialFields();
         toggleClassifiedFields();
+        filterPromoCodes();
 
         if (!categoryId) return;
 
@@ -1275,6 +1327,7 @@
         updateCategoryLabels();
         toggleMetromonialFields();
         togglePrintOnHitadPaperField();
+        filterPromoCodes();
         updateLocationLabels();
         updateWordCount();
         updateTopAdHint();
@@ -1347,7 +1400,9 @@
     pubSel  && pubSel.addEventListener('change',  onPublicationChange);
     catSel  && catSel.addEventListener('change',  function () {
         toggleMetromonialFields();
+        filterPromoCodes();
         loadTypes(catSel.value);
+        calculateAndUpdatePrice();
     });
     typeSel && typeSel.addEventListener('change', function () {
         toggleClassifiedFields();
@@ -1362,6 +1417,8 @@
         calculateAndUpdatePrice();
     });
     tintSel && tintSel.addEventListener('change', calculateAndUpdatePrice);
+    promoCodeSel && promoCodeSel.addEventListener('change', calculateAndUpdatePrice);
+    discountAmountInput && discountAmountInput.addEventListener('input', calculateAndUpdatePrice);
     distSel && distSel.addEventListener('change', filterCities);
     descTA  && descTA.addEventListener('input',   function () {
         updateWordCount();
@@ -1412,6 +1469,7 @@
     toggleMetromonialFields();
     toggleClassifiedFields();
     togglePrintOnHitadPaperField();
+    filterPromoCodes();
     updateWordCount();
     updateTopAdHint();
 

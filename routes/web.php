@@ -87,6 +87,15 @@ Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity'])->grou
 
     /*
     |--------------------------------------------------------------------------
+    | Promo Codes
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/promo-codes', [GeneralController::class, 'getPromoCodes']);
+    Route::post('/promo-codes', [GeneralController::class, 'addPromoCode']);
+    Route::post('/promo-codes/{id}/update', [GeneralController::class, 'updatePromoCode']);
+
+    /*
+    |--------------------------------------------------------------------------
     | Ad Types
     |--------------------------------------------------------------------------
     */

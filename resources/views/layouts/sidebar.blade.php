@@ -291,6 +291,13 @@
       </a>
     </li>
 
+    <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
+      <a href="{{ url('/promo-codes') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-purchase-tag-alt"></i>
+        <div>Promo Codes</div>
+      </a>
+    </li>
+
     <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
       <a href="{{ url('/adtypes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-file"></i>
@@ -483,6 +490,13 @@
       <a href="{{ url('/categories') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-category"></i>
         <div>Ad Categories</div>
+      </a>
+    </li>
+
+    <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
+      <a href="{{ url('/promo-codes') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-purchase-tag-alt"></i>
+        <div>Promo Codes</div>
       </a>
     </li>
 
