@@ -21,6 +21,13 @@ use Illuminate\Validation\Rule;
 
 class GeneralController extends Controller
 {
+        protected function canEditPaymentFieldsForRole(?string $role): bool
+    {
+        $normalizedRole = strtolower(trim((string) ($role ?? '')));
+
+        return in_array($normalizedRole, ['administrative level', 'super admin'], true);
+    }
+
     public function getMembers(Request $request)
 {
     $search = trim($request->input('search', ''));
@@ -1749,7 +1756,7 @@ class GeneralController extends Controller
 
         if ($extraWords > 0 && $additionalRate > 0) {
             $items[] = [
-                'label' => 'Additional words (' . $extraWords . ' ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¿Ãƒâ€šÃ‚Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
+                'label' => 'Additional words (' . $extraWords . ' ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¿ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â½ ' . number_format($additionalRate, 2, '.', '') . ')',
                 'amount' => round($extraWords * $additionalRate, 2),
             ];
         }
@@ -1861,7 +1868,7 @@ class GeneralController extends Controller
         );
 
         return str_contains($englishName, 'matrimonial')
-            || str_contains($sinhalaName, 'මංගල යෝජනා');
+            || str_contains($sinhalaName, 'à¶¸à¶‚à¶œà¶½ à¶ºà·à¶¢à¶±à·');
     }
 
 
@@ -2093,7 +2100,7 @@ class GeneralController extends Controller
             ->join('districts', 'advertisements.district_id', '=', 'districts.id')
             ->join('cities', 'advertisements.city_id', '=', 'cities.id')
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ PAYMENTS
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ PAYMENTS
             ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
             ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
             ->where('categories.is_active', 1)
@@ -2111,7 +2118,7 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥ IMPORTANT FILTER (THIS IS WHAT YOU WANT)
             ->where('advertisements.publication', 'hitad_print');
 
         // free-text search
@@ -2321,10 +2328,10 @@ class GeneralController extends Controller
             ->where('districts.is_active', 1)
             ->where('cities.is_active', 1)
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY HITAD PRINT ADS
             ->where('advertisements.publication', 'hitad_print')
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY PAID
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY PAID
             ->where('payments.payment_status', 'completed')
 
             ->select(
@@ -2397,10 +2404,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY HITAD PRINT ADS
+    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY HITAD PRINT ADS
     //         ->where('advertisements.publication', 'hitad_print')
 
-    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC
+    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ UNPAID LOGIC
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id') // no payment
     //                 ->orWhere('payments.payment_status', 'pending') // pending
@@ -2495,10 +2502,10 @@ class GeneralController extends Controller
                 'payments.payment_status',
             )
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ MAIN FILTER
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ MAIN FILTER
             ->where('advertisements.publication', 'lahipita');
 
-        // ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â search (same as your existing)
+        // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â search (same as your existing)
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2670,10 +2677,10 @@ class GeneralController extends Controller
     //         ->leftJoin('payments', 'advertisements.id', '=', 'payments.advertisement_id')
     //         ->leftJoin('payment_methods', 'payments.payment_method_id', '=', 'payment_methods.id')
 
-    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ ONLY LAHIPITA ADS
+    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ ONLY LAHIPITA ADS
     //         ->where('advertisements.publication', 'lahipita')
 
-    //         // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ UNPAID LOGIC (IMPORTANT)
+    //         // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ UNPAID LOGIC (IMPORTANT)
     //         ->where(function ($q) {
     //             $q->whereNull('payments.id')
     //                 ->orWhere('payments.payment_status', 'pending')
@@ -3901,7 +3908,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     ->html($resolvedHtmlBody);
             });
 
-            // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE TO DATABASE
+            // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ SAVE TO DATABASE
             // AdvertisementEmail::create([
             //     'advertisement_id' => $ad->id,
             //     'customer_email' => $ad->email,
@@ -3913,7 +3920,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             return redirect()->back()->with('success', 'Advertisement link sent successfully to ' . $ad->email . '!');
         } 
         // catch (\Exception $e) {
-        //     // ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ SAVE FAILED EMAIL TO DATABASE
+        //     // ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã¢â‚¬Â¦ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ SAVE FAILED EMAIL TO DATABASE
         //     AdvertisementEmail::create([
         //         'advertisement_id' => $ad->id,
         //         'customer_email' => $ad->email,
@@ -3934,7 +3941,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     }
 
     /**
-     * GET: Load advertisement for editing ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â join customer & payment info and prepare lookup lists (categories, districts, cities).
+     * GET: Load advertisement for editing ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â join customer & payment info and prepare lookup lists (categories, districts, cities).
      * If the advertisement publication is 'lahipita', override English labels with Sinhala where available to keep the edit UI consistent.
      *
      * @param int $id
@@ -4101,7 +4108,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     public function updateAdvertisement(Request $request, $id)
     {
         $currentRole = strtolower(trim((string) data_get(session('user'), 'role', '')));
-        $canEditPaymentFields = $currentRole === 'super admin';
+        $canEditPaymentFields = $this->canEditPaymentFieldsForRole($currentRole);
         $topAdSupported = Schema::hasColumn('advertisements', 'top_ad');
         $existingAd = DB::table('advertisements') ->where('id', $id) ->first();
             if (!$existingAd) {
