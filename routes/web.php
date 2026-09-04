@@ -13,14 +13,22 @@ use Illuminate\Support\Facades\DB;
 */
 Route::get('/', function () {
     if (Session::has('user')) {
-        $user = session('user');
 
-        $customerCount = DB::table('customers')->count();
-        $adminCount = DB::table('admins')->count();
-        $adCount = DB::table('advertisements')->count();
+        $role = strtolower(
+            trim((string) data_get(session('user'), 'role', ''))
+        );
 
-        return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
+        if ($role === 'team chandana') {
+            return redirect('/advertisements/lahipita/approved');
+        }
+
+        if ($role === 'team nalaka') {
+            return redirect('/advertisements/hitad/approved');
+        }
+
+        return redirect('/dashboard');
     }
+
     return redirect('/login');
 });
 
@@ -41,18 +49,18 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 // Users management
 Route::match(['get', 'post'], '/users', [AuthController::class, 'manageUsers'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 Route::post('/users/{id}/update', [AuthController::class, 'updateUser'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 Route::post('/users/{id}/delete', [AuthController::class, 'deleteUser'])
-    ->middleware('auth.session.custom');
+    ->middleware(['auth.session.custom', 'log.activity']);
 
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
+Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity'])->group(function () {
 
     Route::get('/dashboard', function () {
         $user = session('user');
@@ -65,6 +73,7 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     });
 
     Route::get('/reports', [GeneralController::class, 'reports']);
+    Route::get('/reports/web-combined/{type}/pdf', [GeneralController::class, 'downloadWebCombinedReport']);
     Route::get('/reports/{type}/pdf', [GeneralController::class, 'downloadMonthlyReport']);
 
     /*
@@ -111,6 +120,8 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/adsizes/by-type/{id}', [GeneralController::class, 'getAdSizesByType']);
     // AJAX: get criterias for a category
     Route::get('/adcriterias/by-category/{id}', [GeneralController::class, 'getCriteriasByCategory']);
+    // AJAX: calculate advertisement price
+    Route::post('/calculate-ad-price', [GeneralController::class, 'calculateAdvertisementPrice']);
 
     /*
     |--------------------------------------------------------------------------
@@ -155,6 +166,76 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     */
     Route::get('/members', [GeneralController::class, 'getMembers']);
 
+Route::get('/advertisements', [GeneralController::class, 'getAdvertisements']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Approved Advertisements
+|--------------------------------------------------------------------------
+*/
+
+// Hitad approved ads
+Route::get(
+    '/advertisements/hitad/approved',
+    [GeneralController::class, 'getHitadApprovedAdvertisements']
+);
+
+// Lahipita approved ads
+Route::get(
+    '/advertisements/lahipita/approved',
+    [GeneralController::class, 'getLahipitaApprovedAdvertisements']
+);
+
+// Hitad - View approved advertisement once
+Route::post(
+    '/advertisements/hitad/approved/{id}/view',
+    [GeneralController::class, 'viewHitadApprovedAdvertisementOnce']
+);
+
+// Lahipita - View approved advertisement once
+Route::post(
+    '/advertisements/lahipita/approved/{id}/view',
+    [GeneralController::class, 'viewLahipitaApprovedAdvertisementOnce']
+);
+
+
+// Existing normal view
+Route::get(
+    '/advertisements/{id}/view',
+    [GeneralController::class, 'viewAdvertisement']
+);
+
+/*
+|--------------------------------------------------------------------------
+| Print on Hitad Paper Advertisements
+|--------------------------------------------------------------------------
+*/
+
+// Hitad list
+Route::get(
+    '/advertisements/hitad/print-on-paper',
+    [GeneralController::class, 'getHitadPrintOnPaperAdvertisements']
+);
+
+// Lahipita list
+Route::get(
+    '/advertisements/lahipita/print-on-paper',
+    [GeneralController::class, 'getLahipitaPrintOnPaperAdvertisements']
+);
+
+// Hitad - View once
+Route::post(
+    '/advertisements/hitad/print-on-paper/{id}/view',
+    [GeneralController::class, 'viewHitadPrintOnPaperOnce']
+);
+
+// Lahipita - View once
+Route::post(
+    '/advertisements/lahipita/print-on-paper/{id}/view',
+    [GeneralController::class, 'viewLahipitaPrintOnPaperOnce']
+);
+
     /*
     |--------------------------------------------------------------------------
     | Advertisements
@@ -180,9 +261,9 @@ Route::middleware(['auth.session.custom', 'prevent.back'])->group(function () {
     Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
     Route::post('/advertisements/{id}/send-link-email', [GeneralController::class, 'sendLinkEmail']);
 
-    // Paid / Unpaid
+    //  Hitad
     Route::get('/advertisements/paid', [GeneralController::class, 'getPaidAdvertisements']);
-    Route::get('/advertisements/unpaid', [GeneralController::class, 'getUnpaidAdvertisements']);
+    Route::get('/advertisements/unpaid', [GeneralController::class, 'getHitadPrintUnpaidAdvertisements']);
 
     // Lahipita
     Route::get('/advertisements/lahipita', [GeneralController::class, 'getLahipitaAdvertisements']);

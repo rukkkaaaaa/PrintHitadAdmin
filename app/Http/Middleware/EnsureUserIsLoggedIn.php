@@ -17,8 +17,70 @@ class EnsureUserIsLoggedIn
         $user = Session::get('user', []);
         $role = strtolower(trim((string) ($user['role'] ?? '')));
 
-        // Super admin has unrestricted access to the whole system
-        if ($role === 'super admin' || $role === 'superadmin' || $role === 'super') {
+        /*
+        |--------------------------------------------------------------------------
+        | Administrative Level
+        |--------------------------------------------------------------------------
+        | Full access to everything.
+        */
+        if ($role === 'administrative level') {
+            return $next($request);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Super Admin
+        |--------------------------------------------------------------------------
+        | Full route access.    
+        | Audit columns will be hidden in Blade separately.
+        */
+        if ($role === 'super admin') {
+            return $next($request);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Team Chandana
+        |--------------------------------------------------------------------------
+        | ONLY:
+        | - Lahipita Approved Ads
+        | - Lahipita Print on Hitad Paper Ads
+        */
+        if ($role === 'team chandana') {
+
+            $isAllowedPath =
+                $request->is('advertisements/lahipita/approved') ||
+                $request->is('advertisements/lahipita/approved/*/view') ||
+                $request->is('advertisements/lahipita/print-on-paper') ||
+                $request->is('advertisements/lahipita/print-on-paper/*/view') ||
+                $request->is('logout');
+
+            if (!$isAllowedPath) {
+                return redirect('/advertisements/lahipita/approved')
+                    ->with('error','Team Chandana can only access Lahipita approved and Print on Hitad Paper advertisements.');
+            }
+
+            return $next($request);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Team Nalaka
+        |--------------------------------------------------------------------------
+        | ONLY:
+        | - Hitad Approved Ads
+        */
+        if ($role === 'team nalaka') {
+
+            $isAllowedPath =
+                $request->is('advertisements/hitad/approved') ||
+                $request->is('advertisements/hitad/approved/*/view') ||
+                $request->is('logout');
+
+            if (!$isAllowedPath) {
+                return redirect('/advertisements/hitad/approved')
+                    ->with('error','Team Nalaka can only access Hitad approved advertisements.');
+            }
             return $next($request);
         }
         $isReportingRole = in_array($role, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);

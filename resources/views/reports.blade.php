@@ -4,140 +4,221 @@
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-	<div class="row mb-4">
-		<div class="col-12">
-			<div class="card">
-				<div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-					<div>
-						<h4 class="mb-1">Monthly Reports</h4>
-						<p class="mb-0 text-muted">Generate Hitad and Lahipita payment reports by month.</p>
-					</div>
 
-					<div class="d-flex flex-column gap-2 align-items-md-end">
-						<form action="{{ url('/reports') }}" method="GET" class="d-flex gap-2 align-items-center">
-							<input type="month" name="month" class="form-control" value="{{ $monthInput }}">
-							<button type="submit" class="btn btn-primary">
-								Generate
-							</button>
-						</form>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
 
-						<div class="d-flex flex-wrap gap-2 justify-content-md-end">
-							<a href="#hitad-paid" class="btn btn-sm btn-outline-success">Hitad Paid</a>
-							<a href="#hitad-unpaid" class="btn btn-sm btn-outline-warning">Hitad Unpaid</a>
-							<a href="#lahipita-paid" class="btn btn-sm btn-outline-success">Lahipita Paid</a>
-							<a href="#lahipita-unpaid" class="btn btn-sm btn-outline-warning">Lahipita Unpaid</a>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                <div>
+                    <h4 class="mb-1">Monthly Reports</h4>
+                    <p class="text-muted mb-0">
+                        View advertisements and download reports by selected month.
+                    </p>
+                </div>
 
-	<div class="row mb-4 g-3">
-		<div class="col-md-3 col-sm-6">
-			<div class="card text-center">
-				<div class="card-body">
-					<div class="text-muted mb-1">Hitad Paid</div>
-					<h3 class="mb-0 text-success">{{ $reportSections['hitad_paid']['count'] }}</h3>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 col-sm-6">
-			<div class="card text-center">
-				<div class="card-body">
-					<div class="text-muted mb-1">Hitad Unpaid</div>
-					<h3 class="mb-0 text-warning">{{ $reportSections['hitad_unpaid']['count'] }}</h3>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 col-sm-6">
-			<div class="card text-center">
-				<div class="card-body">
-					<div class="text-muted mb-1">Lahipita Paid</div>
-					<h3 class="mb-0 text-success">{{ $reportSections['lahipita_paid']['count'] }}</h3>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-3 col-sm-6">
-			<div class="card text-center">
-				<div class="card-body">
-					<div class="text-muted mb-1">Lahipita Unpaid</div>
-					<h3 class="mb-0 text-warning">{{ $reportSections['lahipita_unpaid']['count'] }}</h3>
-				</div>
-			</div>
-		</div>
-	</div>
+                <form action="{{ url('/reports') }}" method="GET" class="d-flex gap-2 align-items-center">
+                    <input
+                        type="month"
+                        name="month"
+                        class="form-control"
+                        value="{{ $monthInput }}"
+                        required
+                    >
 
-	@php
-		$sections = [
-			'hitad_paid' => ['title' => 'Hitad Paid', 'badge' => 'success', 'empty' => 'No Hitad paid ads found for this month.'],
-			'hitad_unpaid' => ['title' => 'Hitad Unpaid', 'badge' => 'warning', 'empty' => 'No Hitad unpaid ads found for this month.'],
-			'lahipita_paid' => ['title' => 'Lahipita Paid', 'badge' => 'success', 'empty' => 'No Lahipita paid ads found for this month.'],
-			'lahipita_unpaid' => ['title' => 'Lahipita Unpaid', 'badge' => 'warning', 'empty' => 'No Lahipita unpaid ads found for this month.'],
-		];
-	@endphp
+                    <button type="submit" class="btn btn-primary">
+                        Generate
+                    </button>
+                </form>
 
-	<div class="row g-4">
-		@foreach($sections as $key => $section)
-			@php($report = $reportSections[$key])
-			<div class="col-12" id="{{ str_replace('_', '-', $key) }}">
-				<div class="card">
-					<div class="card-header d-flex justify-content-between align-items-center">
-						<div>
-							<h5 class="mb-0">{{ $section['title'] }}</h5>
-							<small class="text-muted">{{ $monthLabel }}</small>
-						</div>
-						<div class="d-flex align-items-center gap-2">
-							<span class="badge bg-{{ $section['badge'] }}">{{ $report['count'] }} records</span>
-							<a href="{{ url('/reports/' . $key . '/pdf') . '?month=' . $monthInput }}" download class="btn btn-sm btn-outline-primary">
-								PDF Export
-							</a>
-						</div>
-					</div>
+            </div>
+        </div>
+    </div>
 
-					<div class="card-body p-0">
-						<div class="table-responsive">
-							<table class="table table-hover mb-0 align-middle">
-								<thead class="table-light">
-									<tr>
-										<th>ID</th>
-										<th>Customer</th>
-										<th>Category</th>
-										<th>District</th>
-										<th>City</th>
-										<th>Publish Date</th>
-										<th>Amount</th>
-										<th>Payment Status</th>
-										<th>Payment Date</th>
-									</tr>
-								</thead>
-								<tbody>
-									@forelse($report['ads'] as $ad)
-										<tr>
-											<td>{{ $ad->id }}</td>
-											<td>{{ $ad->customer_name }}</td>
-											<td>{{ $ad->category_name }}</td>
-											<td>{{ $ad->district_name }}</td>
-											<td>{{ $ad->city_name }}</td>
-											<td>{{ $ad->publish_date ? \Illuminate\Support\Carbon::parse($ad->publish_date)->format('Y-m-d') : '-' }}</td>
-											<td>{{ is_null($ad->amount) ? '-' : 'Rs. ' . number_format($ad->amount, 2) }}</td>
-											<td>@include('partials.payment-status-badge', ['status' => $ad->payment_status])</td>
-											<td>{{ $ad->payment_date ? \Illuminate\Support\Carbon::parse($ad->payment_date)->format('Y-m-d') : '-' }}</td>
-										</tr>
-									@empty
-										<tr>
-											<td colspan="9" class="text-center text-muted py-4">
-												{{ $section['empty'] }}
-											</td>
-										</tr>
-									@endforelse
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			</div>
-		@endforeach
-	</div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Download PDF Reports - {{ $monthLabel }}</h5>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2">
+
+                <a href="{{ url('/reports/web-combined/hitad-paid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-info">
+                    Web Combined Hitad Paid
+                </a>
+
+                <a href="{{ url('/reports/web-combined/hitad-unpaid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-info">
+                    Web Combined Hitad Unpaid
+                </a>
+
+                <a href="{{ url('/reports/web-combined/lahipita-paid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-info">
+                    Web Combined Lahipita Paid
+                </a>
+
+                <a href="{{ url('/reports/web-combined/lahipita-unpaid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-info">
+                    Web Combined Lahipita Unpaid
+                </a>
+
+                <a href="{{ url('/reports/hitad-paid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-success">
+                    Hitad Paid
+                </a>
+
+                <a href="{{ url('/reports/hitad-unpaid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-warning">
+                    Hitad Unpaid
+                </a>
+
+                <a href="{{ url('/reports/lahipita-paid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-success">
+                    Lahipita Paid
+                </a>
+
+                <a href="{{ url('/reports/lahipita-unpaid/pdf') . '?month=' . $monthInput }}"
+                   class="btn btn-outline-warning">
+                    Lahipita Unpaid
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">Advertisements</h5>
+                <small class="text-muted">{{ $monthLabel }}</small>
+            </div>
+
+            <span class="badge bg-primary">
+                {{ $ads->total() }} Records
+            </span>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Publication</th>
+                            <th>Web Combined</th>
+                            <th>Customer</th>
+                            <th>Category</th>
+                            <th>District</th>
+                            <th>City</th>
+                            <th>Publish Date</th>
+                            <th>Amount</th>
+                            <th>Payment Status</th>
+                            <th>Payment Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                    @forelse($ads as $ad)
+
+                        <tr>
+
+                            <td>{{ $ad->id }}</td>
+
+                            <td>
+                                @if($ad->publication === 'hitad_print')
+                                    Hitad
+                                @elseif($ad->publication === 'lahipita')
+                                    Lahipita
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $ad->publication)) }}
+                                @endif
+                            </td>
+
+                            <td>
+                                @if($ad->web_combined_ad_hitadlk)
+                                    <span class="badge bg-info">Yes</span>
+                                @else
+                                    <span class="badge bg-secondary">No</span>
+                                @endif
+                            </td>
+
+                            <td>{{ $ad->customer_name }}</td>
+
+                            <td>{{ $ad->category_name }}</td>
+
+                            <td>{{ $ad->district_name ?? '-' }}</td>
+
+                            <td>{{ $ad->city_name ?? '-' }}</td>
+
+                            <td>
+                                {{ $ad->publish_date
+                                    ? \Illuminate\Support\Carbon::parse($ad->publish_date)->format('Y-m-d')
+                                    : '-'
+                                }}
+                            </td>
+
+                            <td>
+                                {{ is_null($ad->amount)
+                                    ? '-'
+                                    : 'Rs. ' . number_format($ad->amount, 2)
+                                }}
+                            </td>
+
+                            <td>
+                                @include('partials.payment-status-badge', [
+                                    'status' => $ad->payment_status
+                                ])
+                            </td>
+
+                            <td>
+                                {{ $ad->payment_date
+                                    ? \Illuminate\Support\Carbon::parse($ad->payment_date)->format('Y-m-d')
+                                    : '-'
+                                }}
+                            </td>
+
+                        </tr>
+
+                    @empty
+
+                        <tr>
+                            <td colspan="11" class="text-center text-muted py-4">
+                                No advertisements found for {{ $monthLabel }}.
+                            </td>
+                        </tr>
+
+                    @endforelse
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        @if($ads->hasPages())
+            <div class="card-footer">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+
+                    <small class="text-muted">
+                        Showing {{ $ads->firstItem() }}
+                        to {{ $ads->lastItem() }}
+                        of {{ $ads->total() }} records
+                    </small>
+
+                    {{ $ads->links() }}
+
+                </div>
+            </div>
+        @endif
+
+    </div>
+
 </div>
 @endsection

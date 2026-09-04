@@ -11,13 +11,13 @@
           <div class="card-body">
             <h5 class="card-title text-primary">Welcome, {{ $user['name'] }} 🎉</h5>
             <p class="mb-4">This is PrintHitAd admin dashboard.</p>
-            <a href="{{ url('/all-print-ads') }}" class="btn btn-sm btn-outline-primary">View All Print Ads</a>
+            <!-- <a href="{{ url('/all-print-ads') }}" class="btn btn-sm btn-outline-primary">View All Print Ads</a> -->
           </div>
         </div>
         <div class="col-sm-5 text-center text-sm-left">
-          <div class="card-body pb-0 px-0 px-md-4">
+          <!-- <div class="card-body pb-0 px-0 px-md-4">
             <img src="/assets/img/illustrations/man-with-laptop-light.png" height="140" alt="Admin" />
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

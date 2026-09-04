@@ -10,6 +10,7 @@
     $cities = $cities ?? collect();
     $paymentMethods = $paymentMethods ?? collect();
     $publicationDeadlines = $publicationDeadlines ?? [];
+    $topAdSupported = $topAdSupported ?? false;
     $generalSettings = $generalSettings ?? [
         'max_words_en' => 65,
         'max_words_si' => 65,
@@ -17,6 +18,8 @@
         'additional_word_rate_si' => 20,
         'free_word_limit_en' => 15,
         'free_word_limit_si' => 15,
+        'top_ad_rate_en' => 100,
+        'top_ad_rate_si' => 100,
     ];
 @endphp
 
@@ -92,6 +95,7 @@
       action="{{ $action }}"
       method="POST"
       enctype="multipart/form-data"
+    novalidate
       class="ad-form-shell">
     @csrf
 
@@ -187,12 +191,30 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label d-block">Web Combined Ad</label>
-                    <select name="web_combined_ad" class="form-select">
-                        <option value="0" {{ old('web_combined_ad', 0) == 0 ? 'selected' : '' }}>No</option>
-                        <option value="1" {{ old('web_combined_ad') == 1 ? 'selected' : '' }}>Yes</option>
+                    <select name="web_combined_ad_hitadlk" class="form-select">
+                        <option value="0" {{ old('web_combined_ad_hitadlk', 0) == 0 ? 'selected' : '' }}>No</option>
+                        <option value="1" {{ old('web_combined_ad_hitadlk') == 1 ? 'selected' : '' }}>Yes</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                @if($topAdSupported)
+                <div class="col-md-6" id="topAdFieldWrap" style="display:none">
+                    <label class="form-label d-block" for="topAdToggle">Top Ad</label>
+                    <input type="hidden" name="top_ad" value="0">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="topAdToggle" name="top_ad" value="1" {{ old('top_ad') == 1 ? 'checked' : '' }}>
+                        <label class="form-check-label" for="topAdToggle">Pin this advertisement in the top ad slot</label>
+                    </div>
+                    <small class="help-note d-block mt-1" id="topAdHint"></small>
+                </div>
+                @endif
+                <div class="col-md-6" id="printOnHitadPaperWrap" style="display:none">
+                    <label class="form-label d-block">Print on HitAd Paper</label>
+                    <select name="print_combined_ad_hitadprint" id="printOnHitadPaperSelect" class="form-select">
+                        <option value="0" {{ old('print_combined_ad_hitadprint', 0) == 0 ? 'selected' : '' }}>No</option>
+                        <option value="1" {{ old('print_combined_ad_hitadprint') == 1 ? 'selected' : '' }}>Yes</option>
+                    </select>
+                </div>
+                <div class="col-md-6" id="tintFieldWrap" style="display:none">
                     <label class="form-label">Tint</label>
                     <select name="advertisement_tint_id" id="tintSel" class="form-select" data-old="{{ old('advertisement_tint_id') }}">
                         <option value="">No Tint</option>
@@ -212,8 +234,8 @@
                         <option value="">Select District</option>
                         @foreach($districts as $district)
                             @php
-                                $distEn = trim($district->district_name_en ?? '');
-                                $distSi = trim($district->district_name_si ?? '');
+                                $distEn = trim($district->district_name ?? '');
+                                $distSi = trim($district->district_name ?? '');
                                 $distLabel = $isLahipita ? ($distSi ?: $distEn) : ($distEn ?: $distSi);
                             @endphp
                             <option value="{{ $district->id }}"
@@ -227,12 +249,12 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">City</label>
-                    <select name="city_id" id="citySelect" class="form-select" required disabled>
+                    <select name="city_id" id="citySelect" class="form-select" disabled>
                         <option value="">Select District first</option>
                         @foreach($cities as $city)
                             @php
-                                $cityEn = trim($city->city_name_en ?? '');
-                                $citySi = trim($city->city_name_si ?? '');
+                                $cityEn = trim($city->city_name ?? '');
+                                $citySi = trim($city->city_name ?? '');
                                 $cityLabel = $isLahipita ? ($citySi ?: $cityEn) : ($cityEn ?: $citySi);
                             @endphp
                             <option value="{{ $city->id }}"
@@ -272,15 +294,25 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                    <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Confirm Email</label>
-                    <input type="email" name="confirm_email" class="form-control" value="{{ old('confirm_email') }}">
+                    <input type="email" name="confirm_email" class="form-control" value="{{ old('confirm_email') }}" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Address</label>
                     <input type="text" name="address" class="form-control" value="{{ old('address') }}" required>
+                </div>
+                <div class="col-md-6" id="nicFrontFieldWrap">
+                    <label class="form-label">NIC Front Photo</label>
+                    <input type="file" name="nic_front_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
+                </div>
+                <div class="col-md-6" id="nicBackFieldWrap">
+                    <label class="form-label">NIC Back Photo</label>
+                    <input type="file" name="nic_back_image" class="form-control" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    <small class="help-note">Allowed: JPG, JPEG, PNG (max 5MB)</small>
                 </div>
             </div>
         </div>
@@ -302,7 +334,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Payment Status</label>
-                    <select name="payment_status" class="form-select">
+                    <select name="payment_status" class="form-select" required>
                         <option value="pending"   {{ old('payment_status', 'pending') === 'pending'   ? 'selected' : '' }}>Pending</option>
                         <option value="completed" {{ old('payment_status') === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="failed"    {{ old('payment_status') === 'failed'    ? 'selected' : '' }}>Failed</option>
@@ -311,12 +343,23 @@
                 <div class="col-md-6">
                     <label class="form-label">Amount (LKR)</label>
                     <input type="number" name="payment_amount" class="form-control" min="0" step="0.01"
-                           value="{{ old('payment_amount') }}" placeholder="0.00">
+                           value="{{ old('payment_amount') }}" placeholder="0.00" required readonly>
+                    <small class="help-note">Auto-calculated from the selected ad options.</small>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Payment Date</label>
                     <input type="text" name="payment_date" id="paymentDateInput" class="form-control"
                            value="{{ old('payment_date') }}" placeholder="Select date" autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Receipt Number</label>
+                    <input type="text" name="receipt_number" class="form-control"
+                           value="{{ old('receipt_number') }}" placeholder="Enter receipt number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Payment Slip</label>
+                    <input type="file" name="payment_slip" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                    <small class="help-note">Allowed: PDF, JPG, JPEG, PNG (max 5MB)</small>
                 </div>
             </div>
         </div>
@@ -558,9 +601,25 @@
     const descTA         = form.querySelector('#descTA');
     const wcDisplay      = form.querySelector('#wcDisplay');
     const imagesHint     = form.querySelector('#imagesHint');
+    const topAdFieldWrap = form.querySelector('#topAdFieldWrap');
+    const topAdToggle    = form.querySelector('#topAdToggle');
+    const topAdHint      = form.querySelector('#topAdHint');
+    const tintFieldWrap  = form.querySelector('#tintFieldWrap');
+    const printPaperWrap = form.querySelector('#printOnHitadPaperWrap');
+    const printPaperSel  = form.querySelector('#printOnHitadPaperSelect');
+    const nicFrontWrap   = form.querySelector('#nicFrontFieldWrap');
+    const nicBackWrap    = form.querySelector('#nicBackFieldWrap');
+    const nicFrontInput  = form.querySelector('input[name="nic_front_image"]');
+    const nicBackInput   = form.querySelector('input[name="nic_back_image"]');
+    const paymentAmountInput = form.querySelector('input[name="payment_amount"]');
 
     /* ── State ───────────────────────────────────────────────────────── */
     let pendingCriterias = [];   // pre-loaded when category changes, rendered on size selection
+    const CLASSIFIED_KEYWORDS = ['classified'];
+    const METROMONIAL_KEYWORDS = {
+        en: ['matrimonial'],
+        si: ['මංගල යෝජනා']
+    };
 
     /* ── Helpers ─────────────────────────────────────────────────────── */
     function lang() {
@@ -596,6 +655,231 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function isMetromonialCategorySelected() {
+        if (!catSel || !catSel.value || !catSel.options[catSel.selectedIndex]) {
+            return false;
+        }
+
+        var selected = catSel.options[catSel.selectedIndex];
+        var haystack = [
+            selected.textContent || '',
+            selected.dataset.en || '',
+            selected.dataset.si || ''
+        ].join(' ').toLowerCase();
+
+        var activeKeywords = lang() === 'si'
+            ? METROMONIAL_KEYWORDS.si
+            : METROMONIAL_KEYWORDS.en;
+
+        return activeKeywords.some(function (keyword) {
+            return haystack.indexOf(keyword) !== -1;
+        });
+    }
+
+    function isClassifiedTypeSelected() {
+        if (!typeSel || !typeSel.value || !typeSel.options[typeSel.selectedIndex]) {
+            return false;
+        }
+
+        var selected = typeSel.options[typeSel.selectedIndex];
+        var haystack = [
+            selected.textContent || '',
+            selected.dataset.en || '',
+            selected.dataset.si || ''
+        ].join(' ').toLowerCase();
+
+        return CLASSIFIED_KEYWORDS.some(function (keyword) {
+            return haystack.indexOf(keyword) !== -1;
+        });
+    }
+
+    function toggleClassifiedFields() {
+        var isClassified = isClassifiedTypeSelected();
+
+        if (topAdFieldWrap) {
+            topAdFieldWrap.style.display = isClassified ? '' : 'none';
+        }
+        if (tintFieldWrap) {
+            tintFieldWrap.style.display = isClassified ? '' : 'none';
+        }
+
+        if (!isClassified) {
+            if (topAdToggle) {
+                topAdToggle.checked = false;
+            }
+            if (tintSel) {
+                resetSelect(tintSel, 'No Tint');
+            }
+        }
+
+        updateTopAdHint();
+    }
+
+    function togglePrintOnHitadPaperField() {
+        var isLahipita = pubSel && pubSel.value === 'lahipita';
+
+        if (printPaperWrap) {
+            printPaperWrap.style.display = isLahipita ? '' : 'none';
+        }
+        if (!isLahipita && printPaperSel) {
+            printPaperSel.value = '0';
+        }
+    }
+
+    function toggleMetromonialFields() {
+        var isMetromonial = isMetromonialCategorySelected();
+
+        if (nicFrontWrap) {
+            nicFrontWrap.style.display = isMetromonial ? '' : 'none';
+        }
+        if (nicBackWrap) {
+            nicBackWrap.style.display = isMetromonial ? '' : 'none';
+        }
+
+        if (nicFrontInput) {
+            nicFrontInput.required = !!isMetromonial;
+        }
+        if (nicBackInput) {
+            nicBackInput.required = !!isMetromonial;
+        }
+
+        if (!isMetromonial) {
+            if (nicFrontInput) {
+                nicFrontInput.value = '';
+                nicFrontInput.classList.remove('is-invalid');
+            }
+            if (nicBackInput) {
+                nicBackInput.value = '';
+                nicBackInput.classList.remove('is-invalid');
+            }
+        }
+    }
+
+    function getValidationFeedbackElement(field) {
+        if (!field) return null;
+        var parent = field.closest('.col-md-6, .col-12');
+        if (!parent) return null;
+
+        var existing = parent.querySelector('.invalid-feedback[data-dynamic-validation="1"]');
+        if (existing) return existing;
+
+        var feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback d-block';
+        feedback.setAttribute('data-dynamic-validation', '1');
+        feedback.style.display = 'none';
+        parent.appendChild(feedback);
+        return feedback;
+    }
+
+    function setFieldInvalid(field, message) {
+        if (!field) return;
+        field.classList.add('is-invalid');
+        var feedback = getValidationFeedbackElement(field);
+        if (feedback) {
+            feedback.textContent = message || 'This field is required.';
+            feedback.style.display = '';
+        }
+    }
+
+    function clearFieldInvalid(field) {
+        if (!field) return;
+        field.classList.remove('is-invalid');
+        var feedback = getValidationFeedbackElement(field);
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.style.display = 'none';
+        }
+    }
+
+    function validateRequiredField(field, label) {
+        if (!field || field.disabled) return true;
+
+        var tagName = (field.tagName || '').toLowerCase();
+        var type = (field.type || '').toLowerCase();
+        var value = (field.value || '').trim();
+        var valid = true;
+
+        if (type === 'file') {
+            valid = !!(field.files && field.files.length > 0);
+        } else if (tagName === 'select') {
+            valid = value !== '';
+        } else {
+            valid = value !== '';
+        }
+
+        if (valid && tagName === 'input' && type === 'email') {
+            valid = field.checkValidity();
+        }
+
+        if (!valid) {
+            setFieldInvalid(field, (label || 'This field') + ' is required.');
+            return false;
+        }
+
+        clearFieldInvalid(field);
+        return true;
+    }
+
+    function validateCreateForm() {
+        var ok = true;
+        var firstInvalid = null;
+
+        var customerNameInput = form.querySelector('input[name="customer_name"]');
+        var nicPassportInput = form.querySelector('input[name="nic_passport"]');
+        var telephoneInput = form.querySelector('input[name="telephone"]');
+        var emailInput = form.querySelector('input[name="email"]');
+        var confirmEmailInput = form.querySelector('input[name="confirm_email"]');
+        var addressInput = form.querySelector('input[name="address"]');
+        var paymentStatusSelect = form.querySelector('select[name="payment_status"]');
+        var paymentAmountInput = form.querySelector('input[name="payment_amount"]');
+
+        var requiredFields = [
+            { field: descTA, label: 'Description' },
+            { field: publishInput, label: 'Publish Date' },
+            { field: distSel, label: 'District' },
+            { field: customerNameInput, label: 'Name' },
+            { field: nicPassportInput, label: 'NIC / Passport' },
+            { field: telephoneInput, label: 'Phone' },
+            { field: emailInput, label: 'Email' },
+            { field: confirmEmailInput, label: 'Confirm Email' },
+            { field: addressInput, label: 'Address' },
+            { field: paymentStatusSelect, label: 'Payment Status' },
+            { field: paymentAmountInput, label: 'Amount (LKR)' }
+        ];
+
+        requiredFields.forEach(function (item) {
+            if (!validateRequiredField(item.field, item.label)) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = item.field;
+            }
+        });
+
+        if (emailInput && confirmEmailInput && emailInput.value.trim() !== '' && confirmEmailInput.value.trim() !== '') {
+            if (emailInput.value.trim().toLowerCase() !== confirmEmailInput.value.trim().toLowerCase()) {
+                setFieldInvalid(confirmEmailInput, 'Confirm Email must match Email.');
+                ok = false;
+                if (!firstInvalid) firstInvalid = confirmEmailInput;
+            }
+        }
+
+        if (isMetromonialCategorySelected()) {
+            if (!validateRequiredField(nicFrontInput, 'NIC Front Photo')) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = nicFrontInput;
+            }
+            if (!validateRequiredField(nicBackInput, 'NIC Back Photo')) {
+                ok = false;
+                if (!firstInvalid) firstInvalid = nicBackInput;
+            }
+        }
+
+        if (firstInvalid && typeof firstInvalid.focus === 'function') {
+            firstInvalid.focus();
+        }
+
+        return ok;
     }
 
     /* ── Language: filter & label category options ───────────────────── */
@@ -652,6 +936,27 @@
             freeWordLimit: Number(generalSettings['free_word_limit_' + suffix] || 0),
             additionalWordRate: Number(generalSettings['additional_word_rate_' + suffix] || 0),
         };
+    }
+
+    function currentTopAdRate() {
+        const suffix = lang() === 'si' ? 'si' : 'en';
+        return Number(generalSettings['top_ad_rate_' + suffix] || 0);
+    }
+
+    function updateTopAdHint() {
+        if (!topAdHint) return;
+
+        const rate = Math.max(0, currentTopAdRate());
+        const enabled = !!(topAdToggle && topAdToggle.checked);
+
+        if (!enabled) {
+            topAdHint.textContent = 'Enable this if the ad should run in the top placement.';
+            return;
+        }
+
+        topAdHint.textContent = rate > 0
+            ? ('Top ad placement adds LKR ' + rate.toFixed(2) + ' to the calculated amount.')
+            : 'Top ad placement is enabled.';
     }
 
     /* ── Live word counter ────────────────────────────────────────────── */
@@ -748,7 +1053,19 @@
         if (!criterias || criterias.length === 0) return '';
         return criterias.map(function (c) {
             var field = '';
-            if (c.field_type === 'textarea') {
+            if (c.field_type === 'text') {
+                field = '<input type="text" name="criteria[' + c.id + ']" class="form-control" />';
+            } else if (c.field_type === 'number') {
+                field = '<input type="number" name="criteria[' + c.id + ']" class="form-control" />';
+            } else if (c.field_type === 'image') {
+                field = '<input type="file" name="criteria_image[' + c.id + ']" class="form-control" accept="image/*" />';
+            } else if (c.field_type === 'dropdown') {
+                var opts = (c.options || []).map(function (o) {
+                    return '<option value="' + escHtml(o.label) + '">' + escHtml(o.label) + '</option>';
+                }).join('');
+                field = '<select name="criteria[' + c.id + ']" class="form-select">'
+                    + '<option value="">-- Select --</option>' + opts + '</select>';
+            } else if (c.field_type === 'textarea') {
                 field = '<textarea name="criteria[' + c.id + ']" class="form-control" rows="3"></textarea>';
             } else if (c.field_type === 'radio') {
                 var opts = (c.options || []).map(function (o) {
@@ -760,11 +1077,7 @@
                 }).join('');
                 field = '<div class="d-flex flex-wrap gap-3">' + opts + '</div>';
             } else {
-                var opts = (c.options || []).map(function (o) {
-                    return '<option value="' + escHtml(o.label) + '">' + escHtml(o.label) + '</option>';
-                }).join('');
-                field = '<select name="criteria[' + c.id + ']" class="form-select">'
-                    + '<option value="">-- Select --</option>' + opts + '</select>';
+                field = '<input type="text" name="criteria[' + c.id + ']" class="form-control" />';
             }
             return '<div class="col-12"><div class="criteria-block">'
                 + '<label class="form-label">' + escHtml(c.label) + '</label>'
@@ -787,6 +1100,7 @@
             show(customerCard);
             show(paymentCard);
             show(formActions);
+            calculateAndUpdatePrice();
         } else {
             hide(adDetailsCard);
             hide(locationCard);
@@ -795,6 +1109,32 @@
             hide(paymentCard);
             hide(formActions);
         }
+    }
+
+    /* ── AJAX: calculate and auto-fill advertisement price ──────────── */
+    function calculateAndUpdatePrice() {
+        if (!paymentAmountInput || !paymentAmountInput.form) return;
+
+        var formData = new FormData(paymentAmountInput.form);
+        
+        fetch(@json(url('/calculate-ad-price')), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && typeof data.total !== 'undefined') {
+                    paymentAmountInput.value = data.total.toFixed(2);
+                    clearFieldInvalid(paymentAmountInput);
+                }
+            })
+            .catch(function (err) {
+                console.error('Price calculation failed:', err);
+            });
     }
 
     /* ── AJAX: load types for a category ─────────────────────────────── */
@@ -806,7 +1146,10 @@
         resetSelect(tintSel, 'No Tint');
         hide(sizeHints);
         revealFromSize(false);
-            pendingCriterias = [];
+        pendingCriterias = [];
+
+        toggleMetromonialFields();
+        toggleClassifiedFields();
 
         if (!categoryId) return;
 
@@ -821,13 +1164,13 @@
                     var opt = document.createElement('option');
                     opt.value = t.id;
                     opt.textContent = t.label;
+                    opt.dataset.en = t.label_en || '';
+                    opt.dataset.si = t.label_si || '';
                     typeSel.appendChild(opt);
                 });
                 show(typeCard);
             })
             .catch(function () { show(typeCard); });
-
-        loadTints(categoryId);
 
         // Pre-fetch criterias for this category
         fetch(@json(url('/adcriterias/by-category')) + '/' + categoryId + '?lang=' + l, {
@@ -839,14 +1182,19 @@
     }
 
     /* ── AJAX: load tints for a category ────────────────────────────── */
-    function loadTints(categoryId) {
+    function loadTints(categoryId, typeId) {
         resetSelect(tintSel, 'No Tint');
         if (!categoryId || !tintSel) return;
 
         var l = lang();
         var oldTintId = (tintSel.dataset.old || '').toString();
+        var query = new URLSearchParams({ lang: l });
 
-        fetch(@json(url('/tints/by-category')) + '/' + categoryId + '?lang=' + l, {
+        if (typeId) {
+            query.set('type_id', typeId);
+        }
+
+        fetch(@json(url('/tints/by-category')) + '/' + categoryId + '?' + query.toString(), {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
             .then(function (r) { return r.json(); })
@@ -875,9 +1223,19 @@
         hide(sizeCard);
         hide(sizeHints);
         revealFromSize(false);
-            pendingCriterias = [];
 
         if (!typeId) return;
+
+        // Classified ads have no size options — skip the size step entirely.
+        if (isClassifiedTypeSelected()) {
+            sizeSel.required = false;
+            revealFromSize(true);
+            updateLocationLabels();
+            filterCities();
+            return;
+        }
+
+        sizeSel.required = true;
 
         var l = lang();
         fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
@@ -915,8 +1273,11 @@
     function onPublicationChange() {
         refreshPublishDateConstraints();
         updateCategoryLabels();
+        toggleMetromonialFields();
+        togglePrintOnHitadPaperField();
         updateLocationLabels();
         updateWordCount();
+        updateTopAdHint();
 
         var catId  = catSel.value;
         var typeId = typeSel.value;
@@ -935,15 +1296,19 @@
                         var opt = document.createElement('option');
                         opt.value = t.id;
                         opt.textContent = t.label;
+                        opt.dataset.en = t.label_en || '';
+                        opt.dataset.si = t.label_si || '';
                         if (String(t.id) === String(curType)) opt.selected = true;
                         typeSel.appendChild(opt);
                     });
-                });
 
-            if (tintSel) {
-                tintSel.dataset.old = curTint;
-                loadTints(catId);
-            }
+                    toggleClassifiedFields();
+
+                    if (tintSel && isClassifiedTypeSelected()) {
+                        tintSel.dataset.old = curTint;
+                        loadTints(catId, curType);
+                    }
+                });
 
             fetch(@json(url('/adcriterias/by-category')) + '/' + catId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -958,7 +1323,7 @@
                 .catch(function () {});
         }
 
-        if (typeId) {
+        if (typeId && !isClassifiedTypeSelected()) {
             var curSize = sizeSel.value;
             fetch(@json(url('/adsizes/by-type')) + '/' + typeId + '?lang=' + l, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -980,11 +1345,37 @@
 
     /* ── Event listeners ─────────────────────────────────────────────── */
     pubSel  && pubSel.addEventListener('change',  onPublicationChange);
-    catSel  && catSel.addEventListener('change',  function () { loadTypes(catSel.value); });
-    typeSel && typeSel.addEventListener('change', function () { loadSizes(typeSel.value); });
-    sizeSel && sizeSel.addEventListener('change', applySize);
+    catSel  && catSel.addEventListener('change',  function () {
+        toggleMetromonialFields();
+        loadTypes(catSel.value);
+    });
+    typeSel && typeSel.addEventListener('change', function () {
+        toggleClassifiedFields();
+        if (isClassifiedTypeSelected()) {
+            loadTints(catSel ? catSel.value : '', typeSel.value);
+        }
+        loadSizes(typeSel.value);
+        calculateAndUpdatePrice();
+    });
+    sizeSel && sizeSel.addEventListener('change', function () {
+        applySize();
+        calculateAndUpdatePrice();
+    });
+    tintSel && tintSel.addEventListener('change', calculateAndUpdatePrice);
     distSel && distSel.addEventListener('change', filterCities);
-    descTA  && descTA.addEventListener('input',   updateWordCount);
+    descTA  && descTA.addEventListener('input',   function () {
+        updateWordCount();
+        calculateAndUpdatePrice();
+    });
+    topAdToggle && topAdToggle.addEventListener('change', function () {
+        updateTopAdHint();
+        calculateAndUpdatePrice();
+    });
+    printPaperSel && printPaperSel.addEventListener('change', calculateAndUpdatePrice);
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+        el.addEventListener('input', function () { clearFieldInvalid(el); });
+        el.addEventListener('change', function () { clearFieldInvalid(el); });
+    });
     descTA  && descTA.addEventListener('paste', function (e) {
         if (!descTA) return;
 
@@ -1009,14 +1400,20 @@
     publishInput && publishInput.addEventListener('change', function () { validatePublishDateCutoff(false); });
 
     form.addEventListener('submit', function (e) {
-        if (!validatePublishDateCutoff(true)) {
+        var isPublishDateValid = validatePublishDateCutoff(true);
+        var isCreateFormValid = validateCreateForm();
+        if (!isPublishDateValid || !isCreateFormValid) {
             e.preventDefault();
         }
     });
 
     /* ── Init ────────────────────────────────────────────────────────── */
     updateCategoryLabels();
+    toggleMetromonialFields();
+    toggleClassifiedFields();
+    togglePrintOnHitadPaperField();
     updateWordCount();
+    updateTopAdHint();
 
     @if($autoOpen)
     const offcanvasEl = form.closest('.offcanvas');

@@ -27,9 +27,9 @@
       <!-- Avatar -->
       <li class="nav-item me-3">
         <div class="avatar avatar-online">
-          <img src="/assets/img/avatars/1.png"
+          <!-- <img src="/assets/img/avatars/1.png"
             alt="User Avatar"
-            class="w-px-40 h-auto rounded-circle" />
+            class="w-px-40 h-auto rounded-circle" /> -->
         </div>
       </li>
 

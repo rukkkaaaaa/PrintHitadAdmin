@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class District extends Model
 {
     use HasFactory;
-    protected $fillable = ['district_name_en', 'district_name_si', 'is_active'];
+    protected $fillable = ['district_name', 'district_name', 'is_active'];
 
 
     public function cities()

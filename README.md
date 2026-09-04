@@ -1,66 +1,222 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PrintHitad Admin
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Admin dashboard for managing the PrintHitad / Lahipita advertisement workflow.
 
-## About Laravel
+This README now explains both **how to run** the app and **what is happening inside the system** during daily usage.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ What this app does
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Session-based admin authentication
+- User and role management
+- Advertisement lifecycle management (create, edit, view, download)
+- Paid/unpaid and publication-based ad listings
+- Master data management:
+	- Categories
+	- Advertisement types
+	- Advertisement sizes
+	- Tints
+	- Criteria and criteria options
+	- Districts and cities
+- Members listing (from `customers`)
+- Monthly report generation + PDF export
+- Publication deadline and general settings management
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🔄 What is happening in this system (workflow)
 
-## Learning Laravel
+In practical terms, this is the day-to-day flow:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+1. **Admin logs in**
+	- Unauthenticated users are redirected to `/login`.
+	- After login, users are taken to `/dashboard`.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. **Role-based access is applied**
+	- `super admin`: access to everything.
+	- `site admin`: only configuration/master-data areas (categories, types, sizes, tints, criteria, locations).
+	- reporting roles: mainly reports and dashboard.
+	- advertising roles: advertisement creation and advertisement-related screens.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+3. **Master data is managed**
+	- Teams configure categories, ad types, ad sizes, tints, criteria/options, districts, and cities.
+	- These become selectable data for advertisement forms.
 
-## Laravel Sponsors
+4. **Advertisement is created/updated**
+	- Ads are created from `/advertisements/create`.
+	- The form behavior changes by publication (Hitad/Lahipita) and selected options.
+	- Pricing is calculated from configured settings/rates and ad details.
+	- Uploads (images/documents) are saved through configured storage.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+5. **Operations tracking**
+	- Ads are reviewed in listing pages (`/advertisements`, paid/unpaid pages, and Lahipita subsets).
+	- Staff can view details, edit records, download outputs, and track payment status.
 
-### Premium Partners
+6. **Monthly reporting**
+	- `/reports` summarizes monthly activity.
+	- PDFs are exported via `/reports/{type}/pdf?month=YYYY-MM`.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+7. **Deadline/settings enforcement**
+	- Publication deadlines and general settings affect eligibility and pricing logic in the ad workflow.
 
-## Contributing
+## 🧱 Tech stack
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- PHP `^8.1`
+- Laravel `^10`
+- MySQL / MariaDB
+- Vite `^4`
+- `barryvdh/laravel-dompdf` (PDF output)
+- S3-compatible object storage (`oracle` disk) for uploads
 
-## Code of Conduct
+## ✅ Requirements
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Before running locally, make sure you have:
 
-## Security Vulnerabilities
+- PHP 8.1+
+- Composer
+- Node.js + npm
+- MySQL/MariaDB database
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## 🚀 Local setup
 
-## License
+### 1) Clone and install dependencies
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer install
+npm install
+```
+
+### 2) Configure environment
+
+If `.env` is missing, create it from `.env.example`.
+
+Set at minimum:
+
+- App
+	- `APP_NAME`
+	- `APP_ENV`
+	- `APP_URL`
+- Database
+	- `DB_CONNECTION`
+	- `DB_HOST`
+	- `DB_PORT`
+	- `DB_DATABASE`
+	- `DB_USERNAME`
+	- `DB_PASSWORD`
+- Mail (if using email features)
+	- `MAIL_*`
+
+Generate app key:
+
+```bash
+php artisan key:generate
+```
+
+### 3) Configure object storage (recommended)
+
+Uploads use the `oracle` disk in `config/filesystems.php`.
+
+Add these variables to `.env` when using upload flows:
+
+- `OCI_ACCESS_KEY_ID`
+- `OCI_SECRET_ACCESS_KEY`
+- `OCI_DEFAULT_REGION` (default: `ap-singapore-1`)
+- `OCI_BUCKET`
+- `OCI_URL`
+
+> If OCI values are missing or invalid, upload-related features may fail.
+
+### 4) Run database migrations
+
+```bash
+php artisan migrate
+```
+
+If you point to an already-initialized legacy DB and hit duplicate table errors, run only required migration files with `--path`.
+
+### 5) Start the app
+
+Use two terminals:
+
+```bash
+php artisan serve
+npm run dev
+```
+
+Open your configured app URL (typically `http://127.0.0.1:8000`).
+
+## 🔐 Authentication and access
+
+- Login page: `/login`
+- Registration page: `/register`
+- Root route (`/`) redirects to `/login` when unauthenticated
+- Dashboard: `/dashboard`
+
+Role checks are enforced in middleware and include special handling for:
+
+- `super admin` (full access)
+- reporting roles (reports/dashboard-focused access)
+- advertising roles (advertisement-focused access)
+- `site admin` (configuration sections only)
+
+## 🧭 Route quick reference
+
+- Dashboard: `/dashboard`
+- Users: `/users`
+- Reports: `/reports`, `/reports/{type}/pdf`
+- Members: `/members`
+- Advertisements:
+	- `/all-print-ads`
+	- `/advertisements`
+	- `/advertisements/create`
+	- `/advertisements/{id}/view`
+	- `/advertisements/{id}/edit`
+	- `/advertisements/paid`
+	- `/advertisements/unpaid`
+	- Lahipita-specific subsets under `/advertisements/lahipita...`
+- Master data:
+	- `/categories`
+	- `/adtypes`
+	- `/adsizes`
+	- `/tints`
+	- `/adcriterias`
+	- `/adcriteria-options`
+	- `/districts`
+	- `/cities`
+- Settings:
+	- `/publication-deadlines`
+	- `/general-settings`
+
+## 🛠️ Useful commands
+
+```bash
+# Run tests
+php artisan test
+
+# Build frontend assets
+npm run build
+
+# Clear optimized/cache state
+php artisan optimize:clear
+```
+
+## 📁 High-level structure
+
+- `app/Http/Controllers/` — main controllers (`AuthController`, `GeneralController`)
+- `app/Http/Middleware/` — session auth and role restrictions
+- `resources/views/` — Blade templates
+- `routes/web.php` — web routes
+- `database/migrations/` — schema migrations
+- `config/` — framework/service configuration
+
+## 🩺 Troubleshooting
+
+- **Redirect to `/login` unexpectedly**
+	- Session may be missing/expired, or route is protected.
+- **Migration “table already exists” errors**
+	- Use targeted migration execution with `--path` for incremental updates.
+- **Uploaded files not accessible**
+	- Verify OCI credentials, endpoint, bucket, and visibility settings.
+- **Frontend changes not appearing**
+	- Restart `npm run dev`, clear browser cache, and ensure Vite is running.
+
+## 📜 License
+
+MIT (see `LICENSE`).

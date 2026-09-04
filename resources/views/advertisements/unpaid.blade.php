@@ -5,6 +5,26 @@
 <div class="container mt-4">
     <h2 class="mb-3">Hitad - Unpaid Advertisements</h2>
 
+    {{-- ✅ EMAIL SUCCESS NOTIFICATION --}}
+    @if(session('success'))
+        <div id="emailSuccessNotification" class="email-success-notification">
+            <div class="email-success-content">
+                <i class="bx bx-check-circle email-success-icon"></i>
+
+                <span class="email-success-message">
+                    {{ session('success') }}
+                </span>
+
+                <button type="button"
+                        class="email-success-close"
+                        onclick="closeEmailSuccessNotification()"
+                        aria-label="Close">
+                    &times;
+                </button>
+            </div>
+        </div>
+    @endif
+
     <style>
         /* Unified page tweaks for all advertisement tables */
         .ads-card { border-radius: 12px; box-shadow: 0 6px 18px rgba(18,38,63,0.06); overflow: hidden; }
@@ -19,6 +39,94 @@
         .table-responsive { padding: 0.75rem 1rem; }
         @media (max-width: 767px) {
             .action-btns .btn { margin-bottom: .35rem; }
+        }
+
+        /* ✅ EMAIL SUCCESS NOTIFICATION */
+        .email-success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            min-width: 320px;
+            max-width: 450px;
+            background-color: #198754;
+            color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.20);
+            animation: emailNotificationSlideIn 0.4s ease;
+        }
+
+        .email-success-content {
+            display: flex;
+            align-items: center;
+            padding: 15px 18px;
+        }
+
+        .email-success-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .email-success-message {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .email-success-close {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 400;
+            line-height: 1;
+            margin-left: 15px;
+            padding: 0;
+            cursor: pointer;
+            opacity: 0.85;
+        }
+
+        .email-success-close:hover {
+            opacity: 1;
+        }
+
+        .email-notification-hide {
+            animation: emailNotificationSlideOut 0.4s ease forwards;
+        }
+
+        @keyframes emailNotificationSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes emailNotificationSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .email-success-notification {
+                left: 15px;
+                right: 15px;
+                min-width: auto;
+                max-width: none;
+            }
         }
     </style>
 
@@ -46,11 +154,8 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Amount</th>
-                    <th>Payment Method</th>
+                    <th>Publish Date</th>
                     <th>Payment Status</th>
                     <th>Send Link</th>
                     <th>Action</th>
@@ -65,13 +170,6 @@
                         <td>{{ $ad->category_name }}</td>
 
                         <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
-
-                        <td>
                             @if(!is_null($ad->amount))
                                 Rs. {{ number_format($ad->amount, 2) }}
                             @else
@@ -79,7 +177,13 @@
                             @endif
                         </td>
 
-                        <td>{{ $ad->payment_method ?? '-' }}</td>
+                        <td>
+    @if(!empty($ad->publish_date))
+        {{ \Carbon\Carbon::parse($ad->publish_date)->format('Y-m-d') }}
+    @else
+        -
+    @endif
+</td>
 
                         {{-- PAYMENT STATUS --}}
                         <td>
@@ -109,15 +213,22 @@
                                 <i class="bx bx-edit-alt"></i>
                             </a>
 
-                            <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                            <button class="btn btn-sm btn-outline-success"
+        onclick="confirmDownload(this)"
+        data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
+    <i class="bx bx-download"></i>
+</button>
+
+                            <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
                                 <i class="bx bx-download"></i>
-                            </button>
+                            </button -->
+                            
                         </td>
                     </tr>
 
                 @empty
                     <tr>
-                        <td colspan="11" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             No unpaid advertisements found.
                         </td>
                     </tr>
@@ -128,6 +239,7 @@
         {{-- Pagination --}}
         @if(method_exists($ads, 'links'))
             <div class="mt-3 px-3">
+                @include('advertisements._pagination_count', ['ads' => $ads])
                 {{ $ads->links() }}
             </div>
         @endif
@@ -140,11 +252,39 @@
 
 {{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
 <script>
-function confirmDownload(adId) {
+	function confirmDownload(btn) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = btn.dataset.downloadUrl;
+    }
+}
+/** function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {
         window.location.href = "/advertisements/" + adId + "/download";
     }
+} */
+
+{{-- ✅ EMAIL SUCCESS NOTIFICATION SCRIPT --}}
+function closeEmailSuccessNotification() {
+    const notification = document.getElementById('emailSuccessNotification');
+
+    if (notification) {
+        notification.classList.add('email-notification-hide');
+
+        setTimeout(function () {
+            notification.remove();
+        }, 400);
+    }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const notification = document.getElementById('emailSuccessNotification');
+
+    if (notification) {
+        setTimeout(function () {
+            closeEmailSuccessNotification();
+        }, 3000);
+    }
+});
 </script>
 
 @endsection

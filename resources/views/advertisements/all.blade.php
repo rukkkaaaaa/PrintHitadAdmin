@@ -1,6 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
+
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
     <h2 class="mb-3">All Print Advertisements</h2>
@@ -20,6 +31,13 @@
         @media (max-width: 767px) {
             .action-btns .btn { margin-bottom: .35rem; }
         }
+        .approved-ad-row > td {
+        background-color: #d1e7dd !important;
+        }
+
+        .approved-ad-row:hover > td {
+        background-color: #badbcc !important;
+        }
     </style>
 
     <!-- Search + actions -->
@@ -33,8 +51,13 @@
                     </div>
 
                     <div class="col-md-2">
-                        <input type="date" name="publish_date" class="form-control" placeholder="Publish date"
-                               value="{{ request('publish_date') }}">
+                        <input type="date" name="publish_date_from" class="form-control" title="Publish date from"
+                               value="{{ request('publish_date_from', request('publish_date')) }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <input type="date" name="publish_date_to" class="form-control" title="Publish date to"
+                               value="{{ request('publish_date_to') }}">
                     </div>
 
                     <div class="col-md-3">
@@ -43,30 +66,33 @@
                     </div>
 
                     <div class="col-md-2">
+                        <button class="btn btn-primary w-100" type="submit">Search</button>
+                    </div>
+                </div>
+
+                <div class="row g-2 mt-2 align-items-center">
+                    <div class="col-md-2">
                         <input type="text" name="phone" class="form-control" placeholder="Phone"
                                value="{{ request('phone') }}">
                     </div>
 
-                    <div class="col-md-2 d-flex">
-                        <input type="text" name="email" class="form-control me-2" placeholder="Email"
+                    <div class="col-md-3">
+                        <input type="text" name="email" class="form-control" placeholder="Email"
                                value="{{ request('email') }}">
-                        <button class="btn btn-primary" type="submit">Search</button>
                     </div>
-                </div>
 
-                <div class="row g-2 mt-2">
                     <div class="col-md-4">
                         <input type="text" name="category" class="form-control" placeholder="Category name"
                                value="{{ request('category') }}">
                     </div>
-                    <div class="col-md-8 text-end">
+                    <!-- <div class="col-md-8 text-end">
                         <a href="{{ url('/advertisements/create') }}" class="btn btn-success me-2">
                             <i class="bx bx-plus"></i> New Ad
                         </a>
                         <a href="#" class="btn btn-outline-secondary">
                             <i class="bx bx-cloud-download"></i> Export
                         </a>
-                    </div>
+                    </div> -->
                 </div>
             </form>
         </div>
@@ -85,36 +111,56 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
                     <th>Publication</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Publish Date</th>
                     <th>Payment</th>
+                    @unless($hideAuditColumns)
+                    <th>Approved By</th>
+                @endunless
                     <th>Action</th>
                 </tr>
             </thead>
 
             <tbody>
                 @forelse ($ads as $ad)
+                    <tr class="{{ !empty($ad->approved_at) ? 'approved-ad-row' : '' }}">
                     <tr>
                         <td>{{ $ad->id }}</td>
                         <td>{{ $ad->customer_name }}</td>
                         <td>{{ $ad->category_name }}</td>
 
-                        <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
                         <td>{{ $ad->publication_label ?? $ad->publication }}</td>
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
 
                         <td>{{ $ad->publish_date }}</td>
 
                         <td>
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
+
+                        @unless($hideAuditColumns)
+                        <td>
+                            @if(!empty($ad->approved_by_admin_id))
+
+                                <span class="badge bg-success">
+                                 <i class="bx bx-check-circle"></i>
+                                    {{ $ad->approved_admin_name ?? 'Admin' }}
+                                </span>
+
+                            @if(!empty($ad->approved_at))
+                                <small class="text-muted d-block mt-1">
+                                {{ \Carbon\Carbon::parse($ad->approved_at)->format('Y-m-d H:i') }}
+                            </small>
+                            @endif
+
+                         @else
+
+                            <span class="text-muted">
+                                Not Approved
+                                </span>
+
+                            @endif
+                        </td>
+                        @endunless
 
                         <td class="action-btns">
                             <a href="{{ url('/advertisements/' . $ad->id . '/view') }}" class="btn btn-sm btn-outline-info">
@@ -125,15 +171,22 @@
                                 <i class="bx bx-edit-alt"></i>
                             </a>
 
-                            <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                            <button class="btn btn-sm btn-outline-success"
+                                onclick="confirmDownload(this)"
+                                data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
                                 <i class="bx bx-download"></i>
                             </button>
+
+                            <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                                <i class="bx bx-download"></i>
+                            </button -->
+                            
                         </td>
                     </tr>
 
                 @empty
                     <tr>
-                        <td colspan="11" class="text-center text-muted">
+                        <td colspan="{{ $hideAuditColumns ? 7 : 8 }}" class="text-center text-muted">
                             No advertisements found.
                         </td>
                     </tr>
@@ -142,6 +195,7 @@
         </table>
 
         <div class="mt-3 px-3">
+            @include('advertisements._pagination_count', ['ads' => $ads])
             {{ $ads->links() }}
         </div>
 
@@ -153,11 +207,16 @@
 </div>
 
 <script>
-function confirmDownload(adId) {
+	function confirmDownload(btn) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = btn.dataset.downloadUrl;
+    }
+}
+/** function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {
         window.location.href = "/advertisements/" + adId + "/download";
     }
-}
+} */
 </script>
 
 @endsection

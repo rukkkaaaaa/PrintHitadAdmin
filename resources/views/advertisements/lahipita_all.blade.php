@@ -1,6 +1,17 @@
 @extends('layouts.app')
 
 @section('content')
+
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
     <h2 class="mb-3">Lahipita - All Advertisements</h2>
@@ -38,11 +49,11 @@
                 <th>ID</th>
                 <th>Customer</th>
                 <th>Category</th>
-                <th>Description</th>
-                <th>District</th>
-                <th>City</th>
                 <th>Publish Date</th>
                 <th>Payment</th>
+                @unless($hideAuditColumns)
+                    <th>Approved By</th>
+                @endunless
                 <th>Action</th>
             </tr>
         </thead>
@@ -50,16 +61,10 @@
         <tbody>
             @forelse ($ads as $ad)
                 <tr>
+                    <tr class="{{ !empty($ad->approved_at) ? 'approved-ad-row' : '' }}">
                     <td>{{ $ad->id }}</td>
                     <td>{{ $ad->customer_name }}</td>
                     <td>{{ $ad->category_name }}</td>
-
-                    <td>
-                        {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                    </td>
-
-                    <td>{{ $ad->district_name }}</td>
-                    <td>{{ $ad->city_name }}</td>
 
                     <td>{{ $ad->publish_date }}</td>
 
@@ -67,6 +72,31 @@
                     <td>
                         @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                     </td>
+
+                    @unless($hideAuditColumns)
+                    <td>
+                            @if(!empty($ad->approved_by_admin_id))
+
+                                <span class="badge bg-success">
+                                 <i class="bx bx-check-circle"></i>
+                                    {{ $ad->approved_admin_name ?? 'Admin' }}
+                                </span>
+
+                            @if(!empty($ad->approved_at))
+                                <small class="text-muted d-block mt-1">
+                                {{ \Carbon\Carbon::parse($ad->approved_at)->format('Y-m-d H:i') }}
+                            </small>
+                            @endif
+
+                         @else
+
+                            <span class="text-muted">
+                                Not Approved
+                                </span>
+
+                            @endif
+                        </td>
+                        @endunless
 
                     {{-- ACTIONS --}}
                     <td class="action-btns">
@@ -78,15 +108,22 @@
                             <i class="bx bx-edit-alt"></i>
                         </a>
 
-                        <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                        <button class="btn btn-sm btn-outline-success"
+                            onclick="confirmDownload(this)"
+                            data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
                             <i class="bx bx-download"></i>
                         </button>
+
+                            <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                                <i class="bx bx-download"></i>
+                            </button -->
+                            
                     </td>
                 </tr>
 
             @empty
                 <tr>
-                    <td colspan="10" class="text-center text-muted">
+                    <td colspan="{{ $hideAuditColumns ? 7 : 8 }}" class="text-center text-muted">
                         No Lahipita ads found.
                     </td>
                 </tr>
@@ -96,6 +133,7 @@
 
     {{-- Pagination --}}
     <div class="mt-3 px-3">
+        @include('advertisements._pagination_count', ['ads' => $ads])
         {{ $ads->links() }}
     </div>
 
@@ -108,11 +146,16 @@
 
 {{-- DOWNLOAD CONFIRM SCRIPT --}}
 <script>
-function confirmDownload(adId) {
+	function confirmDownload(btn) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = btn.dataset.downloadUrl;
+    }
+}
+/** function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {
         window.location.href = "/advertisements/" + adId + "/download";
     }
-}
+} */
 </script>
 
 @endsection

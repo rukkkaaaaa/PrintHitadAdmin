@@ -14,10 +14,47 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
+        {{-- Search --}}
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <form method="GET" action="{{ url()->current() }}">
+                <div class="row g-2 align-items-center">
+
+                    <div class="col-md-9">
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control"
+                            placeholder="Search by name, email, NIC or passport..."
+                            value="{{ request('search') }}"
+                        >
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+
+                        @if(request('search'))
+                            <a href="{{ url()->current() }}" class="btn btn-secondary">
+                                Clear
+                            </a>
+                        @endif
+
+                    </div>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <strong>All Members</strong>
-            <span class="badge bg-primary">{{ $members->count() }} total</span>
+            <span class="badge bg-primary">{{ $members->total() }} total</span>
         </div>
 
         <div class="card-body table-responsive p-0">
@@ -37,7 +74,7 @@
                 <tbody>
                     @forelse ($members as $index => $member)
                         <tr>
-                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $members->firstItem() + $index }}</td>
                             <td>{{ $member->customer_name }}</td>
                             <td>{{ $member->address }}</td>
                             <td>{{ $member->telephone }}</td>
@@ -60,6 +97,10 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+     <div class="mt-3">
+        {{ $members->links() }}
     </div>
 </div>
 @endsection

@@ -75,13 +75,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Categories</label>
-                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                 <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                         type="button"
                                         data-bs-toggle="dropdown"
-                                        data-selected-text="Select categories"
+                                        data-selected-text="Select category"
                                         aria-expanded="false">
-                                    Select categories
+                                    Select category
                                 </button>
                                 <div class="dropdown-menu p-2">
                                     @foreach ($categoriesEn as $category)
@@ -99,8 +99,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                            <small class="text-muted">Choose one category from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                         </div>
 
                         <div class="mb-3">
@@ -137,13 +137,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Categories</label>
-                            <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                            <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                 <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                         type="button"
                                         data-bs-toggle="dropdown"
-                                        data-selected-text="Select categories"
+                                        data-selected-text="Select category"
                                         aria-expanded="false">
-                                    Select categories
+                                    Select category
                                 </button>
                                 <div class="dropdown-menu p-2">
                                     @foreach ($categoriesSi as $category)
@@ -161,8 +161,8 @@
                                     @endforeach
                                 </div>
                             </div>
-                            <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                            <small class="text-muted">Choose one category from the dropdown.</small>
+                            <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                         </div>
 
                         <div class="mb-3">
@@ -307,7 +307,7 @@
                                        name="advertisement_tint_en"
                                        class="form-control"
                                     value="{{ $tint->advertisement_tint_en }}">
-                                <small class="text-muted">Either EN or SI required</small>
+                                <small class="text-muted">Use only one language name (EN or SI).</small>
                             </div>
 
                             <div class="mb-3">
@@ -316,17 +316,18 @@
                                        name="advertisement_tint_si"
                                        class="form-control"
                                     value="{{ $tint->advertisement_tint_si }}">
+                                <div class="invalid-feedback d-block tint-name-error" style="display:none !important;">Please fill only one field: English or Sinhala.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Categories</label>
-                                <div class="dropdown tint-category-dropdown" data-placeholder="Select categories">
+                                <div class="dropdown tint-category-dropdown" data-placeholder="Select category">
                                     <button class="btn btn-outline-secondary dropdown-toggle w-100"
                                             type="button"
                                             data-bs-toggle="dropdown"
-                                            data-selected-text="Select categories"
+                                            data-selected-text="Select category"
                                             aria-expanded="false">
-                                        Select categories
+                                        Select category
                                     </button>
                                     <div class="dropdown-menu p-2">
                                         @foreach ($editCategories as $category)
@@ -344,8 +345,8 @@
                                         @endforeach
                                     </div>
                                 </div>
-                                <small class="text-muted">Choose one or more categories from the dropdown.</small>
-                                <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select at least one category.</div>
+                                <small class="text-muted">Choose one category from the dropdown.</small>
+                                <div class="invalid-feedback d-block tint-category-error" style="display:none !important;">Please select a category.</div>
                             </div>
 
                             <div class="mb-3">
@@ -408,33 +409,79 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const dropdowns = document.querySelectorAll('.tint-category-dropdown');
+        const tintForms = document.querySelectorAll('form[action$="/add-tint"], form[action*="/update-tint/"]');
+
+        const getSelectedCategoryIds = (form) => {
+            return Array.from(form.querySelectorAll('.tint-category-checkbox:checked'))
+                .map((checkbox) => parseInt(checkbox.value, 10))
+                .filter((id) => Number.isInteger(id));
+        };
 
         const updateDropdownLabel = (dropdown) => {
             const button = dropdown.querySelector('.dropdown-toggle');
             const checkboxes = dropdown.querySelectorAll('.tint-category-checkbox');
             const checkedBoxes = Array.from(checkboxes).filter((checkbox) => checkbox.checked);
             const labels = checkedBoxes.map((checkbox) => checkbox.dataset.label).filter(Boolean);
-            const placeholder = dropdown.dataset.placeholder || 'Select categories';
+            const placeholder = dropdown.dataset.placeholder || 'Select category';
 
-            if (labels.length === 0) {
-                button.textContent = placeholder;
-            } else if (labels.length <= 2) {
-                button.textContent = labels.join(', ');
-            } else {
-                button.textContent = labels.length + ' categories selected';
-            }
+            button.textContent = labels.length === 0 ? placeholder : labels[0];
         };
 
         const updateValidation = (form, showError = false) => {
             const categoryCheckboxes = form.querySelectorAll('.tint-category-checkbox');
             const hasSelection = Array.from(categoryCheckboxes).some((checkbox) => checkbox.checked);
-            const error = form.querySelector('.tint-category-error');
+            const categoryError = form.querySelector('.tint-category-error');
 
-            if (error) {
-                error.style.display = !hasSelection && showError ? 'block' : 'none';
+            if (categoryError) {
+                categoryError.style.display = !hasSelection && showError ? 'block' : 'none';
             }
 
             return hasSelection;
+        };
+
+        const getTrimmedValue = (input) => {
+            return input ? input.value.trim() : '';
+        };
+
+        const updateNameLock = (form) => {
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+
+            if (!enInput || !siInput) {
+                return;
+            }
+
+            const enValue = getTrimmedValue(enInput);
+            const siValue = getTrimmedValue(siInput);
+
+            const bothFilled = enValue !== '' && siValue !== '';
+
+            if (bothFilled) {
+                enInput.disabled = false;
+                siInput.disabled = false;
+                return;
+            }
+
+            siInput.disabled = enValue !== '';
+            enInput.disabled = siValue !== '';
+        };
+
+        const updateNameValidation = (form, showError = false) => {
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+            const nameError = form.querySelector('.tint-name-error');
+
+            if (!enInput || !siInput || !nameError) {
+                return true;
+            }
+
+            const enValue = getTrimmedValue(enInput);
+            const siValue = getTrimmedValue(siInput);
+            const bothFilled = enValue !== '' && siValue !== '';
+
+            nameError.style.display = bothFilled && showError ? 'block' : 'none';
+
+            return !bothFilled;
         };
 
         dropdowns.forEach((dropdown) => {
@@ -442,6 +489,14 @@
 
             dropdown.querySelectorAll('.tint-category-checkbox').forEach((checkbox) => {
                 checkbox.addEventListener('change', function () {
+                    if (this.checked) {
+                        dropdown.querySelectorAll('.tint-category-checkbox').forEach((otherCheckbox) => {
+                            if (otherCheckbox !== this) {
+                                otherCheckbox.checked = false;
+                            }
+                        });
+                    }
+
                     updateDropdownLabel(dropdown);
                     const form = dropdown.closest('form');
 
@@ -452,11 +507,31 @@
             });
         });
 
-        document.querySelectorAll('form[action$="/add-tint"], form[action*="/update-tint/"]').forEach((form) => {
+        tintForms.forEach((form) => {
+            updateNameLock(form);
+            updateNameValidation(form, false);
+
+            const enInput = form.querySelector('input[name="advertisement_tint_en"]');
+            const siInput = form.querySelector('input[name="advertisement_tint_si"]');
+
+            [enInput, siInput].forEach((input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.addEventListener('input', function () {
+                    updateNameLock(form);
+                    updateNameValidation(form, true);
+                });
+            });
+
             updateValidation(form, false);
 
             form.addEventListener('submit', function (event) {
-                if (!updateValidation(form, true)) {
+                const isCategoryValid = updateValidation(form, true);
+                const isNameValid = updateNameValidation(form, true);
+
+                if (!isCategoryValid || !isNameValid) {
                     event.preventDefault();
                 }
             });

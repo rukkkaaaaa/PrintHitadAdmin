@@ -2,6 +2,16 @@
 
 @section('content')
 
+@php
+
+    $currentRole = strtolower(
+        trim((string) data_get(session('user'), 'role', ''))
+    );
+
+    $hideAuditColumns = $currentRole === 'super admin';
+
+@endphp
+
 <div style="min-height: calc(100vh - 220px); display:flex; flex-direction:column;">
 <div class="container mt-4">
     <h2 class="mb-3">Hitad - Paid Advertisements</h2>
@@ -19,6 +29,13 @@
         .search-input .input-group-text { background: transparent; border-left: 0; }
         .table-responsive { padding: 0.75rem 1rem; }
         @media (max-width: 767px) { .action-btns .btn { margin-bottom: .35rem; } }
+        .approved-ad-row > td {
+        background-color: #d1e7dd !important;
+        }
+
+        .approved-ad-row:hover > td {
+        background-color: #badbcc !important;
+        }
     </style>
 
     <!-- Search + actions -->
@@ -45,13 +62,13 @@
                     <th>ID</th>
                     <th>Customer</th>
                     <th>Category</th>
-                    <th>Description</th>
-                    <th>District</th>
-                    <th>City</th>
                     <th>Amount</th>
-                    <th>Payment Method</th>
+                    <th>Publish Date</th>
                     <th>Payment Date</th>
                     <th>Payment Status</th>
+                    @unless($hideAuditColumns)
+                        <th>Approved By</th>
+                    @endunless
                     <th>Action</th>
                 </tr>
             </thead>
@@ -63,16 +80,9 @@
                         <td>{{ $ad->customer_name }}</td>
                         <td>{{ $ad->category_name }}</td>
 
-                        <td>
-                            {{ \Illuminate\Support\Str::limit($ad->advertisement_description, 40) }}
-                        </td>
-
-                        <td>{{ $ad->district_name }}</td>
-                        <td>{{ $ad->city_name }}</td>
-
                         <td>Rs. {{ number_format($ad->amount, 2) }}</td>
 
-                        <td>{{ $ad->payment_method }}</td>
+                        <td>{{ $ad->publish_date }}</td>
 
                         <td>{{ $ad->payment_date }}</td>
 
@@ -80,6 +90,31 @@
                         <td>
                             @include('partials.payment-status-badge', ['status' => $ad->payment_status])
                         </td>
+
+                        @unless($hideAuditColumns)
+                        <td>
+                            @if(!empty($ad->approved_by_admin_id))
+
+                                <span class="badge bg-success">
+                                 <i class="bx bx-check-circle"></i>
+                                    {{ $ad->approved_admin_name ?? 'Admin' }}
+                                </span>
+
+                            @if(!empty($ad->approved_at))
+                                <small class="text-muted d-block mt-1">
+                                {{ \Carbon\Carbon::parse($ad->approved_at)->format('Y-m-d H:i') }}
+                            </small>
+                            @endif
+
+                         @else
+
+                            <span class="text-muted">
+                                Not Approved
+                                </span>
+
+                            @endif
+                        </td>
+                        @endunless
 
                         {{-- ACTIONS --}}
                         <td class="action-btns">
@@ -91,15 +126,22 @@
                                 <i class="bx bx-edit-alt"></i>
                             </a>
 
-                            <button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                            <button class="btn btn-sm btn-outline-success"
+                                onclick="confirmDownload(this)"
+                                data-download-url="{{ url('/advertisements/' . $ad->id . '/download') }}">
                                 <i class="bx bx-download"></i>
                             </button>
+
+                            <!--button class="btn btn-sm btn-outline-success" onclick="confirmDownload({{ $ad->id }})">
+                                <i class="bx bx-download"></i>
+                            </button -->
+                            
                         </td>
                     </tr>
 
                 @empty
                     <tr>
-                        <td colspan="12" class="text-center text-muted">
+                        <td colspan="{{ $hideAuditColumns ? 7 : 8 }}" class="text-center text-muted">
                             No paid advertisements found.
                         </td>
                     </tr>
@@ -110,6 +152,7 @@
         {{-- Pagination --}}
         @if(method_exists($ads, 'links'))
             <div class="mt-3 px-3">
+                @include('advertisements._pagination_count', ['ads' => $ads])
                 {{ $ads->links() }}
             </div>
         @endif
@@ -123,11 +166,16 @@
 
 {{-- ✅ DOWNLOAD CONFIRM SCRIPT --}}
 <script>
-function confirmDownload(adId) {
+	function confirmDownload(btn) {
+    if (confirm("Do you want to download the ad details?")) {
+        window.location.href = btn.dataset.downloadUrl;
+    }
+}
+/** function confirmDownload(adId) {
     if (confirm("Do you want to download the ad details?")) {
         window.location.href = "/advertisements/" + adId + "/download";
     }
-}
+} */
 </script>
 
 @endsection
