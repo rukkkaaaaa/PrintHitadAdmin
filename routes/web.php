@@ -2,8 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\GeneralController;
+use App\Http\Controllers\TranslationController;
+use App\Http\Controllers\TeamAccessController;
+use App\Support\TeamAreaPermissions;
 use Illuminate\Support\Facades\DB;
 
 /*
@@ -13,19 +17,6 @@ use Illuminate\Support\Facades\DB;
 */
 Route::get('/', function () {
     if (Session::has('user')) {
-
-        $role = strtolower(
-            trim((string) data_get(session('user'), 'role', ''))
-        );
-
-        if ($role === 'team chandana') {
-            return redirect('/advertisements/lahipita/approved');
-        }
-
-        if ($role === 'team nalaka') {
-            return redirect('/advertisements/hitad/approved');
-        }
-
         return redirect('/dashboard');
     }
 
@@ -55,12 +46,32 @@ Route::post('/users/{id}/update', [AuthController::class, 'updateUser'])
 Route::post('/users/{id}/delete', [AuthController::class, 'deleteUser'])
     ->middleware(['auth.session.custom', 'log.activity']);
 
+// Team work-area permissions are managed only by Super Admin and Administrative Level.
+Route::get('/team-access', [TeamAccessController::class, 'index'])
+    ->middleware(['auth.session.custom', 'log.activity']);
+Route::post('/team-access', [TeamAccessController::class, 'update'])
+    ->middleware(['auth.session.custom', 'log.activity']);
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity'])->group(function () {
+Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity', 'log.team.area.actions'])->group(function () {
+
+    Route::get('/team-home', function () {
+        $role = strtolower(trim((string) data_get(session('user'), 'role', '')));
+        abort_unless(TeamAreaPermissions::isTeamRole($role), 403);
+
+        return view('team-home');
+    });
+
+    Route::get('/advertisements/lahipita/translate', [TranslationController::class, 'index'])
+        ->name('translation.queue');
+    Route::get('/advertisements/lahipita/translate/{id}', [TranslationController::class, 'show'])
+        ->name('translation.queue.show');
+    Route::post('/advertisements/lahipita/translate/{id}/complete', [TranslationController::class, 'complete'])
+        ->name('translation.queue.complete');
 
     Route::get('/dashboard', function () {
         $user = session('user');
@@ -71,6 +82,8 @@ Route::middleware(['auth.session.custom', 'prevent.back', 'log.activity'])->grou
 
         return view('dashboard', compact('user', 'customerCount', 'adminCount', 'adCount'));
     });
+
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     Route::get('/reports', [GeneralController::class, 'reports']);
     Route::get('/reports/web-combined/{type}/pdf', [GeneralController::class, 'downloadWebCombinedReport']);
@@ -251,6 +264,8 @@ Route::post(
     |--------------------------------------------------------------------------
     */
     Route::get('/all-print-ads', [GeneralController::class, 'getAllPrintAdvertisements']);
+    Route::get('/web-combined-ads', [GeneralController::class, 'getWebCombinedAdvertisements']);
+    Route::get('/advertisements/lahipita/web-combined-ads', [GeneralController::class, 'getLahipitaWebCombinedAdvertisements']);
 
     Route::get('/publication-deadlines', [GeneralController::class, 'getPublicationDeadlines']);
     Route::post('/publication-deadlines', [GeneralController::class, 'updatePublicationDeadlines']);
@@ -266,6 +281,7 @@ Route::post(
 
     Route::get('/advertisements/{id}/edit', [GeneralController::class, 'editAdvertisement']);
     Route::post('/advertisements/{id}/update', [GeneralController::class, 'updateAdvertisement']);
+    Route::post('/advertisements/{id}/send-to-translation', [TranslationController::class, 'sendToTranslation']);
 
     Route::get('/advertisements/{id}/download', [GeneralController::class, 'downloadAdvertisement']);
     Route::post('/advertisements/{id}/send-link-email', [GeneralController::class, 'sendLinkEmail']);

@@ -3,32 +3,62 @@
 @section('title', 'Reports')
 
 @section('content')
+@php
+    $periodQuery = http_build_query([
+        'period' => $type,
+        $type => $input,
+    ]);
+@endphp
 <div class="container-xxl flex-grow-1 container-p-y">
 
     <div class="card mb-4">
         <div class="card-body">
-            <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
 
                 <div>
-                    <h4 class="mb-1">Monthly Reports</h4>
+                    <h4 class="mb-1 fw-semibold">Reports</h4>
                     <p class="text-muted mb-0">
-                        View advertisements and download reports by selected month.
+                        View advertisements and download reports by month or week.
                     </p>
                 </div>
 
-                <form action="{{ url('/reports') }}" method="GET" class="d-flex gap-2 align-items-center">
-                    <input
-                        type="month"
-                        name="month"
-                        class="form-control"
-                        value="{{ $monthInput }}"
-                        required
-                    >
+                <div class="d-flex flex-column flex-md-row gap-2">
+                    <form action="{{ url('/reports') }}" method="GET" class="d-flex flex-nowrap align-items-end gap-2 rounded-3 border bg-light p-2" style="width: 310px; max-width: 100%;">
+                        <input type="hidden" name="period" value="month">
+                        <div class="flex-grow-1">
+                            <label for="report-month" class="form-label small fw-semibold text-muted mb-1">Month</label>
+                            <input
+                                id="report-month"
+                                type="month"
+                                name="month"
+                                class="form-control form-control-sm"
+                                value="{{ $monthInput }}"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn {{ $type === 'month' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm text-nowrap flex-shrink-0 px-3">
+                            <i class="bx bx-calendar-check me-1"></i>View
+                        </button>
+                    </form>
 
-                    <button type="submit" class="btn btn-primary">
-                        Generate
-                    </button>
-                </form>
+                    <form action="{{ url('/reports') }}" method="GET" class="d-flex flex-nowrap align-items-end gap-2 rounded-3 border bg-light p-2" style="width: 310px; max-width: 100%;">
+                        <input type="hidden" name="period" value="week">
+                        <div class="flex-grow-1">
+                            <label for="report-week" class="form-label small fw-semibold text-muted mb-1">Week</label>
+                            <input
+                                id="report-week"
+                                type="week"
+                                name="week"
+                                class="form-control form-control-sm"
+                                value="{{ $weekInput }}"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn {{ $type === 'week' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm text-nowrap flex-shrink-0 px-3">
+                            <i class="bx bx-calendar-check me-1"></i>View
+                        </button>
+                    </form>
+                </div>
 
             </div>
         </div>
@@ -36,48 +66,48 @@
 
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Download PDF Reports - {{ $monthLabel }}</h5>
+            <h5 class="mb-0">Download PDF Reports - {{ $label }}</h5>
         </div>
 
         <div class="card-body">
             <div class="d-flex flex-wrap gap-2">
 
-                <a href="{{ url('/reports/web-combined/hitad-paid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/web-combined/hitad-paid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-info">
                     Web Combined Hitad Paid
                 </a>
 
-                <a href="{{ url('/reports/web-combined/hitad-unpaid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/web-combined/hitad-unpaid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-info">
                     Web Combined Hitad Unpaid
                 </a>
 
-                <a href="{{ url('/reports/web-combined/lahipita-paid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/web-combined/lahipita-paid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-info">
                     Web Combined Lahipita Paid
                 </a>
 
-                <a href="{{ url('/reports/web-combined/lahipita-unpaid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/web-combined/lahipita-unpaid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-info">
                     Web Combined Lahipita Unpaid
                 </a>
 
-                <a href="{{ url('/reports/hitad-paid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/hitad-paid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-success">
                     Hitad Paid
                 </a>
 
-                <a href="{{ url('/reports/hitad-unpaid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/hitad-unpaid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-warning">
                     Hitad Unpaid
                 </a>
 
-                <a href="{{ url('/reports/lahipita-paid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/lahipita-paid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-success">
                     Lahipita Paid
                 </a>
 
-                <a href="{{ url('/reports/lahipita-unpaid/pdf') . '?month=' . $monthInput }}"
+                <a href="{{ url('/reports/lahipita-unpaid/pdf') . '?' . $periodQuery }}"
                    class="btn btn-outline-warning">
                     Lahipita Unpaid
                 </a>
@@ -91,7 +121,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="mb-1">Advertisements</h5>
-                <small class="text-muted">{{ $monthLabel }}</small>
+                <small class="text-muted">{{ $label }}</small>
             </div>
 
             <span class="badge bg-primary">
@@ -188,7 +218,7 @@
 
                         <tr>
                             <td colspan="11" class="text-center text-muted py-4">
-                                No advertisements found for {{ $monthLabel }}.
+                                No advertisements found for {{ $label }}.
                             </td>
                         </tr>
 

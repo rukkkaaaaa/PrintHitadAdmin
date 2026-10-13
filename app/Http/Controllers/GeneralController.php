@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\TeamAreaActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
@@ -2356,6 +2357,55 @@ class GeneralController extends Controller
     }
 
     /**
+     * List advertisements selected for the Hitad web combined placement.
+     */
+    public function getWebCombinedAdvertisements(Request $request)
+    {
+        return $this->listWebCombinedAdvertisements($request, 'hitad_print');
+    }
+
+    /**
+     * List advertisements selected for the Lahipita web combined placement.
+     */
+    public function getLahipitaWebCombinedAdvertisements(Request $request)
+    {
+        return $this->listWebCombinedAdvertisements($request, 'lahipita');
+    }
+
+    private function listWebCombinedAdvertisements(Request $request, string $publication)
+    {
+        $ads = DB::table('advertisements')
+            ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
+            ->join('categories', 'advertisements.category_id', '=', 'categories.id')
+            ->leftJoin('admins as viewer_admin', 'advertisements.viewed_by_admin_id', '=', 'viewer_admin.id')
+            ->where('advertisements.web_combined_ad_hitadlk', 1)
+            ->where('advertisements.publication', $publication)
+            ->whereNotNull('advertisements.approved_by_admin_id')
+            ->whereNotNull('advertisements.approved_at')
+            ->select(
+                'advertisements.id',
+                'advertisements.publication',
+                'advertisements.publish_date',
+                'advertisements.approved_by_admin_id',
+                'advertisements.approved_at',
+                'advertisements.viewed_by_admin_id',
+                'advertisements.viewed_at',
+                'customers.customer_name',
+                'viewer_admin.admin_name as viewed_admin_name',
+                DB::raw("CASE
+                    WHEN advertisements.publication = 'lahipita'
+                        THEN COALESCE(categories.category_name_si, categories.category_name_en)
+                    ELSE COALESCE(categories.category_name_en, categories.category_name_si)
+                END as category_name")
+            )
+            ->orderByDesc('advertisements.id')
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('advertisements.web_combined', compact('ads', 'publication'));
+    }
+
+    /**
      * GET: Show all advertisements with optional filters and pagination.
      * This aggregates customers, categories, districts, cities and payment info.
      *
@@ -3214,7 +3264,7 @@ public function getLahipitaApprovedAdvertisements(Request $request)
 
 
 /**
- * Hitad approved advertisement - view once.
+ * Hitad approved advertisement - view or retrieve.
  */
 public function viewHitadApprovedAdvertisementOnce($id)
 {
@@ -3223,7 +3273,7 @@ public function viewHitadApprovedAdvertisementOnce($id)
 
 
 /**
- * Lahipita approved advertisement - view once.
+ * Lahipita approved advertisement - view or retrieve.
  */
 public function viewLahipitaApprovedAdvertisementOnce($id)
 {
@@ -3232,7 +3282,7 @@ public function viewLahipitaApprovedAdvertisementOnce($id)
 
 
 /**
- * Save who viewed the approved advertisement.
+ * Preserve the first-view audit details and allow repeated retrieval.
  */
 private function viewApprovedAdvertisementOnce($id, string $publication)
 {
@@ -3243,55 +3293,35 @@ private function viewApprovedAdvertisementOnce($id, string $publication)
             ->with('error', 'Please login first.');
     }
 
-    /*
-     * Important:
-     * whereNull(viewed_by_admin_id) makes sure the advertisement
-     * can only be marked as viewed ONE TIME.
-     */
-    $updated = DB::table('advertisements')
+    $ad = DB::table('advertisements')
         ->where('id', $id)
         ->where('publication', $publication)
-        ->whereNotNull('approved_by_admin_id')
-        ->whereNotNull('approved_at')
-        ->whereNull('viewed_by_admin_id')
-        ->update([
-            'viewed_by_admin_id' => $adminId,
-            'viewed_at' => now(),
-            'updated_at' => now(),
+        ->first([
+            'id',
+            'approved_by_admin_id',
+            'approved_at',
+            'viewed_by_admin_id',
+            'web_combined_ad_hitadlk',
         ]);
 
-    /*
-     * If nothing was updated, either:
-     * - advertisement does not exist
-     * - advertisement is not approved
-     * - advertisement was already viewed
-     */
-    if ($updated === 0) {
+    if (!$ad) {
+        abort(404);
+    }
 
-        $ad = DB::table('advertisements')
-            ->where('id', $id)
-            ->where('publication', $publication)
-            ->first();
-
-        if (!$ad) {
-            abort(404);
-        }
-
-        if (
-            empty($ad->approved_by_admin_id) ||
-            empty($ad->approved_at)
-        ) {
-            return redirect()->back()
-                ->with('error', 'This advertisement is not approved.');
-        }
-
-        if (!empty($ad->viewed_by_admin_id)) {
-            return redirect()->back()
-                ->with('error', 'This advertisement has already been viewed.');
-        }
-
+    if (empty($ad->approved_by_admin_id) || empty($ad->approved_at)) {
         return redirect()->back()
-            ->with('error', 'Unable to view advertisement.');
+            ->with('error', 'This advertisement is not approved.');
+    }
+
+    if (empty($ad->viewed_by_admin_id)) {
+        DB::table('advertisements')
+            ->where('id', $id)
+            ->whereNull('viewed_by_admin_id')
+            ->update([
+                'viewed_by_admin_id' => $adminId,
+                'viewed_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 
     /*
@@ -3334,6 +3364,10 @@ public function getHitadPrintOnPaperAdvertisements(Request $request)
 
         // Only Print on Hitad Paper = Yes
         ->where('advertisements.print_combined_ad_hitadprint', 1)
+
+        // Only approved advertisements
+        ->whereNotNull('advertisements.approved_by_admin_id')
+        ->whereNotNull('advertisements.approved_at')
 
         ->select(
             'advertisements.id',
@@ -3395,6 +3429,10 @@ public function getLahipitaPrintOnPaperAdvertisements(Request $request)
         // Only Print on Hitad Paper = Yes
         ->where('advertisements.print_combined_ad_hitadprint', 1)
 
+        // Only approved advertisements
+        ->whereNotNull('advertisements.approved_by_admin_id')
+        ->whereNotNull('advertisements.approved_at')
+
         ->select(
             'advertisements.id',
             'advertisements.publish_date',
@@ -3425,7 +3463,7 @@ public function getLahipitaPrintOnPaperAdvertisements(Request $request)
 
 
 /**
- * Hitad Print on Paper - View once.
+ * Hitad Print on Paper - View or retrieve.
  */
 public function viewHitadPrintOnPaperOnce($id)
 {
@@ -3434,7 +3472,7 @@ public function viewHitadPrintOnPaperOnce($id)
 
 
 /**
- * Lahipita Print on Paper - View once.
+ * Lahipita Print on Paper - View or retrieve.
  */
 public function viewLahipitaPrintOnPaperOnce($id)
 {
@@ -3443,7 +3481,7 @@ public function viewLahipitaPrintOnPaperOnce($id)
 
 
 /**
- * Save which admin viewed a Print on Hitad Paper advertisement.
+ * Preserve first-view audit details and allow repeated retrieval.
  */
 private function viewPrintOnHitadPaperOnce($id, string $publication)
 {
@@ -3454,44 +3492,29 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ->with('error', 'Please login first.');
     }
 
-    /*
-     * whereNull() is very important.
-     * It prevents a second admin from viewing it again.
-     */
-    $updated = DB::table('advertisements')
+    $ad = DB::table('advertisements')
         ->where('id', $id)
         ->where('publication', $publication)
-        ->where('print_combined_ad_hitadprint', 1)
-        ->whereNull('print_hitad_viewed_by_admin_id')
-        ->update([
-            'print_hitad_viewed_by_admin_id' => $adminId,
-            'print_hitad_viewed_at' => now(),
-            'updated_at' => now(),
-        ]);
+        ->first(['id', 'print_combined_ad_hitadprint', 'print_hitad_viewed_by_admin_id']);
 
-    if ($updated === 0) {
+    if (!$ad) {
+        abort(404);
+    }
 
-        $ad = DB::table('advertisements')
-            ->where('id', $id)
-            ->where('publication', $publication)
-            ->first();
-
-        if (!$ad) {
-            abort(404);
-        }
-
-        if ((int) ($ad->print_combined_ad_hitadprint ?? 0) !== 1) {
-            return redirect()->back()
-                ->with('error', 'This advertisement is not marked for Print on Hitad Paper.');
-        }
-
-        if (!empty($ad->print_hitad_viewed_by_admin_id)) {
-            return redirect()->back()
-                ->with('error', 'This advertisement has already been viewed.');
-        }
-
+    if ((int) ($ad->print_combined_ad_hitadprint ?? 0) !== 1) {
         return redirect()->back()
-            ->with('error', 'Unable to view advertisement.');
+            ->with('error', 'This advertisement is not marked for Print on Hitad Paper.');
+    }
+
+    if (empty($ad->print_hitad_viewed_by_admin_id)) {
+        DB::table('advertisements')
+            ->where('id', $id)
+            ->whereNull('print_hitad_viewed_by_admin_id')
+            ->update([
+                'print_hitad_viewed_by_admin_id' => $adminId,
+                'print_hitad_viewed_at' => now(),
+                'updated_at' => now(),
+            ]);
     }
 
     // Correct back URL for the read-only advertisement page
@@ -3514,22 +3537,12 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
 
 
     /**
-     * Reports page: build monthly report sections for both publications and payment groups.
-     * Accepts `month` input in Y-m format.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
+     * Reports page: build report sections for both publications and payment groups.
+     * Accepts either `month` (Y-m) or `week` (ISO Y-Www) input.
      */
     public function reports(Request $request)
     {
-        $monthInput = $request->input('month', now()->format('Y-m'));
-
-        try {
-            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
-        } catch (\Throwable $e) {
-            $month = now()->startOfMonth();
-            $monthInput = $month->format('Y-m');
-        }
+        $period = $this->resolveReportPeriod($request);
 
         $ads = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
@@ -3544,8 +3557,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 $q->whereNull('cities.id')->orWhere('cities.is_active', 1);
             })
             ->whereBetween('advertisements.publish_date', [
-                $month->copy()->startOfMonth()->toDateString(),
-                $month->copy()->endOfMonth()->toDateString(),
+                $period['start']->toDateString(),
+                $period['end']->toDateString(),
             ])
                 ->select(
                 'advertisements.id',
@@ -3565,9 +3578,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ->paginate(20)
             ->withQueryString();
 
-        $monthLabel = $month->format('F Y');
-
-        return view('reports', compact('monthInput', 'monthLabel', 'ads'));
+        return view('reports', array_merge($period, compact('ads')));
     }
 
     /**
@@ -3582,23 +3593,24 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $config = $this->getMonthlyReportConfig($type);
         abort_unless($config, 404);
 
-        $monthInput = $request->input('month', now()->format('Y-m'));
-
-        try {
-            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
-        } catch (\Throwable $e) {
-            $month = now()->startOfMonth();
-            $monthInput = $month->format('Y-m');
-        }
-
-        $report = $this->buildMonthlyAdvertisementReport($config['publication'], $config['group'], $month);
-        $filename = sprintf('%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
+        $period = $this->resolveReportPeriod($request);
+        $report = $this->buildMonthlyAdvertisementReport(
+            $config['publication'],
+            $config['group'],
+            $period['start'],
+            $period['end']
+        );
+        $filenamePeriod = $period['type'] === 'week'
+            ? 'week_' . $period['start']->format('o_W')
+            : $period['start']->format('Y_m');
+        $filename = sprintf('%s_%s_report.pdf', $config['slug'], $filenamePeriod);
 
         $html = view('reports.pdf', [
-        'title' => $config['title'],
-        'monthLabel' => $month->format('F Y'),
-        'monthInput' => $monthInput,
-        'report' => $report,
+            'title' => $config['title'],
+            'periodName' => $period['name'],
+            'periodLabel' => $period['label'],
+            'periodInput' => $period['input'],
+            'report' => $report,
         ])->render();
 
     $pdfBytes = Browsershot::html($html)
@@ -3621,22 +3633,23 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         $config = $this->getWebCombinedReportConfig($type);
         abort_unless($config, 404);
 
-        $monthInput = $request->input('month', now()->format('Y-m'));
-
-        try {
-            $month = Carbon::createFromFormat('Y-m', $monthInput)->startOfMonth();
-        } catch (\Throwable $e) {
-            $month = now()->startOfMonth();
-            $monthInput = $month->format('Y-m');
-        }
-
-        $report = $this->buildWebCombinedAdvertisementReport($config['publication'], $config['group'], $month);
-        $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $month->format('Y_m'));
+        $period = $this->resolveReportPeriod($request);
+        $report = $this->buildWebCombinedAdvertisementReport(
+            $config['publication'],
+            $config['group'],
+            $period['start'],
+            $period['end']
+        );
+        $filenamePeriod = $period['type'] === 'week'
+            ? 'week_' . $period['start']->format('o_W')
+            : $period['start']->format('Y_m');
+        $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $filenamePeriod);
 
         $html = view('reports.pdf', [
             'title' => $config['title'],
-            'monthLabel' => $month->format('F Y'),
-            'monthInput' => $monthInput,
+            'periodName' => $period['name'],
+            'periodLabel' => $period['label'],
+            'periodInput' => $period['input'],
             'report' => $report,
         ])->render();
 
@@ -3730,15 +3743,80 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     }
 
     /**
-     * Build the monthly advertisement report for a given publication and payment group (paid/unpaid).
+     * Resolve the selected month or ISO week into an inclusive date range.
+     */
+    private function resolveReportPeriod(Request $request): array
+    {
+        $type = $request->input('period') === 'week'
+            || ($request->filled('week') && !$request->filled('month'))
+            ? 'week'
+            : 'month';
+
+        $monthInput = $request->input('month', now()->format('Y-m'));
+        $weekInput = $request->input('week', now()->format('o-\\WW'));
+
+        if ($type === 'week') {
+            if (preg_match('/^(\d{4})-W(\d{2})$/', (string) $weekInput, $matches)) {
+                $start = Carbon::now()->setISODate((int) $matches[1], (int) $matches[2], 1)->startOfDay();
+                if ($start->format('o-\\WW') !== $weekInput) {
+                    $start = now()->startOfWeek(Carbon::MONDAY);
+                }
+            } else {
+                $start = now()->startOfWeek(Carbon::MONDAY);
+            }
+
+            $end = $start->copy()->addDays(6)->endOfDay();
+            $weekInput = $start->format('o-\\WW');
+
+            return [
+                'type' => 'week',
+                'name' => 'Week',
+                'input' => $weekInput,
+                'weekInput' => $weekInput,
+                'monthInput' => $monthInput,
+                'label' => sprintf(
+                    'Week %s, %s (%s – %s)',
+                    $start->format('W'),
+                    $start->format('o'),
+                    $start->format('M j, Y'),
+                    $end->format('M j, Y')
+                ),
+                'start' => $start,
+                'end' => $end,
+            ];
+        }
+
+        try {
+            $start = Carbon::createFromFormat('Y-m', (string) $monthInput)->startOfMonth();
+        } catch (\Throwable $e) {
+            $start = now()->startOfMonth();
+        }
+
+        $monthInput = $start->format('Y-m');
+
+        return [
+            'type' => 'month',
+            'name' => 'Month',
+            'input' => $monthInput,
+            'weekInput' => $weekInput,
+            'monthInput' => $monthInput,
+            'label' => $start->format('F Y'),
+            'start' => $start,
+            'end' => $start->copy()->endOfMonth(),
+        ];
+    }
+
+    /**
+    * Build an advertisement report for a date range and payment group (paid/unpaid).
      * Returns an array with 'count' and 'ads' collection.
      *
      * @param string $publication
      * @param string $paymentGroup
-     * @param \Illuminate\Support\Carbon $month
+    * @param \Illuminate\Support\Carbon $startDate
+    * @param \Illuminate\Support\Carbon $endDate
      * @return array
      */
-    private function buildMonthlyAdvertisementReport(string $publication, string $paymentGroup, Carbon $month): array
+    private function buildMonthlyAdvertisementReport(string $publication, string $paymentGroup, Carbon $startDate, Carbon $endDate): array
     {
         $query = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
@@ -3752,8 +3830,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ->where('cities.is_active', 1)
             ->where('advertisements.publication', $publication)
             ->whereBetween('advertisements.publish_date', [
-                $month->copy()->startOfMonth()->toDateString(),
-                $month->copy()->endOfMonth()->toDateString(),
+                $startDate->toDateString(),
+                $endDate->toDateString(),
             ])
             ->select(
                 'advertisements.id',
@@ -3792,7 +3870,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
         ];
     }
 
-    private function buildWebCombinedAdvertisementReport(string $publication, string $paymentGroup, Carbon $month): array
+    private function buildWebCombinedAdvertisementReport(string $publication, string $paymentGroup, Carbon $startDate, Carbon $endDate): array
     {
         $query = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
@@ -3809,8 +3887,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             ->where('advertisements.publication', $publication)
             ->where('advertisements.web_combined_ad_hitadlk', 1)
             ->whereBetween('advertisements.publish_date', [
-                $month->copy()->startOfMonth()->toDateString(),
-                $month->copy()->endOfMonth()->toDateString(),
+                $startDate->toDateString(),
+                $endDate->toDateString(),
             ])
             ->select(
                 'advertisements.id',
@@ -3956,6 +4034,13 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     $criteriaValues[$criteria->id] = $currentOptionLabelsByCriteriaId[(int) $criteria->id][$normalized];
                 }
             }
+
+            $areaKey = (int) ($ad->web_combined_ad_hitadlk ?? 0) === 1
+                ? ($publication === 'lahipita' ? 'lahipita_web_combined_ads' : 'hitad_web_combined_ads')
+                : ($publication === 'lahipita' ? 'lahipita_approved_ads' : 'hitad_approved_ads');
+            TeamAreaActivityLog::record($areaKey, 'Retrieve', (int) $id);
+
+            TeamAreaActivityLog::record('print_on_hitad_paper_ads', 'Retrieve', (int) $id);
         }
 
         $images = DB::table('advertisement_images')
@@ -4293,7 +4378,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
      * @param int $id
      * @return \Illuminate\View\View
      */
-    public function editAdvertisement($id)
+    public function editAdvertisement($id, bool $translationMode = false)
     {
         $ad = DB::table('advertisements')
             ->join('customers', 'advertisements.customer_id', '=', 'customers.id')
@@ -4442,7 +4527,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             : null
     );
 
-    return view('advertisements.edit', compact('ad','categories','districts','cities','criterias','criteriaOptions','criteriaValues','tints','generalSettings','topAdSupported','webCombinedRate','printOnHitadPaperRate','currentTintPrice','promoCodes'));
+    return view('advertisements.edit', compact('ad','categories','districts','cities','criterias','criteriaOptions','criteriaValues','tints','generalSettings','topAdSupported','webCombinedRate','printOnHitadPaperRate','currentTintPrice','promoCodes','translationMode'));
     }
 
     /**
@@ -4464,13 +4549,25 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 $isApprove = $request->input('action') === 'approve';
         $isLahipitaAdvertisement =
             trim((string) ($existingAd->publication ?? '')) === 'lahipita';
+            $translationRequested = $isLahipitaAdvertisement && !empty($existingAd->translation_requested_at ?? null);
+            $requiresTranslationForApproval = $isApprove && $translationRequested;
                 $this->ensureRetypedAdvertisementDescriptionColumnExists();
                 $this->ensureRetypedAdvertisementDescriptionDoneColumnExists();
                 $this->ensureReferenceNumberColumnExists();
+                $this->ensureTranslatedDescriptionAndReferenceColumnsExist();
+                $this->ensureTranslatedAdvertisementDescriptionDoneColumnExists();
 
         $referenceNumberRules = [
             $isApprove ? 'required' : 'nullable','string','max:255',
             Rule::unique('advertisements', 'reference_number')->ignore($id),];
+        $translatedReferenceNumberRules = [
+            $requiresTranslationForApproval ? 'required' : 'nullable','string','max:255',
+            Rule::unique('advertisements', 'translated_reference_number')->ignore($id),
+        ];
+        $secondRetypedReferenceNumberRules = [
+            $isApprove ? 'required' : 'nullable','string','max:255',
+            Rule::unique('advertisements', 'retyped_reference_number_2')->ignore($id),
+        ];
 
         $retypedDescriptionRules = [
             $isApprove ? 'required' : 'nullable','string',
@@ -4484,6 +4581,19 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 $fail
         );},
         ];
+        $translatedDescriptionRules = [
+            $requiresTranslationForApproval ? 'required' : 'nullable','string',
+            function ($attribute, $value, $fail) use ($existingAd) {
+                if ($value === null || trim((string) $value) === '') {
+                    return;
+                }
+                $this->validateDescriptionWordLimit(
+                    (string) ($existingAd->publication ?? 'hitad_print'),
+                    (string) $value,
+                    $fail
+                );
+            },
+        ];
 
         $request->validate([
             'customer_name' => 'required|string|max:255',
@@ -4495,8 +4605,12 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'email' => 'nullable|email|max:255',
             'action' => 'required|in:save,approve',
             'reference_number' => $referenceNumberRules,
+            'translated_reference_number' => $translatedReferenceNumberRules,
+            'retyped_reference_number_2' => $secondRetypedReferenceNumberRules,
+            'translated_advertisement_description' => $translatedDescriptionRules,
             'retyped_advertisement_description' => $retypedDescriptionRules,
-            'retyped_advertisement_description_done' => 'nullable|boolean',
+            'retyped_advertisement_description_done' => $isApprove ? 'required|accepted' : 'nullable|boolean',
+            'translated_advertisement_description_done' => $requiresTranslationForApproval ? 'required|accepted' : 'nullable|boolean',
             'category_id' => 'required|exists:categories,id',
             'district_id' => 'required|exists:districts,id',
             'city_id' => 'nullable|exists:cities,id',
@@ -4546,6 +4660,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'criteria_image.*' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:4096',
        ], [
     'reference_number.unique' => 'This reference number is already used by another advertisement.',
+        'translated_reference_number.unique' => 'This translated reference number is already used by another advertisement.',
+        'retyped_reference_number_2.unique' => 'This second retyped reference number is already used by another advertisement.',
 ]);
 
         if ($request->filled('advertisement_tint_id')) {
@@ -4608,8 +4724,14 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
 
             $existingRetypedDone = (bool) ($ad->retyped_advertisement_description_done ?? false);
             $isRetypedDone = $existingRetypedDone ? true : $request->boolean('retyped_advertisement_description_done');
+            $existingTranslatedDone = (bool) ($ad->translated_advertisement_description_done ?? false);
+            $isTranslatedDone = $existingTranslatedDone ? true : $request->boolean('translated_advertisement_description_done');
 
             $advertisementData = [
+                'translated_advertisement_description' => $existingTranslatedDone
+                    ? $ad->translated_advertisement_description
+                    : $request->translated_advertisement_description,
+                'translated_advertisement_description_done' => $isTranslatedDone,
                 'retyped_advertisement_description' => $existingRetypedDone
                     ? $ad->retyped_advertisement_description
                     : $request->retyped_advertisement_description,
@@ -4645,6 +4767,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             } elseif (Schema::hasColumn('advertisements', 'order_ref')) {
                 $advertisementData['order_ref'] = $request->reference_number;
             }
+            $advertisementData['translated_reference_number'] = $request->translated_reference_number;
+            $advertisementData['retyped_reference_number_2'] = $request->retyped_reference_number_2;
 
             if ($topAdSupported) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
@@ -4921,10 +5045,23 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             }
         });
 
-        $publication = DB::table('advertisements')
+        $approvalAd = DB::table('advertisements')
             ->where('id', $id)
-            ->value('publication');
+            ->first(['publication', 'web_combined_ad_hitadlk', 'print_combined_ad_hitadprint']);
+        $publication = $approvalAd->publication ?? null;
             if ($request->input('action') === 'approve') {
+                if ((int) ($approvalAd->web_combined_ad_hitadlk ?? 0) === 1) {
+                    $areaKey = $publication === 'lahipita'
+                        ? 'lahipita_web_combined_ads'
+                        : 'hitad_web_combined_ads';
+                } elseif ($publication === 'lahipita' && (int) ($approvalAd->print_combined_ad_hitadprint ?? 0) === 1) {
+                    $areaKey = 'print_on_hitad_paper_ads';
+                } else {
+                    $areaKey = $publication === 'lahipita'
+                        ? 'lahipita_approved_ads'
+                        : 'hitad_approved_ads';
+                }
+                TeamAreaActivityLog::record($areaKey, 'Approve', (int) $id);
                 if ($publication === 'lahipita') {
                     return redirect('/advertisements/lahipita/approved')
                         ->with('success', 'Lahipita advertisement approved successfully!');
@@ -5000,12 +5137,38 @@ public function getHitadPrintUnpaidAdvertisements(Request $request)
     
     private function ensureReferenceNumberColumnExists(): void
     {
-        if (Schema::hasColumn('advertisements', 'reference_number') || Schema::hasColumn('advertisements', 'order_ref')) {
+        if (Schema::hasColumn('advertisements', 'reference_number')) {
             return;
         }
 
         Schema::table('advertisements', function (Blueprint $table) {
             $table->string('reference_number')->nullable()->after('retyped_advertisement_description_done');
+        });
+    }
+
+    private function ensureTranslatedDescriptionAndReferenceColumnsExist(): void
+    {
+        Schema::table('advertisements', function (Blueprint $table) {
+            if (!Schema::hasColumn('advertisements', 'translated_advertisement_description')) {
+                $table->text('translated_advertisement_description')->nullable()->after('advertisement_description');
+            }
+            if (!Schema::hasColumn('advertisements', 'translated_reference_number')) {
+                $table->string('translated_reference_number')->nullable()->after('reference_number');
+            }
+            if (!Schema::hasColumn('advertisements', 'retyped_reference_number_2')) {
+                $table->string('retyped_reference_number_2')->nullable()->after('translated_reference_number');
+            }
+        });
+    }
+
+    private function ensureTranslatedAdvertisementDescriptionDoneColumnExists(): void
+    {
+        if (Schema::hasColumn('advertisements', 'translated_advertisement_description_done')) {
+            return;
+        }
+
+        Schema::table('advertisements', function (Blueprint $table) {
+            $table->boolean('translated_advertisement_description_done')->default(false)->after('translated_advertisement_description');
         });
     }
 }

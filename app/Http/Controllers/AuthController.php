@@ -181,20 +181,10 @@ class AuthController extends Controller
             'role' => $this->normalizeRoleName($user[0]->role ?? null),
         ]);
 
-        $loggedInRole = $this->normalizeRoleName($user[0]->role ?? null);
         Log::record((int) $user[0]->id, 'Logged in');
 
-            return match ($loggedInRole) {
-            'team chandana' =>
-                redirect('/advertisements/lahipita/approved'),
-            'team nalaka' =>
-                redirect('/advertisements/hitad/approved'),
-            default =>
-                redirect('/dashboard'),
-        };
-
-        // send users to dashboard (reporting users are allowed to view dashboard too)
         return redirect('/dashboard');
+
     }
 
     /**

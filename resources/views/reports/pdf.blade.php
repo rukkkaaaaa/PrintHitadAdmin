@@ -48,10 +48,10 @@
 </head>
 <body>
     <h2>{{ $title }}</h2>
-    <div class="sub">Monthly report for {{ $monthLabel }}</div>
+    <div class="sub">{{ $periodName }} report for {{ $periodLabel }}</div>
 
     <div class="meta">
-        <div><strong>Month:</strong> {{ $monthInput }}</div>
+        <div><strong>{{ $periodName }}:</strong> {{ $periodInput }}</div>
         <div><strong>Total Web Combined Charge:</strong> Rs. {{ number_format($report['total_web_combined_charge'] ?? 0, 2) }}</div>
         <div><strong>Total Amount:</strong> Rs. {{ number_format($report['total_amount'] ?? 0, 2) }}</div>
         <div><strong>Total Records:</strong> {{ $report['count'] }}</div>
@@ -97,7 +97,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="muted" style="text-align:center; padding: 14px;">No records found for this month.</td>
+                    <td colspan="9" class="muted" style="text-align:center; padding: 14px;">No records found for this {{ strtolower($periodName) }}.</td>
                 </tr>
             @endforelse
         </tbody>

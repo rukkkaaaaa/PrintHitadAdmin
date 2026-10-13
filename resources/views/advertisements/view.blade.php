@@ -50,6 +50,7 @@
 
         <!-- Ad Info -->
         <p><strong>Description:</strong> {{ $ad->advertisement_description }}</p>
+        <p><strong>Retyped Description:</strong> {{ $ad->retyped_advertisement_description ?: '—' }}</p>
         <hr>
 
         <p><strong>Publication:</strong> {{ $ad->publication }}</p>

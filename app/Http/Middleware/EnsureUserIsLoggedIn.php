@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use App\Support\TeamAreaPermissions;
 
 class EnsureUserIsLoggedIn
 {
@@ -42,46 +43,19 @@ class EnsureUserIsLoggedIn
         |--------------------------------------------------------------------------
         | Team Chandana
         |--------------------------------------------------------------------------
-        | ONLY:
-        | - Lahipita Approved Ads
-        | - Lahipita Print on Hitad Paper Ads
+        | Access is limited to work areas explicitly granted by an administrator.
         */
-        if ($role === 'team chandana') {
-
-            $isAllowedPath =
-                $request->is('advertisements/lahipita/approved') ||
-                $request->is('advertisements/lahipita/approved/*/view') ||
-                $request->is('advertisements/lahipita/print-on-paper') ||
-                $request->is('advertisements/lahipita/print-on-paper/*/view') ||
-                $request->is('logout');
-
-            if (!$isAllowedPath) {
-                return redirect('/advertisements/lahipita/approved')
-                    ->with('error','Team Chandana can only access Lahipita approved and Print on Hitad Paper advertisements.');
+        if (TeamAreaPermissions::isTeamRole($role)) {
+            if ($request->is('logout') || $request->is('team-home') || $request->is('dashboard')) {
+                return $next($request);
             }
 
-            return $next($request);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Team Nalaka
-        |--------------------------------------------------------------------------
-        | ONLY:
-        | - Hitad Approved Ads
-        */
-        if ($role === 'team nalaka') {
-
-            $isAllowedPath =
-                $request->is('advertisements/hitad/approved') ||
-                $request->is('advertisements/hitad/approved/*/view') ||
-                $request->is('logout');
-
-            if (!$isAllowedPath) {
-                return redirect('/advertisements/hitad/approved')
-                    ->with('error','Team Nalaka can only access Hitad approved advertisements.');
+            $area = TeamAreaPermissions::areaForRequest($request);
+            if ($area !== null && TeamAreaPermissions::hasAccess($user['id'] ?? null, $role, $area)) {
+                return $next($request);
             }
-            return $next($request);
+
+            return redirect('/team-home')->with('error', 'Your team does not have access to that work area.');
         }
         $isReportingRole = in_array($role, ['reporting', 'reportingrole', 'report admin', 'reporter'], true);
         $isAdvertisingRole = in_array($role, ['advertice admin', 'advertising', 'advertising role', 'advertising admin'], true);
@@ -105,12 +79,18 @@ class EnsureUserIsLoggedIn
                 $request->is('advertisements/create') ||
                 $request->is('advertisements/store') ||
                 $request->is('all-print-ads') ||
+                $request->is('web-combined-ads') ||
                 $request->is('advertisements') ||
                 $request->is('advertisements/paid') ||
                 $request->is('advertisements/unpaid') ||
                 $request->is('advertisements/lahipita') ||
                 $request->is('advertisements/lahipita/paid') ||
                 $request->is('advertisements/lahipita/unpaid') ||
+                ($request->isMethod('GET') && $request->is('advertisements/lahipita/web-combined-ads')) ||
+                ($request->isMethod('GET') && $request->is('advertisements/lahipita/approved')) ||
+                ($request->isMethod('GET') && $request->is('advertisements/lahipita/translate')) ||
+                ($request->isMethod('GET') && $request->is('advertisements/lahipita/translate/*')) ||
+                ($request->isMethod('POST') && $request->is('advertisements/lahipita/translate/*/complete')) ||
                 $request->is('advertisements/*/view') ||
                 $request->is('advertisements/*/edit') ||
                 $request->is('advertisements/*/update') ||

@@ -81,6 +81,31 @@
   <script src="{{ asset('assets/js/main.js') }}"></script>
   <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
 
+  <script>
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest('a[href]');
+      if (!link) return;
+
+      var path = new URL(link.href, window.location.origin).pathname;
+      if (path.endsWith('/view') && !window.confirm('Are you sure you want to view this advertisement?')) {
+        event.preventDefault();
+        return;
+      }
+
+      if (/^\/advertisements\/lahipita\/translate\/[^/]+$/.test(path) &&
+          !window.confirm('Are you sure you want to open this translation?')) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('submit', function (event) {
+      var path = new URL(event.target.action, window.location.origin).pathname;
+      if (path.endsWith('/view') && !window.confirm('Are you sure you want to view this advertisement?')) {
+        event.preventDefault();
+      }
+    });
+  </script>
+
   @stack('scripts')
 </body>
 </html>

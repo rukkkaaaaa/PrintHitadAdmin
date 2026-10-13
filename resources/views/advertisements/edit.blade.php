@@ -3,7 +3,7 @@
 @section('content')
 <div class="container mt-4 ea-page">
 
-    <h2 class="mb-3">Edit Advertisement</h2>
+    <h2 class="mb-3">{{ ($translationMode ?? false) ? (($ad->translated_advertisement_description_done ?? false) ? 'Review Translation' : 'Translate Advertisement') : 'Edit Advertisement' }}</h2>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -18,6 +18,12 @@
         $topAdSupported = $topAdSupported ?? false;
         $generalSettings = $generalSettings ?? [];
         $retypedDone = (bool) ($ad->retyped_advertisement_description_done ?? false);
+        $translatedDone = (bool) ($ad->translated_advertisement_description_done ?? false);
+        $isLahipitaAdvertisement = trim((string) ($ad->publication ?? '')) === 'lahipita';
+        $translationRequested = $isLahipitaAdvertisement && !empty($ad->translation_requested_at ?? null);
+        $translationMode = $translationMode ?? false;
+        $translationCompleted = $translationMode && $translatedDone;
+        $canSendToTranslation = in_array($currentRole, ['administrative level', 'super admin', 'advertising admin'], true);
         $topAdRate = trim($ad->publication ?? '') === 'lahipita'
             ? (float) ($generalSettings['top_ad_rate_si'] ?? 0)
             : (float) ($generalSettings['top_ad_rate_en'] ?? 0);
@@ -141,7 +147,8 @@
             color: #56606f;
         }
 
-        #retypedDescriptionBox[readonly] {
+        #retypedDescriptionBox[readonly],
+        #translatedDescriptionBox[readonly] {
             background-color: #f0fdf6;
             border-color: #b9ebd0;
         }
@@ -218,7 +225,7 @@
         }
     </style>
 
-    <form action="{{ url('/advertisements/' . $ad->id . '/update') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ $translationMode ? route('translation.queue.complete', $ad->id) : url('/advertisements/' . $ad->id . '/update') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
         <div class="card edit-card">
@@ -315,18 +322,44 @@
                     </div>
                     <textarea name="retyped_advertisement_description" id="retypedDescriptionBox" class="form-control" rows="4"
                               {{ $retypedDone ? 'readonly' : '' }}>{{ old('retyped_advertisement_description', $ad->retyped_advertisement_description ?? '') }}</textarea>
-                        <div class="mt-3">
-                            <label class="form-label" for="referenceNumberInput">
-                                Reference Number
-                            </label>
-                        <input type="text" name="reference_number" id="referenceNumberInput"
-                                        class="form-control @error('reference_number') is-invalid @enderror"
-                                        value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
-                                        placeholder="Enter reference number">
-                                @error('reference_number')
-                            <div class="invalid-feedback">
-                                {{ $message }}
+                    @if($isLahipitaAdvertisement && $canSendToTranslation)
+                        <div class="mt-2">
+                            <button type="button"
+                                    id="sendToTranslationBtn"
+                                    class="btn btn-sm {{ $translationRequested ? 'btn-success' : 'btn-outline-primary' }}"
+                                    data-url="{{ url('/advertisements/' . $ad->id . '/send-to-translation') }}"
+                                    data-sent="{{ $translationRequested ? '1' : '0' }}"
+                                    {{ $translationRequested || !$retypedDone ? 'disabled' : '' }}>
+                                {{ $translationRequested ? 'Sent to Translation Team ✓' : 'Send to Translation Team' }}
+                            </button>
+                            <div id="translationSendStatus" class="alert alert-success py-2 px-3 mt-2 mb-0 {{ $translationRequested ? '' : 'd-none' }}" role="status">
+                                @if($translationRequested)
+                                    Sent to Team Nalaka{{ $ad->translation_requested_at ? ' on ' . \Illuminate\Support\Carbon::parse($ad->translation_requested_at)->format('d/m/Y H:i') : '' }}.
+                                @endif
                             </div>
+                            @unless($translationRequested)
+                                <small class="text-muted d-block mt-1">Translation is optional. If you do not send this ad to Team Nalaka, you can approve it here after completing the two retyped reference numbers.</small>
+                            @endunless
+                        </div>
+                    @endif
+                    <div class="mt-3">
+                        <label class="form-label" for="referenceNumberInput">Retyped Reference Number 1</label>
+                        <input type="text" name="reference_number" id="referenceNumberInput"
+                               class="form-control @error('reference_number') is-invalid @enderror"
+                               value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
+                               placeholder="Enter first retyped reference number">
+                        @error('reference_number')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label" for="secondReferenceNumberInput">Retyped Reference Number 2</label>
+                        <input type="text" name="retyped_reference_number_2" id="secondReferenceNumberInput"
+                               class="form-control @error('retyped_reference_number_2') is-invalid @enderror"
+                               value="{{ old('retyped_reference_number_2', $ad->retyped_reference_number_2 ?? '') }}"
+                               placeholder="Enter second retyped reference number">
+                        @error('retyped_reference_number_2')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -335,6 +368,37 @@
                         <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
                     @enderror
                     <small class="text-muted d-block mt-2">Click Update after retyping. Then Click on Update in below. Once confirmed, this field becomes locked and stays confirmed when you return.</small>
+
+                    @if($isLahipitaAdvertisement)
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                            <label class="form-label mb-0" for="translatedDescriptionBox">Translated Description</label>
+                            <button type="button"
+                                    id="translatedDescriptionDoneBtn"
+                                    class="btn btn-sm description-done-btn {{ $translatedDone ? 'is-done' : 'btn-outline-secondary' }}"
+                                    {{ $translatedDone ? 'disabled' : '' }}>
+                                Update
+                            </button>
+                        </div>
+                        <textarea name="translated_advertisement_description" id="translatedDescriptionBox" class="form-control" rows="4"
+                                  {{ $translatedDone ? 'readonly' : '' }}>{{ old('translated_advertisement_description', $ad->translated_advertisement_description ?? '') }}</textarea>
+                        @error('translated_advertisement_description')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
+                        <input type="hidden" name="translated_advertisement_description_done" id="translatedDescriptionDoneInput" value="{{ $translatedDone ? 1 : 0 }}">
+                        @error('translated_advertisement_description_done')
+                            <div class="text-danger mt-1" style="font-size: 0.875rem;">{{ $message }}</div>
+                        @enderror
+                        <label class="form-label mt-2" for="translatedReferenceNumberInput">Translated Reference Number</label>
+                        <input type="text" name="translated_reference_number" id="translatedReferenceNumberInput"
+                               class="form-control @error('translated_reference_number') is-invalid @enderror"
+                               value="{{ old('translated_reference_number', $ad->translated_reference_number ?? '') }}"
+                               placeholder="Enter translated reference number">
+                        @error('translated_reference_number')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endif
                 </div>
 
                 <div class="row g-3">
@@ -677,6 +741,17 @@
                 @endif
                 
                 <div class="d-flex justify-content-end gap-2 mt-4 ea-actions">
+                    @if($translationMode)
+                    @if($translationCompleted)
+                    <a href="{{ route('translation.queue') }}" class="btn btn-secondary">Back to Translate Queue</a>
+                    @else
+                    <button type="submit" class="btn btn-success">
+                        <i class="bx bx-check-circle"></i>
+                        Complete Translation & Approve Advertisement
+                    </button>
+                    <a href="{{ route('translation.queue') }}" class="btn btn-secondary">Back to Translate Queue</a>
+                    @endif
+                    @else
                     <button type="submit" name="action" value="save" class="btn btn-primary">
                     <i class="bx bx-save"></i>
                         Save
@@ -688,6 +763,7 @@
                     <a href="{{ url('/advertisements') }}" class="btn btn-secondary" >
                         Cancel
                     </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -696,6 +772,34 @@
 
                 <script>
                 document.addEventListener('DOMContentLoaded', function () {
+
+                var translationMode = @json($translationMode);
+                var translationCompleted = @json($translationCompleted);
+                if (translationMode) {
+                    var translationForm = document.querySelector('.edit-card')
+                        ? document.querySelector('.edit-card').closest('form')
+                        : null;
+                    if (translationForm) {
+                        translationForm.querySelectorAll('input, select, textarea, button').forEach(function (control) {
+                            if (translationCompleted) {
+                                control.disabled = true;
+                                return;
+                            }
+                            if (
+                                control.name === '_token' ||
+                                control.id === 'translatedDescriptionBox' ||
+                                control.id === 'translatedDescriptionDoneBtn' ||
+                                control.id === 'translatedDescriptionDoneInput' ||
+                                control.id === 'translatedReferenceNumberInput' ||
+                                control.id === 'copyRetypedDescriptionBtn' ||
+                                (control.type === 'submit' && !control.name)
+                            ) {
+                                return;
+                            }
+                            control.disabled = true;
+                        });
+                    }
+                }
 
                 var tintSelect = document.getElementById('advertisementTintSelect');
                 var webCombinedSelect = document.getElementById('webCombinedSelect');
@@ -706,6 +810,7 @@
                 var amountPreview = document.getElementById('amountPreview');
 
                 var hasPayment = @json(!empty($ad->payment_id));
+                var translationRequested = @json($translationRequested);
                 var initialAmount = Number(@json((float) ($ad->amount ?? 0)));
                 var initialDiscountAmount = Number(@json((float) ($ad->discount_amount ?? 0)));
                 var initialTintId = String(@json((string) ($ad->advertisement_tint_id ?? '')));
@@ -799,27 +904,61 @@
                     var retypedDoneInput = document.getElementById('retypedDescriptionDoneInput');
                     var approveButton = document.getElementById('approveButton');
                     var referenceNumberInput = document.getElementById('referenceNumberInput');
+                    var translatedDescriptionBox = document.getElementById('translatedDescriptionBox');
+                    var translatedDoneBtn = document.getElementById('translatedDescriptionDoneBtn');
+                    var translatedDoneInput = document.getElementById('translatedDescriptionDoneInput');
+                    var translatedReferenceNumberInput = document.getElementById('translatedReferenceNumberInput');
+                    var secondReferenceNumberInput = document.getElementById('secondReferenceNumberInput');
+                    var sendToTranslationBtn = document.getElementById('sendToTranslationBtn');
+                    var translationSendStatus = document.getElementById('translationSendStatus');
+
+                    function refreshSendTranslationButton() {
+                        if (
+                            !sendToTranslationBtn ||
+                            !retypedDescriptionBox ||
+                            !retypedDoneInput ||
+                            !referenceNumberInput ||
+                            !secondReferenceNumberInput
+                        ) return;
+                        sendToTranslationBtn.disabled = sendToTranslationBtn.dataset.sent === '1' ||
+                            retypedDoneInput.value !== '1' ||
+                            (retypedDescriptionBox.value || '').trim() === '' ||
+                            (referenceNumberInput.value || '').trim() === '' ||
+                            (secondReferenceNumberInput.value || '').trim() === '';
+                    }
 
                     function refreshApproveButton() {
                         if (
                             !approveButton ||
                             !retypedDescriptionBox ||
-                            !referenceNumberInput ) { return;
+                            !retypedDoneInput ||
+                            !referenceNumberInput ||
+                            !secondReferenceNumberInput) { return;
                         }
-                    var hasDescription = (retypedDescriptionBox.value || '').trim() !== '';
-                    var hasReference = (referenceNumberInput.value || '').trim() !== '';
-                    approveButton.disabled = !(hasDescription && hasReference);
+                    if (translationRequested && (
+                        !translatedDescriptionBox ||
+                        !translatedDoneInput ||
+                        !translatedReferenceNumberInput
+                    )) { return; }
+                    var retypedFieldsComplete =
+                        (retypedDescriptionBox.value || '').trim() !== '' &&
+                        (referenceNumberInput.value || '').trim() !== '' &&
+                        (secondReferenceNumberInput.value || '').trim() !== '' &&
+                        retypedDoneInput.value === '1';
+                    var translationComplete = !translationRequested || (
+                        (translatedDescriptionBox.value || '').trim() !== '' &&
+                        (translatedReferenceNumberInput.value || '').trim() !== '' &&
+                        translatedDoneInput.value === '1'
+                    );
+                    approveButton.disabled = !(retypedFieldsComplete && translationComplete);
                    }
-                    if (retypedDescriptionBox) {
-    	                retypedDescriptionBox.addEventListener(
-                        'input',
-                        refreshApproveButton);
-                    }
-                    if (referenceNumberInput) {
-    	                referenceNumberInput.addEventListener(
-                        'input',
-                        refreshApproveButton);
-                    }
+                    [retypedDescriptionBox, translatedDescriptionBox, referenceNumberInput,
+                        translatedReferenceNumberInput, secondReferenceNumberInput].forEach(function (input) {
+                        if (input) input.addEventListener('input', refreshApproveButton);
+                    });
+                    [referenceNumberInput, secondReferenceNumberInput].forEach(function (input) {
+                        if (input) input.addEventListener('input', refreshSendTranslationButton);
+                    });
 
                 refreshApproveButton();
 
@@ -893,6 +1032,7 @@
                             retypedDoneBtn.classList.remove('btn-outline-secondary');
                             retypedDoneBtn.classList.add('is-done');
                             retypedDoneBtn.disabled = true;
+                            refreshSendTranslationButton();
                         };
 
                         if (retypedDoneInput.value === '1') {
@@ -908,6 +1048,80 @@
                                 return;
                                 }
                             lockRetypedDescription();
+                            refreshSendTranslationButton();
+                            refreshApproveButton();
+                        });
+                    }
+
+                    if (sendToTranslationBtn) {
+                        sendToTranslationBtn.addEventListener('click', function () {
+                            var csrfToken = document.querySelector('input[name="_token"]');
+                            sendToTranslationBtn.disabled = true;
+
+                            fetch(sendToTranslationBtn.dataset.url, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken ? csrfToken.value : ''
+                                },
+                                body: JSON.stringify({
+                                    retyped_advertisement_description: retypedDescriptionBox.value,
+                                    retyped_description_confirmed: retypedDoneInput.value,
+                                    reference_number: referenceNumberInput.value,
+                                    retyped_reference_number_2: secondReferenceNumberInput.value
+                                })
+                            }).then(function (response) {
+                                return response.json().then(function (data) {
+                                    if (!response.ok) {
+                                        throw new Error(data.message || 'Could not send this advertisement for translation.');
+                                    }
+                                    return data;
+                                });
+                            }).then(function (data) {
+                                sendToTranslationBtn.dataset.sent = '1';
+                                sendToTranslationBtn.textContent = 'Sent to Translation Team ✓';
+                                sendToTranslationBtn.classList.remove('btn-outline-primary');
+                                sendToTranslationBtn.classList.add('btn-success');
+                                sendToTranslationBtn.disabled = true;
+                                if (translationSendStatus) {
+                                    translationSendStatus.textContent = data.message;
+                                    translationSendStatus.classList.remove('d-none', 'alert-danger');
+                                    translationSendStatus.classList.add('alert-success');
+                                }
+                            }).catch(function (error) {
+                                sendToTranslationBtn.disabled = false;
+                                if (translationSendStatus) {
+                                    translationSendStatus.textContent = error.message;
+                                    translationSendStatus.classList.remove('d-none', 'alert-success');
+                                    translationSendStatus.classList.add('alert-danger');
+                                }
+                            });
+                        });
+                    }
+
+                    refreshSendTranslationButton();
+
+                    if (translatedDoneBtn && translatedDescriptionBox && translatedDoneInput) {
+                        var lockTranslatedDescription = function () {
+                            translatedDescriptionBox.setAttribute('readonly', 'readonly');
+                            translatedDoneInput.value = '1';
+                            translatedDoneBtn.classList.remove('btn-outline-secondary');
+                            translatedDoneBtn.classList.add('is-done');
+                            translatedDoneBtn.disabled = true;
+                        };
+
+                        if (translatedDoneInput.value === '1') {
+                            lockTranslatedDescription();
+                        }
+
+                        translatedDoneBtn.addEventListener('click', function () {
+                            if (!translatedDescriptionBox.value || !translatedDescriptionBox.value.trim()) {
+                                translatedDescriptionBox.focus();
+                                return;
+                            }
+                            lockTranslatedDescription();
                             refreshApproveButton();
                         });
                     }

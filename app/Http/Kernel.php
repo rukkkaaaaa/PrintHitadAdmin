@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'auth.session.custom' => \App\Http\Middleware\EnsureUserIsLoggedIn::class,
         'prevent.back' => \App\Http\Middleware\PreventBackHistory::class, // 👈 ADD THIS LINE
         'log.activity' => \App\Http\Middleware\LogActivity::class,
+        'log.team.area.actions' => \App\Http\Middleware\LogTeamAreaActions::class,
     ];
 }

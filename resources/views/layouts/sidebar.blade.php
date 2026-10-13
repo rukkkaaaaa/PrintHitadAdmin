@@ -13,6 +13,8 @@
 
     $isTeamNalaka = $currentRole === 'team nalaka';
 
+    $teamAreas = \App\Support\TeamAreaPermissions::grantedAreas(data_get(session('user'), 'id'), $currentRole);
+
     $isReportingRole = in_array(
         $currentRole,
         ['reporting', 'reportingrole', 'report admin', 'reporter'],
@@ -34,13 +36,9 @@
 
 
     // Logo/home destination
-    if ($isTeamChandana) {
+    if ($isTeamChandana || $isTeamNalaka) {
 
-        $homeUrl = '/advertisements/lahipita/approved';
-
-    } elseif ($isTeamNalaka) {
-
-        $homeUrl = '/advertisements/hitad/approved';
+      $homeUrl = '/team-home';
 
     } elseif ($isReportingRole) {
 
@@ -73,81 +71,26 @@
   <ul class="menu-inner py-1">
 
     <!-- Pages -->
+    @unless($isTeamChandana || $isTeamNalaka)
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Pages</span>
     </li>
+    @endunless
 
-    @if($isTeamChandana)
-
-    <li class="menu-item active open">
-
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-
-            <i class="menu-icon tf-icons bx bx-printer"></i>
-
-            <div>Lahipita Print</div>
-
+    @if($isTeamChandana || $isTeamNalaka)
+      <li class="menu-item {{ request()->is('dashboard') ? 'active' : '' }}">
+        <a href="{{ url('/dashboard') }}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-home-circle"></i>
+          <div>Dashboard</div>
         </a>
-
-        <ul class="menu-sub">
-
-            <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
-
-                <a
-                    href="{{ url('/advertisements/lahipita/approved') }}"
-                    class="menu-link"
-                >
-                    <div>Lahipita Approved Ads</div>
-                </a>
-
-            </li>
-
-
-            <li class="menu-item {{ request()->is('advertisements/lahipita/print-on-paper') ? 'active' : '' }}">
-
-                <a
-                    href="{{ url('/advertisements/lahipita/print-on-paper') }}"
-                    class="menu-link"
-                >
-                    <div>Print on Hitad Paper Ads</div>
-                </a>
-
-            </li>
-
-        </ul>
-
-    </li>
-
-
-@elseif($isTeamNalaka)
-
-    <li class="menu-item active open">
-
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-
-            <i class="menu-icon tf-icons bx bx-dock-top"></i>
-
-            <div>Hitad Print</div>
-
-        </a>
-
-        <ul class="menu-sub">
-
-            <li class="menu-item {{ request()->is('advertisements/hitad/approved') ? 'active' : '' }}">
-
-                <a
-                    href="{{ url('/advertisements/hitad/approved') }}"
-                    class="menu-link"
-                >
-                    <div>Hitad Approved Ads</div>
-                </a>
-
-            </li>
-
-        </ul>
-
-    </li>
-
+      </li>
+      @foreach($teamAreas as $area)
+        <li class="menu-item {{ request()->is($area['active_pattern'] ?? $area['path']) ? 'active' : '' }}">
+          <a href="{{ url('/' . $area['path']) }}" class="menu-link">
+            <div>{{ $area['label'] }}</div>
+          </a>
+        </li>
+      @endforeach
 
 @elseif($isAdvertisingRole)
 
@@ -159,12 +102,12 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
       <a href="{{ url('/advertisements/create') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-plus-circle"></i>
         <div>Add Advertisement</div>
       </a>
-    </li>
+    </li> -->
 
     <li class="menu-item {{ request()->is('all-print-ads') ? 'active' : '' }}">
       <a href="{{ url('/all-print-ads') }}" class="menu-link">
@@ -173,7 +116,7 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
+    <li class="menu-item {{ request()->is('web-combined-ads') || (request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*')) ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-dock-top"></i>
         <div>Hitad Print</div>
@@ -199,6 +142,11 @@
             <div> Hitad Approved Ads</div>
           </a>
         </li>
+        <li class="menu-item {{ request()->is('web-combined-ads') ? 'active' : '' }}">
+          <a href="{{ url('/web-combined-ads') }}" class="menu-link">
+            <div>Hitad Web Combined Ads</div>
+          </a>
+        </li>
     </ul>
   </li>
 
@@ -221,6 +169,16 @@
         <li class="menu-item {{ request()->is('advertisements/lahipita') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/lahipita') }}" class="menu-link">
             <div>Lahipita All Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/web-combined-ads') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/web-combined-ads') }}" class="menu-link">
+            <div>Lahipita Web Combined Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/translate*') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/translate') }}" class="menu-link">
+            <div>Translate</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
@@ -291,12 +249,12 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
       <a href="{{ url('/promo-codes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-purchase-tag-alt"></i>
         <div>Promo Codes</div>
       </a>
-    </li>
+    </li> -->
 
     <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
       <a href="{{ url('/adtypes') }}" class="menu-link">
@@ -371,15 +329,15 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('advertisements/create') ? 'active' : '' }}">
       <a href="{{ url('/advertisements/create') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-plus-circle"></i>
         <div>Add Advertisement</div>
       </a>
-    </li>
+    </li> -->
 
     <!-- ================= HITAD PRINT ================= -->
-    <li class="menu-item {{ request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*') ? 'active open' : '' }}">
+    <li class="menu-item {{ request()->is('web-combined-ads') || (request()->is('advertisements*') && !request()->is('advertisements/create') && !request()->is('advertisements/lahipita*')) ? 'active open' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-dock-top"></i>
         <div>Hitad Print</div>
@@ -404,6 +362,11 @@
           <a href="{{ url('/advertisements/hitad/approved') }}" class="menu-link">
             <div>Hitad Approved Ads</div>
           </a>
+      </li>
+      <li class="menu-item {{ request()->is('web-combined-ads') ? 'active' : '' }}">
+        <a href="{{ url('/web-combined-ads') }}" class="menu-link">
+          <div>Hitad Web Combined Ads</div>
+        </a>
       </li>
       <!-- <li class="menu-item {{ request()->is('advertisements/hitad/print-on-paper') ? 'active' : '' }}">
         <a href="{{ url('/advertisements/hitad/print-on-paper') }}" class="menu-link" >
@@ -433,6 +396,16 @@
         <li class="menu-item {{ request()->is('advertisements/lahipita') ? 'active' : '' }}">
           <a href="{{ url('/advertisements/lahipita') }}" class="menu-link">
             <div>Lahipita All Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/web-combined-ads') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/web-combined-ads') }}" class="menu-link">
+            <div>Lahipita Web Combined Ads</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->is('advertisements/lahipita/translate*') ? 'active' : '' }}">
+          <a href="{{ url('/advertisements/lahipita/translate') }}" class="menu-link">
+            <div>Translate</div>
           </a>
         </li>
         <li class="menu-item {{ request()->is('advertisements/lahipita/approved') ? 'active' : '' }}">
@@ -493,12 +466,12 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
+    <!-- <li class="menu-item {{ request()->is('promo-codes') ? 'active' : '' }}">
       <a href="{{ url('/promo-codes') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-purchase-tag-alt"></i>
         <div>Promo Codes</div>
       </a>
-    </li>
+    </li> -->
 
     <li class="menu-item {{ request()->is('adtypes') ? 'active' : '' }}">
       <a href="{{ url('/adtypes') }}" class="menu-link">
@@ -570,6 +543,20 @@
       </a>
     </li>
 
+    @if($isAdministrativeLevel || $isSuperAdmin)
+    <li class="menu-item {{ request()->is('activity-logs') ? 'active' : '' }}">
+      <a href="{{ url('/activity-logs') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-history"></i>
+        <div>Activity Logs</div>
+      </a>
+    </li>
+    <li class="menu-item {{ request()->is('team-access') ? 'active' : '' }}">
+      <a href="{{ url('/team-access') }}" class="menu-link">
+        <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
+        <div>Team Access</div>
+      </a>
+    </li>
+    @endif
     <li class="menu-item {{ request()->is('members') ? 'active' : '' }}">
       <a href="{{ url('/members') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-group"></i>

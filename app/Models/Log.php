@@ -22,16 +22,18 @@ class Log extends Model
      */
     public static function record(int $adminId, string $task): self
     {
-        $log = static::create([
-            'admin_id' => $adminId,
-            'task' => $task,
-        ]);
+        return DB::transaction(function () use ($adminId, $task): self {
+            $log = static::create([
+                'admin_id' => $adminId,
+                'task' => $task,
+            ]);
 
-        DB::table('admin_has_logs')->insert([
-            'admin_id' => $adminId,
-            'log_id' => $log->id,
-        ]);
+            DB::table('admin_has_logs')->insert([
+                'admin_id' => $adminId,
+                'log_id' => $log->id,
+            ]);
 
-        return $log;
+            return $log;
+        });
     }
 }

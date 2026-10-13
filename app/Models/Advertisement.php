@@ -23,8 +23,14 @@ class Advertisement extends Model
         'price',
         'ad_title',
         'advertisement_description',
+        'translated_advertisement_description',
+        'translated_advertisement_description_done',
         'retyped_advertisement_description',
         'reference_number',
+        'translated_reference_number',
+        'retyped_reference_number_2',
+        'translation_requested_at',
+        'translation_requested_by_admin_id',
         'publish_date',
         'publication',
         'web_combined_ad_hitadlk',
@@ -33,6 +39,8 @@ class Advertisement extends Model
 
     protected $casts = [
         'publish_date' => 'date',
+        'translated_advertisement_description_done' => 'boolean',
+        'translation_requested_at' => 'datetime',
         'web_combined_ad_hitadlk' => 'boolean',
         'print_combined_ad_hitadprint' => 'boolean',
         'price' => 'decimal:2',

@@ -1,6 +1,12 @@
 /.phpunit.cache
 /node_modules
 /database/
+!/database/
+/database/*
+!/database/migrations/
+/database/migrations/*
+!/database/migrations/2026_10_08_000001_create_admin_area_permissions_table.php
+!/database/migrations/2026_10_09_000001_create_team_area_activity_logs_table.php
 /public/build
 /public/hot
 /public/storage

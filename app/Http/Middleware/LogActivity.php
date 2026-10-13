@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 /**
- * Automatically records every state-changing (non-GET) admin request into
- * the logs / admin_has_logs tables, so no controller needs to log manually.
+ * Automatically records successful admin requests into the logs and
+ * admin_has_logs tables, so no controller needs to log manually.
  */
 class LogActivity
 {
@@ -34,7 +34,7 @@ class LogActivity
 
     private function recordActivity(Request $request, $response): void
     {
-        if (!in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        if (!in_array($request->method(), ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             return;
         }
 
@@ -51,7 +51,12 @@ class LogActivity
             return;
         }
 
-        Log::record((int) $adminId, $this->buildTaskDescription($request));
+        $this->writeActivity((int) $adminId, $this->buildTaskDescription($request));
+    }
+
+    protected function writeActivity(int $adminId, string $description): void
+    {
+        Log::record($adminId, $description);
     }
 
     private function buildTaskDescription(Request $request): string
@@ -59,9 +64,9 @@ class LogActivity
         $route = $request->route();
         $action = $route ? $route->getActionMethod() : null;
 
-        $label = $action && $action !== 'Closure'
-            ? Str::ucfirst(Str::snake($action, ' '))
-            : ($request->method() . ' ' . $request->path());
+        $label = $action && strtolower($action) !== 'closure'
+            ? Str::headline($action)
+            : Str::headline(strtolower($request->method())) . ' ' . Str::headline($request->path());
 
         $params = $route ? array_filter($route->parameters(), 'is_scalar') : [];
 

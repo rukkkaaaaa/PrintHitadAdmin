@@ -8,7 +8,7 @@
         trim((string) data_get(session('user'), 'role', ''))
     );
 
-    $hideAuditColumns = $currentRole === 'super admin';
+    $showAuditColumns = $currentRole === 'administrative level';
 
 @endphp
 
@@ -91,9 +91,9 @@
 
                                 <th>Publish Date</th>
 
-                                @unless($hideAuditColumns)
+                                @if($showAuditColumns)
                                     <th>Viewed By</th>
-                                @endunless
+                                @endif
 
                                 <th>Actions</th>
 
@@ -131,7 +131,7 @@
                                     {{ $ad->publish_date }}
                                 </td>
 
-                                @unless($hideAuditColumns)
+                                @if($showAuditColumns)
                                 {{-- VIEWED BY --}}
                                 <td>
 
@@ -165,60 +165,25 @@
                                     @endif
 
                                 </td>
-                                @endunless
+                                @endif
 
 
                                 {{-- ACTION --}}
                                 <td>
 
-                                    @if(empty($ad->viewed_by_admin_id))
+                                    @php
+                                        $viewUrl = $publication === 'lahipita'
+                                            ? url('/advertisements/lahipita/approved/' . $ad->id . '/view')
+                                            : url('/advertisements/hitad/approved/' . $ad->id . '/view');
+                                    @endphp
 
-                                        @php
-
-                                            $viewUrl = $publication === 'lahipita'
-                                                ? url('/advertisements/lahipita/approved/' . $ad->id . '/view')
-                                                : url('/advertisements/hitad/approved/' . $ad->id . '/view');
-
-                                        @endphp
-
-
-                                        <form
-                                            method="POST"
-                                            action="{{ $viewUrl }}"
-                                            class="d-inline"
-                                        >
-
-                                            @csrf
-
-                                            <button
-                                                type="submit"
-                                                class="btn btn-sm btn-outline-info"
-                                                onclick="return confirm('View this advertisement? You can only click View once.');"
-                                            >
-
-                                                <i class="bx bx-show"></i>
-
-                                                View
-
-                                            </button>
-
-                                        </form>
-
-                                    @else
-
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-secondary"
-                                            disabled
-                                        >
-
-                                            <i class="bx bx-check"></i>
-
-                                            Viewed
-
+                                    <form method="POST" action="{{ $viewUrl }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-info">
+                                            <i class="bx bx-show"></i>
+                                            {{ empty($ad->viewed_by_admin_id) ? 'View' : 'Retrieve' }}
                                         </button>
-
-                                    @endif
+                                    </form>
 
                                 </td>
 
@@ -229,7 +194,7 @@
                             <tr>
 
                                 <td
-                                    colspan="{{ $hideAuditColumns ? 5 : 6 }}"
+                                    colspan="{{ $showAuditColumns ? 6 : 5 }}"
                                     class="text-center text-muted py-4"
                                 >
 
