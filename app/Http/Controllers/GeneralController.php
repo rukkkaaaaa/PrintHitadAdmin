@@ -3537,8 +3537,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
 
 
     /**
-     * Reports page: build report sections for both publications and payment groups.
-     * Accepts either `month` (Y-m) or `week` (ISO Y-Www) input.
+    * Reports page: build report sections for both publications and payment groups.
+    * Accepts `month` (Y-m), `week` (ISO Y-Www), or a custom date range.
      */
     public function reports(Request $request)
     {
@@ -3600,10 +3600,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             $period['start'],
             $period['end']
         );
-        $filenamePeriod = $period['type'] === 'week'
-            ? 'week_' . $period['start']->format('o_W')
-            : $period['start']->format('Y_m');
-        $filename = sprintf('%s_%s_report.pdf', $config['slug'], $filenamePeriod);
+        $filename = sprintf('%s_%s_report.pdf', $config['slug'], $period['filename']);
 
         $html = view('reports.pdf', [
             'title' => $config['title'],
@@ -3640,10 +3637,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             $period['start'],
             $period['end']
         );
-        $filenamePeriod = $period['type'] === 'week'
-            ? 'week_' . $period['start']->format('o_W')
-            : $period['start']->format('Y_m');
-        $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $filenamePeriod);
+        $filename = sprintf('web_combined_%s_%s_report.pdf', $config['slug'], $period['filename']);
 
         $html = view('reports.pdf', [
             'title' => $config['title'],
@@ -3743,17 +3737,44 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     }
 
     /**
-     * Resolve the selected month or ISO week into an inclusive date range.
+    * Resolve the selected month, ISO week, or custom range into inclusive dates.
      */
     private function resolveReportPeriod(Request $request): array
     {
-        $type = $request->input('period') === 'week'
-            || ($request->filled('week') && !$request->filled('month'))
-            ? 'week'
-            : 'month';
+        $requestedPeriod = $request->input('period');
+        $type = in_array($requestedPeriod, ['week', 'custom'], true)
+            ? $requestedPeriod
+            : ($request->filled('week') && !$request->filled('month') ? 'week' : 'month');
 
         $monthInput = $request->input('month', now()->format('Y-m'));
         $weekInput = $request->input('week', now()->format('o-\\WW'));
+
+        if ($type === 'custom') {
+            $validated = $request->validate([
+                'start_date' => ['required', 'date_format:Y-m-d'],
+                'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            ]);
+
+            $start = Carbon::createFromFormat('!Y-m-d', $validated['start_date'])->startOfDay();
+            $end = Carbon::createFromFormat('!Y-m-d', $validated['end_date'])->endOfDay();
+            $startDateInput = $start->format('Y-m-d');
+            $endDateInput = $end->format('Y-m-d');
+            $rangeLabel = $start->format('M j, Y') . ' – ' . $end->format('M j, Y');
+
+            return [
+                'type' => 'custom',
+                'name' => 'Custom Date Range',
+                'input' => $startDateInput . ' to ' . $endDateInput,
+                'startDateInput' => $startDateInput,
+                'endDateInput' => $endDateInput,
+                'weekInput' => $weekInput,
+                'monthInput' => $monthInput,
+                'label' => $rangeLabel,
+                'filename' => 'custom_' . $start->format('Y_m_d') . '_to_' . $end->format('Y_m_d'),
+                'start' => $start,
+                'end' => $end,
+            ];
+        }
 
         if ($type === 'week') {
             if (preg_match('/^(\d{4})-W(\d{2})$/', (string) $weekInput, $matches)) {
@@ -3774,6 +3795,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 'input' => $weekInput,
                 'weekInput' => $weekInput,
                 'monthInput' => $monthInput,
+                'startDateInput' => now()->toDateString(),
+                'endDateInput' => now()->toDateString(),
                 'label' => sprintf(
                     'Week %s, %s (%s – %s)',
                     $start->format('W'),
@@ -3781,6 +3804,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                     $start->format('M j, Y'),
                     $end->format('M j, Y')
                 ),
+                'filename' => 'week_' . $start->format('o_W'),
                 'start' => $start,
                 'end' => $end,
             ];
@@ -3800,7 +3824,10 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'input' => $monthInput,
             'weekInput' => $weekInput,
             'monthInput' => $monthInput,
+            'startDateInput' => now()->toDateString(),
+            'endDateInput' => now()->toDateString(),
             'label' => $start->format('F Y'),
+            'filename' => $start->format('Y_m'),
             'start' => $start,
             'end' => $start->copy()->endOfMonth(),
         ];

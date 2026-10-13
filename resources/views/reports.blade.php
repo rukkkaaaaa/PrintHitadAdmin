@@ -4,25 +4,31 @@
 
 @section('content')
 @php
-    $periodQuery = http_build_query([
-        'period' => $type,
-        $type => $input,
-    ]);
+    $periodQuery = $type === 'custom'
+        ? http_build_query([
+            'period' => 'custom',
+            'start_date' => $startDateInput,
+            'end_date' => $endDateInput,
+        ])
+        : http_build_query([
+            'period' => $type,
+            $type => $input,
+        ]);
 @endphp
 <div class="container-xxl flex-grow-1 container-p-y">
 
     <div class="card mb-4">
         <div class="card-body">
-            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
+            <div class="d-flex flex-column flex-xl-row flex-wrap justify-content-between align-items-xl-center gap-3">
 
                 <div>
                     <h4 class="mb-1 fw-semibold">Reports</h4>
                     <p class="text-muted mb-0">
-                        View advertisements and download reports by month or week.
+                        View advertisements and download reports by month, week, or custom date range.
                     </p>
                 </div>
 
-                <div class="d-flex flex-column flex-md-row gap-2">
+                <div class="d-flex flex-column flex-md-row flex-wrap gap-2">
                     <form action="{{ url('/reports') }}" method="GET" class="d-flex flex-nowrap align-items-end gap-2 rounded-3 border bg-light p-2" style="width: 310px; max-width: 100%;">
                         <input type="hidden" name="period" value="month">
                         <div class="flex-grow-1">
@@ -55,6 +61,35 @@
                             >
                         </div>
                         <button type="submit" class="btn {{ $type === 'week' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm text-nowrap flex-shrink-0 px-3">
+                            <i class="bx bx-calendar-check me-1"></i>View
+                        </button>
+                    </form>
+
+                    <form action="{{ url('/reports') }}" method="GET" class="d-flex flex-nowrap align-items-end gap-2 rounded-3 border bg-light p-2" style="width: 400px; max-width: 100%;">
+                        <input type="hidden" name="period" value="custom">
+                        <div class="flex-grow-1">
+                            <label for="report-start-date" class="form-label small fw-semibold text-muted mb-1">From</label>
+                            <input
+                                id="report-start-date"
+                                type="date"
+                                name="start_date"
+                                class="form-control form-control-sm"
+                                value="{{ $startDateInput }}"
+                                required
+                            >
+                        </div>
+                        <div class="flex-grow-1">
+                            <label for="report-end-date" class="form-label small fw-semibold text-muted mb-1">To</label>
+                            <input
+                                id="report-end-date"
+                                type="date"
+                                name="end_date"
+                                class="form-control form-control-sm"
+                                value="{{ $endDateInput }}"
+                                required
+                            >
+                        </div>
+                        <button type="submit" class="btn {{ $type === 'custom' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm text-nowrap flex-shrink-0 px-3">
                             <i class="bx bx-calendar-check me-1"></i>View
                         </button>
                     </form>
