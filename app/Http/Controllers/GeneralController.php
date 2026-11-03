@@ -3193,6 +3193,8 @@ public function getHitadApprovedAdvertisements(Request $request)
         ->orderByDesc('advertisements.id')
         ->paginate(30);
 
+    $this->attachApprovedViewLogs($ads, 'ViewHitadApprovedAdvertisementOnce');
+
     $pageTitle = 'Hitad - Approved Advertisements';
     $publication = 'hitad_print';
 
@@ -3253,6 +3255,8 @@ public function getLahipitaApprovedAdvertisements(Request $request)
         ->orderByDesc('advertisements.id')
         ->paginate(30);
 
+    $this->attachApprovedViewLogs($ads, 'ViewLahipitaApprovedAdvertisementOnce');
+
     $pageTitle = 'Lahipita - Approved Advertisements';
     $publication = 'lahipita';
 
@@ -3260,6 +3264,33 @@ public function getLahipitaApprovedAdvertisements(Request $request)
         'advertisements.approved',
         compact('ads', 'pageTitle', 'publication')
     );
+}
+
+
+/**
+ * Attach View/Retrieve button logs (from the logs table) to each ad as view_logs.
+ */
+private function attachApprovedViewLogs($ads, string $action): void
+{
+    $label = \Illuminate\Support\Str::headline($action);
+
+    $tasks = [];
+    foreach ($ads as $ad) {
+        $tasks[$label . ' (' . $ad->id . ')'] = $ad->id;
+    }
+
+    $logs = $tasks
+        ? DB::table('logs')
+            ->leftJoin('admins', 'logs.admin_id', '=', 'admins.id')
+            ->whereIn('logs.task', array_keys($tasks))
+            ->orderBy('logs.created_at')
+            ->get(['logs.task', 'logs.created_at', 'admins.admin_name'])
+            ->groupBy(fn ($log) => $tasks[$log->task])
+        : collect();
+
+    foreach ($ads as $ad) {
+        $ad->view_logs = $logs->get($ad->id, collect())->values();
+    }
 }
 
 
@@ -3795,8 +3826,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 'input' => $weekInput,
                 'weekInput' => $weekInput,
                 'monthInput' => $monthInput,
-                'startDateInput' => now()->toDateString(),
-                'endDateInput' => now()->toDateString(),
+                'startDateInput' => $start->toDateString(),
+                'endDateInput' => $end->toDateString(),
                 'label' => sprintf(
                     'Week %s, %s (%s – %s)',
                     $start->format('W'),
@@ -3824,8 +3855,8 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'input' => $monthInput,
             'weekInput' => $weekInput,
             'monthInput' => $monthInput,
-            'startDateInput' => now()->toDateString(),
-            'endDateInput' => now()->toDateString(),
+            'startDateInput' => $start->toDateString(),
+            'endDateInput' => $start->copy()->endOfMonth()->toDateString(),
             'label' => $start->format('F Y'),
             'filename' => $start->format('Y_m'),
             'start' => $start,

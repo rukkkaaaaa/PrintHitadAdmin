@@ -156,6 +156,22 @@
 
                                         @endif
 
+                                        @if(($ad->view_logs ?? collect())->count())
+                                            <div class="dropdown mt-1">
+                                                <button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Access logs ({{ $ad->view_logs->count() }})
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    @foreach($ad->view_logs as $log)
+                                                        <li class="dropdown-item-text small">
+                                                            <strong>{{ $log->admin_name ?? 'Unknown' }}</strong>
+                                                            <span class="text-muted d-block">{{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i') }}</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+
                                     @else
 
                                         <span class="text-muted">
