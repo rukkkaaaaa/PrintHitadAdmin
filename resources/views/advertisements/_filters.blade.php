@@ -35,12 +35,17 @@
                    value="{{ request('phone') }}">
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
+            <input type="number" name="ad_id" class="form-control" placeholder="Ad ID" aria-label="Ad ID" min="1" step="1"
+                   value="{{ request('ad_id') }}">
+        </div>
+
+        <div class="col-md-2">
             <input type="text" name="email" class="form-control" placeholder="Email"
                    value="{{ request('email') }}">
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" name="category" class="form-control" placeholder="Category name"
                    value="{{ request('category') }}">
         </div>

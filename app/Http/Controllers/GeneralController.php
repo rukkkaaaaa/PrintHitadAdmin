@@ -75,6 +75,7 @@ class GeneralController extends Controller
     {
         return $request->only([
             'search',
+            'ad_id',
             'category',
             'publish_date',
             'publish_date_from',
@@ -84,6 +85,15 @@ class GeneralController extends Controller
             'phone',
             'email',
         ]);
+    }
+
+    private function applyAdvertisementIdFilter($query, Request $request)
+    {
+        if ($request->filled('ad_id')) {
+            $query->where('advertisements.id', '=', trim((string) $request->input('ad_id')));
+        }
+
+        return $query;
     }
 
     private function applyAdvertisementTitleFilter($query, Request $request, string $descriptionColumn = 'advertisements.advertisement_description')
@@ -105,6 +115,8 @@ class GeneralController extends Controller
 
     private function applyEloquentAdvertisementFilters($query, Request $request)
     {
+        $this->applyAdvertisementIdFilter($query, $request);
+
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -2464,6 +2476,8 @@ class GeneralController extends Controller
             });
         }
 
+        $this->applyAdvertisementIdFilter($query, $request);
+
         $this->applyAdvertisementTitleFilter($query, $request);
 
         $this->applyAdvertisementPublishDateFilters($query, $request);
@@ -2545,6 +2559,8 @@ class GeneralController extends Controller
                     ->orWhere('categories.category_name_si', 'LIKE', "%{$cat}%");
             });
         }
+
+        $this->applyAdvertisementIdFilter($query, $request);
 
         $this->applyAdvertisementTitleFilter($query, $request);
 
@@ -2772,6 +2788,8 @@ class GeneralController extends Controller
             });
         }
 
+        $this->applyAdvertisementIdFilter($query, $request);
+
         $this->applyAdvertisementTitleFilter($query, $request);
 
         $this->applyAdvertisementPublishDateFilters($query, $request);
@@ -2921,8 +2939,10 @@ class GeneralController extends Controller
             });
         }
 
+        $this->applyAdvertisementIdFilter($query, $request);
+
         $ads = $query->orderBy('advertisements.id', 'desc')->paginate(30);
-        $ads->appends($request->only('search'));
+        $ads->appends($this->advertisementFilterParameters($request));
 
         return view('advertisements.lahipita_all', compact('ads'))
             ->with('search', $request->search);
@@ -3011,6 +3031,8 @@ class GeneralController extends Controller
             );
         });
     }
+
+    $this->applyAdvertisementIdFilter($query, $request);
 
     $this->applyAdvertisementTitleFilter($query, $request);
 
