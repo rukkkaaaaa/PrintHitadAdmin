@@ -172,16 +172,19 @@ class TranslationController extends Controller
                 Rule::unique('advertisements', 'reference_number')->ignore($id),
             ],
             'retyped_reference_number_2' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
-                'different:reference_number',
                 Rule::unique('advertisements', 'retyped_reference_number_2')->ignore($id),
+            ],
+            'retyped_reference_number_3' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('advertisements', 'retyped_reference_number_3')->ignore($id),
             ],
         ], [
             'reference_number.required' => 'Retyped reference number 1 is required before sending for translation.',
-            'retyped_reference_number_2.required' => 'Retyped reference number 2 is required before sending for translation.',
-            'retyped_reference_number_2.different' => 'Retyped reference numbers 1 and 2 must be different.',
         ]);
 
         $sentAt = DB::transaction(function () use ($id, $validated) {
@@ -206,7 +209,8 @@ class TranslationController extends Controller
                 'translation_requested_at' => $sentAt,
                 'translation_requested_by_admin_id' => data_get(session('user'), 'id'),
                 'reference_number' => $validated['reference_number'],
-                'retyped_reference_number_2' => $validated['retyped_reference_number_2'],
+                'retyped_reference_number_2' => $validated['retyped_reference_number_2'] ?? null,
+                'retyped_reference_number_3' => $validated['retyped_reference_number_3'] ?? null,
                 'updated_at' => $sentAt,
             ];
 

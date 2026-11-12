@@ -338,14 +338,14 @@
                                 @endif
                             </div>
                             @unless($translationRequested)
-                                <small class="text-muted d-block mt-1">Translation is optional. If you do not send this ad to Team Nalaka, you can approve it here after completing the two retyped reference numbers.</small>
+                                <small class="text-muted d-block mt-1">Translation is optional. If you do not send this ad to Team Nalaka, you can approve it here after completing the retyped description and reference number 1.</small>
                             @endunless
                         </div>
                     @endif
                     <div class="mt-3">
                         <label class="form-label" for="referenceNumberInput">Retyped Reference Number 1</label>
-                        <input type="text" name="reference_number" id="referenceNumberInput"
-                               class="form-control @error('reference_number') is-invalid @enderror"
+                           <input type="text" name="reference_number" id="referenceNumberInput"
+                               class="form-control @error('reference_number') is-invalid @enderror" required
                                value="{{ old('reference_number', $ad->reference_number ?? $ad->order_ref ?? '') }}"
                                placeholder="Enter first retyped reference number">
                         @error('reference_number')
@@ -359,6 +359,16 @@
                                value="{{ old('retyped_reference_number_2', $ad->retyped_reference_number_2 ?? '') }}"
                                placeholder="Enter second retyped reference number">
                         @error('retyped_reference_number_2')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label" for="thirdReferenceNumberInput">Retyped Reference Number 3</label>
+                        <input type="text" name="retyped_reference_number_3" id="thirdReferenceNumberInput"
+                               class="form-control @error('retyped_reference_number_3') is-invalid @enderror"
+                               value="{{ old('retyped_reference_number_3', $ad->retyped_reference_number_3 ?? '') }}"
+                               placeholder="Enter third retyped reference number">
+                        @error('retyped_reference_number_3')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -909,6 +919,7 @@
                     var translatedDoneInput = document.getElementById('translatedDescriptionDoneInput');
                     var translatedReferenceNumberInput = document.getElementById('translatedReferenceNumberInput');
                     var secondReferenceNumberInput = document.getElementById('secondReferenceNumberInput');
+                    var thirdReferenceNumberInput = document.getElementById('thirdReferenceNumberInput');
                     var sendToTranslationBtn = document.getElementById('sendToTranslationBtn');
                     var translationSendStatus = document.getElementById('translationSendStatus');
 
@@ -917,14 +928,12 @@
                             !sendToTranslationBtn ||
                             !retypedDescriptionBox ||
                             !retypedDoneInput ||
-                            !referenceNumberInput ||
-                            !secondReferenceNumberInput
+                            !referenceNumberInput
                         ) return;
                         sendToTranslationBtn.disabled = sendToTranslationBtn.dataset.sent === '1' ||
                             retypedDoneInput.value !== '1' ||
                             (retypedDescriptionBox.value || '').trim() === '' ||
-                            (referenceNumberInput.value || '').trim() === '' ||
-                            (secondReferenceNumberInput.value || '').trim() === '';
+                            (referenceNumberInput.value || '').trim() === '';
                     }
 
                     function refreshApproveButton() {
@@ -932,8 +941,7 @@
                             !approveButton ||
                             !retypedDescriptionBox ||
                             !retypedDoneInput ||
-                            !referenceNumberInput ||
-                            !secondReferenceNumberInput) { return;
+                            !referenceNumberInput) { return;
                         }
                     if (translationRequested && (
                         !translatedDescriptionBox ||
@@ -943,7 +951,6 @@
                     var retypedFieldsComplete =
                         (retypedDescriptionBox.value || '').trim() !== '' &&
                         (referenceNumberInput.value || '').trim() !== '' &&
-                        (secondReferenceNumberInput.value || '').trim() !== '' &&
                         retypedDoneInput.value === '1';
                     var translationComplete = !translationRequested || (
                         (translatedDescriptionBox.value || '').trim() !== '' &&
@@ -953,10 +960,10 @@
                     approveButton.disabled = !(retypedFieldsComplete && translationComplete);
                    }
                     [retypedDescriptionBox, translatedDescriptionBox, referenceNumberInput,
-                        translatedReferenceNumberInput, secondReferenceNumberInput].forEach(function (input) {
+                        translatedReferenceNumberInput, secondReferenceNumberInput, thirdReferenceNumberInput].forEach(function (input) {
                         if (input) input.addEventListener('input', refreshApproveButton);
                     });
-                    [referenceNumberInput, secondReferenceNumberInput].forEach(function (input) {
+                    [referenceNumberInput].forEach(function (input) {
                         if (input) input.addEventListener('input', refreshSendTranslationButton);
                     });
 
@@ -1070,7 +1077,8 @@
                                     retyped_advertisement_description: retypedDescriptionBox.value,
                                     retyped_description_confirmed: retypedDoneInput.value,
                                     reference_number: referenceNumberInput.value,
-                                    retyped_reference_number_2: secondReferenceNumberInput.value
+                                    retyped_reference_number_2: secondReferenceNumberInput ? secondReferenceNumberInput.value : '',
+                                    retyped_reference_number_3: thirdReferenceNumberInput ? thirdReferenceNumberInput.value : ''
                                 })
                             }).then(function (response) {
                                 return response.json().then(function (data) {

@@ -4638,15 +4638,19 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
                 $this->ensureTranslatedAdvertisementDescriptionDoneColumnExists();
 
         $referenceNumberRules = [
-            $isApprove ? 'required' : 'nullable','string','max:255',
+            'required','string','max:255',
             Rule::unique('advertisements', 'reference_number')->ignore($id),];
         $translatedReferenceNumberRules = [
             $requiresTranslationForApproval ? 'required' : 'nullable','string','max:255',
             Rule::unique('advertisements', 'translated_reference_number')->ignore($id),
         ];
         $secondRetypedReferenceNumberRules = [
-            $isApprove ? 'required' : 'nullable','string','max:255',
+            'nullable','string','max:255',
             Rule::unique('advertisements', 'retyped_reference_number_2')->ignore($id),
+        ];
+        $thirdRetypedReferenceNumberRules = [
+            'nullable','string','max:255',
+            Rule::unique('advertisements', 'retyped_reference_number_3')->ignore($id),
         ];
 
         $retypedDescriptionRules = [
@@ -4687,6 +4691,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             'reference_number' => $referenceNumberRules,
             'translated_reference_number' => $translatedReferenceNumberRules,
             'retyped_reference_number_2' => $secondRetypedReferenceNumberRules,
+            'retyped_reference_number_3' => $thirdRetypedReferenceNumberRules,
             'translated_advertisement_description' => $translatedDescriptionRules,
             'retyped_advertisement_description' => $retypedDescriptionRules,
             'retyped_advertisement_description_done' => $isApprove ? 'required|accepted' : 'nullable|boolean',
@@ -4742,6 +4747,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
     'reference_number.unique' => 'This reference number is already used by another advertisement.',
         'translated_reference_number.unique' => 'This translated reference number is already used by another advertisement.',
         'retyped_reference_number_2.unique' => 'This second retyped reference number is already used by another advertisement.',
+        'retyped_reference_number_3.unique' => 'This third retyped reference number is already used by another advertisement.',
 ]);
 
         if ($request->filled('advertisement_tint_id')) {
@@ -4849,6 +4855,7 @@ private function viewPrintOnHitadPaperOnce($id, string $publication)
             }
             $advertisementData['translated_reference_number'] = $request->translated_reference_number;
             $advertisementData['retyped_reference_number_2'] = $request->retyped_reference_number_2;
+            $advertisementData['retyped_reference_number_3'] = $request->retyped_reference_number_3;
 
             if ($topAdSupported) {
                 $advertisementData['top_ad'] = $request->boolean('top_ad');
@@ -5237,6 +5244,9 @@ public function getHitadPrintUnpaidAdvertisements(Request $request)
             }
             if (!Schema::hasColumn('advertisements', 'retyped_reference_number_2')) {
                 $table->string('retyped_reference_number_2')->nullable()->after('translated_reference_number');
+            }
+            if (!Schema::hasColumn('advertisements', 'retyped_reference_number_3')) {
+                $table->string('retyped_reference_number_3')->nullable()->after('retyped_reference_number_2');
             }
         });
     }

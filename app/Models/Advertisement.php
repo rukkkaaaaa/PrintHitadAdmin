@@ -29,6 +29,7 @@ class Advertisement extends Model
         'reference_number',
         'translated_reference_number',
         'retyped_reference_number_2',
+        'retyped_reference_number_3',
         'translation_requested_at',
         'translation_requested_by_admin_id',
         'publish_date',

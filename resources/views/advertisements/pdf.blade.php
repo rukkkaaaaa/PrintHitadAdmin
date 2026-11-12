@@ -104,6 +104,11 @@
         </tr>
 
         <tr>
+            <td class="label">Retyped Description</td>
+            <td>{{ $ad->retyped_advertisement_description ?: '-' }}</td>
+        </tr>
+
+        <tr>
             <td class="label">Publication</td>
             <td>{{ $ad->publication }}</td>
         </tr>
